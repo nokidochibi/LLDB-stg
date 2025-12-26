@@ -458,7 +458,12 @@
             }
             
             const activeContainer = dom.containers[mode];
-            activeContainer.scrollTop = activeContainer.scrollHeight;
+            // 変更点: リクエストタブの場合は最上部、それ以外（チャット）は最下部へ
+            if (mode === 'request') {
+                activeContainer.scrollTop = 0;
+            } else {
+                activeContainer.scrollTop = activeContainer.scrollHeight;
+            }
         };
 
         window.activateSecretMode = function() {
@@ -590,6 +595,8 @@
             `;
             dom.requestList.insertBefore(card, dom.requestList.firstChild);
             showToast("リクエストを送ったよ！📮");
+            // 追加: 投稿後に最上部へスクロール
+            dom.containers.request.scrollTop = 0;
 
             try {
                 await fetch(`${GAS_API_URL}?action=postRequest&q=${encodeURIComponent(query)}`);
@@ -641,6 +648,9 @@
                     </div>
                 </div>
             `).join('');
+            
+            // 追加: リスト描画後に最上部へスクロール
+            dom.containers.request.scrollTop = 0;
         }
 
         function handleLyricsResults(data) {
