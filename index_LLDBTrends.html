@@ -293,7 +293,8 @@
 
         /* セル内装飾 */
         a { color: var(--text-main); text-decoration: none; display: block; }
-        a small { color: #64748b; font-size: 0.85em; display: block; margin-top: 2px; }
+        /* display: block から display: inline に変更し、改行されないように修正 */
+        a small { color: #64748b; font-size: 0.85em; display: inline; }
         
         .views-number {
             display: block;
