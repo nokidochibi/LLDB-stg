@@ -780,24 +780,26 @@
                 const val = row[h.key];
                 
                 if (h.key === 'title') {
-                    // ★ カテゴリタグの生成
+                    // ★ カテゴリタグの生成 & カテゴリ判定
                     let tagHtml = '';
-                    let isOtherCategory = false; // 「他」カテゴリ判定用フラグ
+                    let category = 'Other'; // デフォルト
 
                     if (row.isMV == 1) {
                         tagHtml = '<span class="video-tag tag-mv">MV</span>';
+                        category = 'MV';
                     } else if (row.isFullOther == 1) {
                         tagHtml = '<span class="video-tag tag-live">LIVE</span>';
+                        category = 'Live';
                     } else if (row.isNYMovie == 1) {
                         tagHtml = '<span class="video-tag tag-ny">NY</span>';
+                        category = 'NY';
                     } else {
                         tagHtml = '<span class="video-tag tag-other">他</span>';
-                        isOtherCategory = true; // 「他」の場合はフラグを立てる
+                        category = 'Other';
                     }
 
                     // タグとタイトルを結合
-                    // isOtherCategory が true の場合、formatTitle に改行禁止フラグを渡す
-                    td.innerHTML = tagHtml + `<a href="${row.url}" target="_blank" style="display:inline;">${formatTitle(val, isOtherCategory)}</a>`;
+                    td.innerHTML = tagHtml + `<a href="${row.url}" target="_blank" style="display:inline;">${formatTitle(val, category)}</a>`;
 
                 } else if (h.key === 'totalViews') {
                     const num = parseFloat(val)||0;
@@ -962,21 +964,28 @@
         document.getElementById('noGraphData').style.display = 'none';
     }
 
-    function formatTitle(title, forceSingleLine = false) {
+    function formatTitle(title, category) {
         if (!title) return '';
         let cleanText = title.replace(/[\r\n]+/g, ' ').replace(/[\s\u3000]+/g, ' ').trim();
 
-        let formatted = cleanText
-            .replace(/#\S+/g, '') // ★ハッシュタグ削除を最初に実行（#aiko等が#だけ残るのを防ぐ）
-            .replace(/^aiko\s*-\s*/gi, '')
-            .replace(/^aiko\s+/gi, '')
-            .replace(/aiko\s*-\s*/gi, '')
-            .replace(/aiko/gi, '')
-            .replace(/music video/gi, '') // "music video" を削除
-            .replace(/\s*[\/-]\s*MV/gi, '') // " - MV" や " / MV" などを削除
-            .replace(/\s*\(MV\)/gi, '') // "(MV)" を削除
-            .replace(/MV/gi, '') // 残った "MV" も削除
-            .trim();
+        let formatted = cleanText;
+
+        // ★ユーザー指定ルール
+        // 既存のハッシュタグ削除ロジックは廃止
+
+        if (category === 'MV') {
+            // MVの場合："music video","aiko-"を削除
+            formatted = formatted.replace(/music video/gi, '').replace(/aiko-/gi, '');
+        } else if (category === 'NY') {
+            // New Yearの場合："aiko "を削除（aikoの後の半角スペースまで含めて削除）
+            formatted = formatted.replace(/aiko /gi, '');
+        } else {
+            // Liveの場合 または 他の場合
+            // "『"または"「"の前が"aiko-"または"aiko”だったら削除
+            formatted = formatted.replace(/aiko-?(?=[『「])/gi, '');
+        }
+
+        formatted = formatted.trim();
 
         // 文末のハイフンなどが残った場合の掃除
         if (formatted.endsWith('-') || formatted.endsWith('/')) {
