@@ -981,8 +981,8 @@
             formatted = formatted.replace(/aiko /gi, '');
         } else {
             // Liveの場合 または 他の場合
-            // "『"または"「"の前が"aiko-"または"aiko”だったら削除
-            formatted = formatted.replace(/aiko-?(?=[『「])/gi, '');
+            // "『"または"「"以前にある "aiko-", "aiko", "aiko- " を削除
+            formatted = formatted.replace(/aiko-? ?(?=.*[『「])/gi, '');
         }
 
         formatted = formatted.trim();
