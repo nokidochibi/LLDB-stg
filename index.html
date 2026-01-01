@@ -403,8 +403,21 @@
             if(aboutVerEl) aboutVerEl.textContent = aboutVersion;
 
             lucide.createIcons();
-            // デフォルトアプリ: LLDB Live
-            switchApp('live');
+            
+            // ▼▼▼ ここを修正しました ▼▼▼
+            // URLハッシュ(#)を見て初期アプリを切り替える処理
+            const hash = window.location.hash;
+
+            if (hash === '#song') {
+                switchApp('songHelper');
+            } else if (hash === '#trends') {
+                switchApp('trends');
+            } else if (hash === '#history') {
+                switchApp('history');
+            } else {
+                // デフォルトは Live
+                switchApp('live');
+            }
 
             const header = document.getElementById('main-app-header');
             if(header) {
