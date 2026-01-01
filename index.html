@@ -165,6 +165,16 @@
             </div>
             <i data-lucide="chevron-right" class="text-gray-300 w-5 h-5"></i>
           </div>
+
+        <!-- ★追加機能: セトリ投稿フォーム -->
+        <div class="noren-item bg-gray-50/50" onclick="openSetlistForm()">
+            <div class="noren-icon bg-blue-500"><i data-lucide="send" class="w-6 h-6"></i></div>
+            <div class="flex-1">
+                <div class="font-bold text-gray-600 text-lg">セトリ投稿フォーム</div>
+                <div class="text-xs text-gray-400 mt-0.5">ライブのセットリストを報告</div>
+            </div>
+            <i data-lucide="chevron-right" class="text-gray-300 w-5 h-5"></i>
+        </div>
     
     <div class="noren-item bg-gray-50/50" onclick="forceReloadApp()">
             <div class="noren-icon bg-gray-600"><i data-lucide="refresh-cw" class="w-6 h-6"></i></div>
@@ -344,6 +354,18 @@
             const modal = document.getElementById('about-modal');
             modal.classList.remove('open');
         }
+
+        // ★追加機能: セトリ投稿フォームへの遷移処理
+        function openSetlistForm() {
+            // ダイアログで確認
+            if (confirm('セトリ投稿フォームに移動しますか？')) {
+                // 暖簾メニューを閉じる
+                toggleNoren();
+                // 外部サイトへ遷移
+                window.location.href = 'https://nokidochibi.github.io/LLDB_SetoriForm/';
+            }
+        }
+
 // 強制再起動機能
         function forceReloadApp() {
           if (!confirm('キャッシュを削除してアプリを再起動しますか？\n（表示がおかしい時などにお使いください）')) return;
