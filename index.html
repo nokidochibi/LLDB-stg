@@ -74,6 +74,10 @@
         /* 暖簾メニュー & ヘッダー用スタイル */
         #noren-menu {
             position: fixed; top: 60px; left: 0; width: 100%;
+            max-height: calc(100vh - 80px); /* 画面下端に少し余裕を持たせる */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch; /* iOSでの慣性スクロール */
+
             background-color: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px);
             box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1); z-index: 50;
             transform: translateY(-120%); 
