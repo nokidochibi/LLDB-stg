@@ -744,6 +744,7 @@
     }
 
     function filterAndDisplay(isInit = false) {
+        // 1. チェックボックスの状態を取得してフィルタリング
         const checked = Array.from(document.querySelectorAll('.category-checkbox-hidden:checked')).map(c => c.dataset.category);
         
         if (checked.length === 0) {
@@ -752,11 +753,11 @@
             filteredVideoData = videoData.filter(v => checked.some(c => v[c] === '1' || v[c] === 1));
         }
 
-        if (isInit) {
-            const h = tableHeaders.find(h => h.key === currentSortColumn);
-            if(h) sortTable(currentSortColumn, h.type, currentSortDirection);
-            else updateTableBody(filteredVideoData);
+        const h = tableHeaders.find(h => h.key === currentSortColumn);
+        if(h) {
+            sortTable(currentSortColumn, h.type, currentSortDirection);
         } else {
+            // 万が一ヘッダーが見つからない場合の予備処理
             updateTableBody(filteredVideoData);
         }
     }
