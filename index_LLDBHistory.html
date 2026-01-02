@@ -504,6 +504,14 @@
 
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('content-area').classList.remove('hidden');
+
+                // データ生成完了後にタブの表示状態を更新する
+                const activeTab = document.querySelector('.tab-item.active');
+                if (activeTab) {
+                    switchTab(activeTab.dataset.tab);
+                } else {
+                    switchTab('history');
+                }
             }, 800);
         }
         
