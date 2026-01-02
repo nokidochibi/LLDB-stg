@@ -489,6 +489,7 @@
             localStorage.setItem('lldb_user_birth', `${y}-${m}-${d}`);
 
             document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('input-area').classList.add('hidden'); // 入力エリアを非表示にする
             document.getElementById('content-area').classList.add('hidden');
 
             // 実際のアプリではここでfetchしますが、プレビューではモックを使用
@@ -504,6 +505,7 @@
 
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('content-area').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' }); // 画面トップへスクロール
 
                 // データ生成完了後にタブの表示状態を更新する
                 const activeTab = document.querySelector('.tab-item.active');
