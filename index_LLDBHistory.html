@@ -916,12 +916,14 @@
                     }
                 } else { tracksHtml = '<span class="text-gray-400">情報なし</span>'; }
 
-                const borderStyle = data.type && (data.type.includes('Album') || data.type.includes('アルバム')) 
-                    ? 'border-l-4 border-pink-400' 
-                    : 'border-l-4 border-orange-400';
+                // ★変更: 枠線スタイルロジックを削除
+                // const borderStyle = data.type && (data.type.includes('Album') || data.type.includes('アルバム')) 
+                //     ? 'border-l-4 border-pink-400' 
+                //     : 'border-l-4 border-orange-400';
 
+                // ★変更: borderStyleクラスを削除し、画像のonerrorを追加
                 const cardHtml = `
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${borderStyle}">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
                             <span class="text-xs font-bold bg-white px-2 py-1 rounded border border-gray-200">${data.type || 'CD'}</span>
                             <span class="text-xs font-mono text-gray-400">${fullDateStr}</span>
@@ -932,13 +934,13 @@
                             <div class="flex gap-3 mb-5">
                                 <div class="flex-1">
                                     <div class="relative group w-full">
-                                        <img src="${data.img1 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="初回盤">
+                                        <img src="${data.img1 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
                                         <div class="jacket-label">初回限定盤</div>
                                     </div>
                                 </div>
                                 <div class="flex-1">
                                     <div class="relative group w-full">
-                                        <img src="${data.img2 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="通常盤">
+                                        <img src="${data.img2 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
                                         <div class="jacket-label">通常盤</div>
                                     </div>
                                 </div>
