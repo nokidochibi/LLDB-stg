@@ -37,9 +37,6 @@
             --border-album: #FF69B4; /* aiko Pink */
             --border-single: #F97316; /* Orange-500 */
             --border-other: #94A3B8; /* Slate-400 */
-            
-            /* Zoom Level (JSで動的に変更) */
-            --zoom-level: 1;
         }
 
         body {
@@ -175,25 +172,24 @@
            ★NEW: マップ（グリッド）機能用のスタイル追加
            --------------------------------------------------------- */
         
+        /* コンテナのスクロール設定削除（Stickyを機能させるため） */
         #view-map {
-            overflow-x: auto; /* 横スクロール許可 */
-            overflow-y: hidden;
-            -webkit-overflow-scrolling: touch;
+            /* overflow-x: auto; 削除 */
+            /* overflow-y: hidden; 削除 */
+            overflow: visible; /* デフォルトに戻す */
         }
 
         .disco-grid {
             display: grid;
             grid-template-columns: 36px repeat(12, 1fr);
             gap: var(--cell-gap);
-            width: 100%; /* JSで動的に変更される */
-            min-width: 100%;
+            width: 100%; /* 画面幅いっぱいに */
             padding: 0 4px;
-            transform-origin: top left;
         }
 
         .header-row {
-            position: sticky; top: 0; z-index: 60; /* z-indexを高く設定 */
-            background-color: rgba(248, 249, 250, 0.98); /* 背景を濃くして透け防止 */
+            position: sticky; top: 0; z-index: 60;
+            background-color: rgba(248, 249, 250, 0.98);
             backdrop-filter: blur(4px);
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 4px; padding-top: 2px;
@@ -203,14 +199,15 @@
             gap: var(--cell-gap);
         }
 
+        /* レスポンシブ文字サイズ (clampを使用) */
         .header-cell { 
             text-align: center; 
-            font-size: calc(9px * var(--zoom-level)); /* 拡大に合わせて文字も大きく */
+            font-size: clamp(9px, 2vw, 13px); /* 画面幅に応じて拡大 */
             font-weight: bold; color: #94a3b8; 
             height: 32px; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 2px;
         }
         
-        /* 縦軸固定用のスタイル */
+        /* 縦軸固定 */
         .header-cell:first-child {
             position: sticky; left: 0; z-index: 60;
             background-color: rgba(248, 249, 250, 0.98);
@@ -218,7 +215,7 @@
         .year-cell {
             position: sticky; left: 0; z-index: 30;
             background-color: #fff;
-            font-size: calc(10px * var(--zoom-level)); /* 拡大に合わせて文字も大きく */
+            font-size: clamp(10px, 2.2vw, 14px); /* 画面幅に応じて拡大 */
             font-weight: 900; color: #cbd5e1;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
@@ -228,12 +225,12 @@
             border-right: 1px solid transparent;
         }
 
-        .birth-cake { font-size: calc(10px * var(--zoom-level)); margin-bottom: -2px; display: block; animation: bounce 2s infinite; }
+        .birth-cake { font-size: clamp(10px, 2.2vw, 14px); margin-bottom: -2px; display: block; animation: bounce 2s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
 
         .year-label { display: block; }
         .age-label { 
-            font-size: calc(8px * var(--zoom-level)); /* 拡大に合わせて文字も大きく */
+            font-size: clamp(8px, 1.8vw, 11px); /* 画面幅に応じて拡大 */
             color: var(--accent-color); margin-top: 1px; 
             font-weight: bold; opacity: 0.8; white-space: nowrap; transform: scale(0.9);
         }
@@ -259,7 +256,7 @@
             flex: 1;
             display: flex; align-items: center; justify-content: center;
             text-align: center;
-            font-size: calc(6px * var(--zoom-level)); /* ★修正: ズーム倍率を反映 */
+            font-size: clamp(6px, 1.4vw, 11px); /* ★修正: 画面幅に応じて拡大 */
             line-height: 1.1;
             font-weight: bold;
             word-break: break-all;
@@ -301,15 +298,28 @@
             border-radius: 2px; display: flex; align-items: center; justify-content: center; overflow: hidden;
         }
         .empty-cell::after {
-            font-size: calc(14px * var(--zoom-level)); /* 絵文字も拡大 */
+            font-size: clamp(14px, 3vw, 20px); /* 絵文字も拡大 */
             opacity: 0.15; pointer-events: none; filter: grayscale(30%);
         }
         .empty-cell.season-winter::after { content: '❄️'; }
         .empty-cell.season-spring::after { content: '🌸'; }
         .empty-cell.season-summer::after { content: '🌻'; }
         .empty-cell.season-autumn::after { content: '🍁'; }
-
-        .future-cell { border: 1px dashed rgba(0,0,0,0.1); } /* 点線を少し濃く */
+        
+        /* Liveのみセル用の追加スタイル（背景・透かし適用用） */
+        .live-only-bg::after {
+            font-size: clamp(14px, 3vw, 20px); 
+            opacity: 0.15; pointer-events: none; filter: grayscale(30%);
+            content: '';
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        }
+        .live-only-bg.season-winter::after { content: '❄️'; }
+        .live-only-bg.season-spring::after { content: '🌸'; }
+        .live-only-bg.season-summer::after { content: '🌻'; }
+        .live-only-bg.season-autumn::after { content: '🍁'; }
+        .live-only-bg .live-cell { z-index: 1; position: relative; background: transparent; } /* 文字を上に */
+        
+        .future-cell { border: 1px dashed rgba(0,0,0,0.1); }
         .birth-month-header { color: var(--accent-color); font-weight: 900; }
 
         /* モーダル拡張 */
@@ -376,10 +386,10 @@
                 <div id="grid-container" class="disco-grid bg-white rounded-2xl shadow-sm border border-gray-100 pb-4 pt-1 select-none">
                     <!-- JSで生成 -->
                 </div>
-                <!-- 拡大縮小のヒント -->
+                <!-- ヒント -->
                 <div class="text-center mt-4 mb-8">
                     <p class="text-[10px] text-gray-400 font-bold bg-white/50 inline-block px-3 py-1 rounded-full border border-gray-100">
-                        ※２本指で拡大/縮小できるよ
+                        ※横向きにすると拡大されて見やすくなるよ
                     </p>
                 </div>
             </div>
@@ -537,7 +547,7 @@
             lucide.createIcons();
             populateDates();
             startDataLoading();
-            setupPinchZoom(); // ★追加: ピンチズーム初期化
+            // setupPinchZoom(); // ★廃止
             
             const savedBirth = localStorage.getItem('lldb_user_birth');
             if (savedBirth) {
@@ -548,114 +558,7 @@
             }
         });
 
-        // ★追加: ピンチイン/ピンチアウト機能の実装 (中心点ズーム対応)
-        function setupPinchZoom() {
-            const gridContainer = document.getElementById('grid-container');
-            const mapContainer = document.getElementById('view-map');
-            let initialDistance = 0;
-            let currentWidth = 100; // %
-            
-            // スクロール補正用
-            let startClientX = 0;
-            let startClientY = 0;
-            let startScrollLeft = 0;
-            let startScrollTop = 0;
-
-            mapContainer.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 2) {
-                    initialDistance = Math.hypot(
-                        e.touches[0].pageX - e.touches[1].pageX,
-                        e.touches[0].pageY - e.touches[1].pageY
-                    );
-                    const styleWidth = gridContainer.style.width;
-                    currentWidth = styleWidth ? parseFloat(styleWidth) : 100;
-                    
-                    // 2本の指の中心点を取得（画面上の座標）
-                    startClientX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                    startClientY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-                    
-                    // 現在のスクロール位置
-                    startScrollLeft = mapContainer.scrollLeft;
-                    startScrollTop = window.scrollY; // 縦スクロールはWindow全体
-                }
-            }, { passive: true });
-
-            mapContainer.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 2) {
-                    const dist = Math.hypot(
-                        e.touches[0].pageX - e.touches[1].pageX,
-                        e.touches[0].pageY - e.touches[1].pageY
-                    );
-                    
-                    if (initialDistance > 0) {
-                        const scale = dist / initialDistance;
-                        let newWidth = currentWidth * scale;
-                        
-                        // 最小100%（画面幅）、最大400%に制限
-                        if (newWidth < 100) newWidth = 100;
-                        if (newWidth > 400) newWidth = 400;
-
-                        // 幅を更新
-                        gridContainer.style.width = `${newWidth}%`;
-                        
-                        // ズームレベル(CSS変数)を更新して文字サイズを連動
-                        const zoomLevel = newWidth / 100;
-                        gridContainer.style.setProperty('--zoom-level', zoomLevel);
-
-                        // --- 中心点ズーム補正ロジック ---
-                        // 現在の拡大率と新しい拡大率の比率
-                        const ratio = newWidth / currentWidth;
-                        
-                        // 横スクロール補正
-                        // (現在のスクロール位置 + タッチ中心) が コンテンツ上の位置
-                        // これを比率倍して、タッチ中心を引くと新しいスクロール位置
-                        // ただし、mapContainerのオフセットも考慮が必要だが、簡易的に
-                        // 指の位置に対応するコンテンツ位置が ratio 倍に移動した分を追従させる
-                        
-                        // コンテンツ上のタッチX座標（概算）
-                        const contentX = startScrollLeft + (startClientX - mapContainer.getBoundingClientRect().left);
-                        const newScrollLeft = contentX * ratio - (startClientX - mapContainer.getBoundingClientRect().left);
-                        mapContainer.scrollLeft = newScrollLeft;
-
-                        // 縦スクロール補正 (グリッドの高さが変わるため)
-                        // コンテンツ上のタッチY座標（概算）
-                        // ※gridContainerの上端からの位置
-                        const containerRect = gridContainer.getBoundingClientRect();
-                        const contentY = startClientY - containerRect.top; // topはスクロールに伴い変わるので注意が必要だが、ここでは直前の位置からの変化を見る
-                        
-                        // より単純なアプローチ: 
-                        // 「指の下にある要素」が「指の下」に維持されるようにスクロールする
-                        // 縦方向も横幅に比例して伸びる（aspect-ratio:1/1のセルが多いため）
-                        // 実際にはヘッダーなど固定高の部分があるため完全な比例ではないが、近似的に補正
-                        
-                        // 現在の指のY位置に対応するドキュメント内位置
-                        const docY = window.scrollY + startClientY;
-                        // 拡大によって、この位置がどう移動するか。
-                        // 基準点(gridContainerの開始位置)からの距離が ratio 倍になる
-                        const gridTop = gridContainer.offsetTop;
-                        const distFromTop = docY - gridTop;
-                        const newDistFromTop = distFromTop * ratio;
-                        const newScrollY = gridTop + newDistFromTop - startClientY;
-                        
-                        // ※touchmove中は描画更新が激しいので、requestAnimationFrameを使うのが理想だが、
-                        // ここでは簡易実装として値をセットする（ただしOSの慣性スクロールと喧嘩する場合がある）
-                        
-                        // currentWidthなどの基準値を更新しないと、連続的な変化に対応できないため、
-                        // この簡易ロジックでは「開始時からの変化」ではなく「前回からの変化」で計算するか、
-                        // あるいは「開始時」を基準にし続ける必要がある。ここでは開始時基準で計算している。
-                        // ただし、scrollLeftなどはユーザーが動かす可能性もあるため、完全な追従は難しい。
-                        
-                        // 補正: ここでは横スクロール(scrollLeft)のみ適用し、縦はブラウザの挙動に任せる方が自然な場合も多いが、
-                        // 要望にある「中心から拡大」を実現するため、縦位置も調整を試みる。
-                        // window.scrollTo(0, newScrollY); // ← 挙動が不安定になるリスクがあるため、今回は横のみ厳密に、縦は自然に任せる（ユーザーが調整可能）
-                        
-                        // 修正: 毎回 currentWidth を更新する方式に変更するとスムーズ
-                         currentWidth = newWidth;
-                         initialDistance = dist;
-                    }
-                }
-            }, { passive: true });
-        }
+        // ピンチズーム関連処理は削除
 
         function startDataLoading() {
             loadingPromise = new Promise(async (resolve) => {
@@ -1084,8 +987,9 @@
                             liveInnerHtml += `<div class="live-item ${colorClass}">${abbr}</div>`;
                         });
 
+                        // ★修正: ライブのみセルに背景クラスと透かしクラス(live-only-bg)を追加
                         html += `
-                            <div class="jacket-cell cursor-pointer shadow-sm" onclick="openModal(this)" data-items="${dataJson}">
+                            <div class="jacket-cell cursor-pointer shadow-sm ${colClass} live-only-bg" onclick="openModal(this)" data-items="${dataJson}">
                                 <div class="live-cell">
                                     ${liveInnerHtml}
                                 </div>
@@ -1095,7 +999,6 @@
                     } else {
                         // --- 空白 ---
                         if (isFuture) {
-                            // ★修正: 未来でも季節の色と絵文字を表示し、かつ点線枠もつける
                             html += `<div class="empty-cell ${colClass} future-cell"></div>`;
                         } else {
                             html += `<div class="empty-cell ${colClass}"></div>`;
@@ -1213,11 +1116,12 @@
                         if (!addedLives.has(row.live)) {
                             addedLives.add(row.live);
                             liveFound = true;
-                            const safeName = row.live.replace(/'/g, "\\'");
+                            // ★修正: JSでエスケープ不要なため、そのままの文字列を使用する
+                            const liveName = row.live;
                             const div = document.createElement('div');
                             div.className = 'p-2 bg-red-50 text-red-600 rounded-lg text-xs font-bold border border-red-100 flex justify-between items-center cursor-pointer active:scale-95 transition-transform';
                             div.innerHTML = `<span>${row.live}</span> <i data-lucide="chevron-right" class="w-3 h-3"></i>`;
-                            div.onclick = () => { closeModal(); requestSearchInLive(safeName); };
+                            div.onclick = () => { closeModal(); requestSearchInLive(liveName); };
                             liveListEl.appendChild(div);
                         }
                     }
