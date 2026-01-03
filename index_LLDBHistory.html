@@ -298,6 +298,52 @@
             white-space: nowrap;
             overflow: hidden; /* はみ出し防止 */
         }
+    /* ---------------------------------------------------------
+           ★NEW: ライブテキスト表示用スタイル（詳細版）
+           --------------------------------------------------------- */
+        .live-text-cell {
+            width: 100%; height: 100%;
+            display: flex; 
+            flex-direction: column; /* 複数ある場合は縦に積む */
+            overflow: hidden;
+            border-radius: 2px;
+        }
+        .live-text-item {
+            flex: 1; /* 均等に高さを分割 */
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            font-size: 6px; /* 指定: 6px */
+            line-height: 1.0; /* 行間を詰める */
+            text-align: center;
+            font-weight: 900;
+            
+            white-space: normal; /* 指定: 折り返し有効 */
+            word-break: break-all; /* 単語の途中でも折り返す */
+            overflow: hidden;
+            padding: 0 1px;
+            border: 0.5px solid transparent; /* 境界線用 */
+        }
+
+        /* ツアータイプ別の配色 (Liveアプリのたすき色に準拠) */
+        /* Pop: 赤 (#E63946) */
+        .live-pop { 
+            background-color: #fff1f2; color: #E63946; border-color: #fecaca; 
+        }
+        /* Rock: 青 (#00BFFF) */
+        .live-rock { 
+            background-color: #f0f9ff; color: #00BFFF; border-color: #bae6fd; 
+        }
+        /* Aloha: 黄 (#FFD700) ※視認性のため文字は少し暗く、背景を黄色に */
+        .live-aloha { 
+            background-color: #fefce8; color: #d97706; border-color: #fef08a; 
+        }
+        /* Event/Other: 灰 (#9CA3AF) */
+        .live-other { 
+            background-color: #f8fafc; color: #9CA3AF; border-color: #e2e8f0; 
+        }
     </style>
 </head>
 <body>
@@ -837,7 +883,7 @@
                 releaseMap[key].sort((a, b) => new Date(a.releaseDate) - new Date(b.releaseDate));
             });
 
-            // ★NEW: ライブデータのマップ作成 (追加)
+            // ★NEW: ライブデータのマップ作成 (抽出ロジック)
             const liveMap = {};
             if (allData && allData.historyData) {
                 allData.historyData.forEach(row => {
@@ -880,7 +926,7 @@
                 for (let m = 1; m <= 12; m++) {
                     const key = `${y}-${m}`;
                     const items = releaseMap[key]; // CD
-                    const lives = liveMap[key];    // Live (★追加)
+                    const lives = liveMap[key];    // Live
                     const isFuture = new Date(y, m-1) > new Date();
                     
                     let colClass = '';
@@ -921,21 +967,29 @@
                         `;
                     } else if (lives && lives.length > 0) {
                         // --- ★NEW: ライブテキスト表示 (CDがない場合) ---
-                        // 略称生成ロジック
                         let liveHtml = '';
+                        
                         lives.forEach(name => {
+                            // 1. 略称生成
                             let shortName = name
                                 .replace(/Love Like Pop/i, 'LLP')
                                 .replace(/Love Like Rock/i, 'LLR')
                                 .replace(/Love Like Aloha/i, 'LLA')
-                                .replace(/ vol\./i, '') // vol.を削除
+                                .replace(/ vol\./i, '')
                                 .replace(/追加公演/g, '')
-                                .replace(/(\d+)\.\d+/g, '$1'); // バージョン小数を削除 (例: 17.5 -> 17)
-                            
-                            liveHtml += `<span class="live-text-item">${shortName}</span>`;
+                                .replace(/(\d+)\.\d+/g, '$1');
+
+                            // 2. ツアータイプ判定と色クラス決定
+                            let typeClass = 'live-other';
+                            const nLower = name.toLowerCase();
+                            if (nLower.includes('love like pop')) typeClass = 'live-pop';
+                            else if (nLower.includes('love like rock')) typeClass = 'live-rock';
+                            else if (nLower.includes('love like aloha')) typeClass = 'live-aloha';
+
+                            liveHtml += `<span class="live-text-item ${typeClass}">${shortName}</span>`;
                         });
 
-                        // クリックでそのライブを検索する機能を持たせる
+                        // クリックでそのライブ(最初の1件)を検索
                         const firstLiveName = lives[0].replace(/'/g, "\\'");
                         html += `
                             <div class="live-text-cell cursor-pointer" onclick="requestSearchInLive('${firstLiveName}')">
