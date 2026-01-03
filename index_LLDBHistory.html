@@ -237,37 +237,7 @@
     border-radius: 2px;
     box-shadow: -1px -1px 2px rgba(0,0,0,0.2);
 }
-/* ★NEW: ライブセル用のスタイル */
-        .live-cell {
-            width: 100%; height: 100%;
-            background-color: #E63946; /* LLDB Live Theme Red */
-            border-radius: 3px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .live-item {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: white;
-            font-size: 8px;
-            font-weight: bold;
-            line-height: 1;
-            padding: 0 1px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            word-break: break-all; /* 長い英単語での改行 */
-        }
-        .live-item:hover {
-            background-color: rgba(255,255,255,0.2);
-        }
-        /* 同月に複数のライブがある場合、境界線を入れる */
-        .live-item:not(:last-child) {
-            border-bottom: 1px solid rgba(255,255,255,0.3);
-        }
+
         /* 季節の背景色 */
         .season-winter { background-color: #eff6ff; }
         .season-spring { background-color: #fff1f2; }
@@ -303,6 +273,31 @@
             max-height: 85vh; overflow-y: auto; overflow-x: hidden;
         }
         .modal-overlay.open .modal-card-expanded { transform: scale(1); }
+/* ---------------------------------------------------------
+           ★NEW: ライブテキスト表示用スタイル（追加）
+           --------------------------------------------------------- */
+        .live-text-cell {
+            width: 100%; height: 100%;
+            display: flex; 
+            flex-direction: column; /* 複数ある場合は縦に積む */
+            align-items: center; 
+            justify-content: center;
+            background-color: #fff1f2; /* 薄い赤色背景（ライブ感） */
+            border-radius: 2px;
+            overflow: hidden;
+            border: 1px solid #fecaca;
+            padding: 1px;
+        }
+        .live-text-item {
+            font-size: 8px; /* 年齢軸と同じサイズ */
+            line-height: 1.1;
+            text-align: center;
+            color: #e11d48; 
+            font-weight: 900;
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden; /* はみ出し防止 */
+        }
     </style>
 </head>
 <body>
@@ -828,7 +823,7 @@
             const container = document.getElementById('grid-container');
             if(!listData) return;
 
-            // 1. CDリリース情報のマップ作成 (既存ロジック)
+            // 1. CDデータのマップ作成 (既存)
             const releaseMap = {};
             listData.forEach(item => {
                 if(!item.releaseDate) return;
@@ -837,19 +832,23 @@
                 if (!releaseMap[key]) releaseMap[key] = [];
                 releaseMap[key].push(item);
             });
+
             Object.keys(releaseMap).forEach(key => {
                 releaseMap[key].sort((a, b) => new Date(a.releaseDate) - new Date(b.releaseDate));
             });
 
-            // 2. ★NEW: ライブ情報のマップ作成
+            // ★NEW: ライブデータのマップ作成 (追加)
             const liveMap = {};
-            if (allData.historyData && Array.isArray(allData.historyData)) {
+            if (allData && allData.historyData) {
                 allData.historyData.forEach(row => {
                     if (!row.date || !row.live) return;
                     const d = new Date(row.date);
                     const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-                    if (!liveMap[key]) liveMap[key] = new Set();
-                    liveMap[key].add(row.live);
+                    if (!liveMap[key]) liveMap[key] = [];
+                    // 同じ月内で重複排除して追加
+                    if (!liveMap[key].includes(row.live)) {
+                        liveMap[key].push(row.live);
+                    }
                 });
             }
 
@@ -859,7 +858,6 @@
             const birthMonth = birthDate.getMonth() + 1;
 
             let html = '';
-            // ヘッダー行 (変更なし)
             html += `<div class="header-row col-span-full grid grid-cols-[36px_repeat(12,1fr)] gap-[2px]">`;
             html += `<div></div>`;
             for (let m = 1; m <= 12; m++) {
@@ -869,7 +867,6 @@
             }
             html += `</div>`;
 
-            // 年・月ごとのループ
             for (let y = startYear; y <= endYear; y++) {
                 let ageLabel = '';
                 const birthYear = birthDate.getFullYear();
@@ -882,8 +879,8 @@
 
                 for (let m = 1; m <= 12; m++) {
                     const key = `${y}-${m}`;
-                    const items = releaseMap[key]; // CDデータ
-                    const liveSet = liveMap[key];  // ライブデータ (★NEW)
+                    const items = releaseMap[key]; // CD
+                    const lives = liveMap[key];    // Live (★追加)
                     const isFuture = new Date(y, m-1) > new Date();
                     
                     let colClass = '';
@@ -892,10 +889,9 @@
                     else if (m >= 6 && m <= 8) colClass = 'season-summer';
                     else if (m >= 9 && m <= 11) colClass = 'season-autumn';
 
-                    // --- セルの中身判定 ---
-                    
-                    // パターンA: CDがある場合 (ジャケット優先)
+                    // 優先順位: 1.CDジャケット -> 2.ライブ情報 -> 3.空セル
                     if (items && items.length > 0) {
+                        // --- 既存: CDジャケット表示 ---
                         const dataJson = JSON.stringify(items).replace(/"/g, '&quot;');
                         
                         let contentHtml = '';
@@ -905,13 +901,13 @@
                             const borderClass = getBorderClass(item.type);
                             contentHtml = `<img src="${imgUrl}" loading="lazy" class="jacket-img-base ${borderClass}">`;
                         } else {
-                            // 複数枚リリース
                             const first = items[0];
                             const last = items[items.length - 1];
                             const img1 = first.img2 || first.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
                             const img2 = last.img2 || last.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
                             const border1 = getBorderClass(first.type);
                             const border2 = getBorderClass(last.type);
+                            
                             contentHtml = `
                                 <img src="${img1}" class="jacket-img-base stacked-1 ${border1}">
                                 <img src="${img2}" class="jacket-img-base stacked-2 ${border2}">
@@ -923,29 +919,31 @@
                                 ${contentHtml}
                             </div>
                         `;
-                    
-                    // パターンB: CDはないが、ライブがある場合 (★NEW)
-                    } else if (liveSet && liveSet.size > 0) {
-                        const lives = Array.from(liveSet);
-                        let liveInnerHtml = '';
-                        
-                        lives.forEach(liveName => {
-                            const safeName = liveName.replace(/'/g, "\\'");
-                            const shortName = getShortLiveName(liveName); // 略称生成
-                            // クリックすると検索を実行
-                            liveInnerHtml += `<div class="live-item" onclick="requestSearchInLive('${safeName}')">${shortName}</div>`;
+                    } else if (lives && lives.length > 0) {
+                        // --- ★NEW: ライブテキスト表示 (CDがない場合) ---
+                        // 略称生成ロジック
+                        let liveHtml = '';
+                        lives.forEach(name => {
+                            let shortName = name
+                                .replace(/Love Like Pop/i, 'LLP')
+                                .replace(/Love Like Rock/i, 'LLR')
+                                .replace(/Love Like Aloha/i, 'LLA')
+                                .replace(/ vol\./i, '') // vol.を削除
+                                .replace(/追加公演/g, '')
+                                .replace(/(\d+)\.\d+/g, '$1'); // バージョン小数を削除 (例: 17.5 -> 17)
+                            
+                            liveHtml += `<span class="live-text-item">${shortName}</span>`;
                         });
 
+                        // クリックでそのライブを検索する機能を持たせる
+                        const firstLiveName = lives[0].replace(/'/g, "\\'");
                         html += `
-                            <div class="jacket-cell shadow-sm border border-red-100">
-                                <div class="live-cell">
-                                    ${liveInnerHtml}
-                                </div>
+                            <div class="live-text-cell cursor-pointer" onclick="requestSearchInLive('${firstLiveName}')">
+                                ${liveHtml}
                             </div>
                         `;
-
-                    // パターンC: 何もない (空セル)
                     } else {
+                        // --- 既存: 空セル/未来セル ---
                         if (isFuture) {
                             html += `<div class="future-cell ${colClass}"></div>`;
                         } else {
@@ -956,32 +954,7 @@
             }
             container.innerHTML = html;
         }
-function getShortLiveName(name) {
-            if (!name) return '';
-            
-            // 全角英数を半角に
-            let s = name.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
-                return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
-            });
 
-            // Love Like Pop vol.X -> Pop X
-            if (s.match(/Love\s*Like\s*Pop\s*(?:vol\.?)?(\d+)/i)) {
-                return s.replace(/Love\s*Like\s*Pop\s*(?:vol\.?)?(\d+).*/i, 'Pop $1');
-            }
-            // Love Like Rock vol.X -> Rock X
-            if (s.match(/Love\s*Like\s*Rock\s*(?:vol\.?)?(\d+)/i)) {
-                return s.replace(/Love\s*Like\s*Rock\s*(?:vol\.?)?(\d+).*/i, 'Rock $1');
-            }
-            // Love Like Aloha vol.X -> Aloha X
-            if (s.match(/Love\s*Like\s*Aloha\s*(?:vol\.?)?(\d+)/i)) {
-                return s.replace(/Love\s*Like\s*Aloha\s*(?:vol\.?)?(\d+).*/i, 'Aloha $1');
-            }
-            // 追加公演などの処理 (add. -> +)
-            s = s.replace(/追加公演/g, '+');
-            
-            // その他の長いタイトルは適当に短縮するかそのまま
-            return s.replace('Love Like ', '');
-        }
         function getBorderClass(type) {
             if (!type) return 'border-other';
             const t = type.toLowerCase();
