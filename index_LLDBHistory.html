@@ -315,7 +315,7 @@
             align-items: center;
             justify-content: center;
             
-            font-size: 6px; /* 指定: 6px */
+            font-size: 7px; /* 指定: 7px */
             line-height: 1.0; /* 行間を詰める */
             text-align: center;
             font-weight: 900;
@@ -426,18 +426,15 @@
 
                     <div class="p-5">
                         <!-- ジャケット画像 (初回・通常 並列) -->
-                        <div class="flex gap-4 mb-6">
-                            <div class="flex-1">
-                                <div class="relative group w-full">
-                                    <img id="match-img-first" src="" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                    <div class="jacket-label">初回限定盤</div>
-                                </div>
+                        <div id="today-jacket-container" class="flex gap-4 mb-6 justify-center items-center">
+                            <div id="today-wrapper-first" class="flex-1 relative group w-full hidden">
+                                <img id="match-img-first" src="" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
                             </div>
-                            <div class="flex-1">
-                                <div class="relative group w-full">
-                                    <img id="match-img-regular" src="" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                    <div class="jacket-label">通常盤</div>
-                                </div>
+                            <div id="today-wrapper-regular" class="flex-1 relative group w-full hidden">
+                                <img id="match-img-regular" src="" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                            </div>
+                            <div id="today-wrapper-none" class="flex-1 relative group w-full hidden max-w-[60%]">
+                                <img src="https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image" class="cd-jacket" alt="No Image">
                             </div>
                         </div>
 
@@ -836,10 +833,44 @@
                 document.getElementById('match-cd-title').innerText = bestMatch.title || 'Unknown Title';
                 document.getElementById('match-cd-type').innerText = bestMatch.type || 'CD';
                 
-                const img1 = document.getElementById('match-img-first');
-                const img2 = document.getElementById('match-img-regular');
-                img1.src = bestMatch.img1 || '';
-                img2.src = bestMatch.img2 || '';
+                // --- 画像表示制御ロジック (修正版) ---
+                const img1Url = bestMatch.img1;
+                const img2Url = bestMatch.img2;
+                
+                const elFirst = document.getElementById('match-img-first');
+                const elRegular = document.getElementById('match-img-regular');
+                const wrapFirst = document.getElementById('today-wrapper-first');
+                const wrapRegular = document.getElementById('today-wrapper-regular');
+                const wrapNone = document.getElementById('today-wrapper-none');
+
+                // 一旦リセット
+                wrapFirst.classList.add('hidden');
+                wrapRegular.classList.add('hidden');
+                wrapNone.classList.add('hidden');
+                wrapFirst.classList.remove('max-w-[60%]');
+                wrapRegular.classList.remove('max-w-[60%]');
+
+                if (img1Url || img2Url) {
+                    // どちらか、あるいは両方ある場合
+                    if (img1Url) {
+                        elFirst.src = img1Url;
+                        wrapFirst.classList.remove('hidden');
+                    }
+                    if (img2Url) {
+                        elRegular.src = img2Url;
+                        wrapRegular.classList.remove('hidden');
+                    }
+
+                    // 片方しかない場合は中央寄せ＆サイズ調整
+                    if (!img1Url || !img2Url) {
+                        if (img1Url) wrapFirst.classList.add('max-w-[60%]');
+                        if (img2Url) wrapRegular.classList.add('max-w-[60%]');
+                    }
+                } else {
+                    // 両方ない場合
+                    wrapNone.classList.remove('hidden');
+                }
+                // ---------------------------------------
 
                 let tracksHtml = '';
                 if (bestMatch.tracks) {
@@ -1047,6 +1078,42 @@
                     }
                 } else { tracksHtml = '<span class="text-gray-400">情報なし</span>'; }
 
+                // --- 画像エリア生成ロジック (修正版) ---
+                let imagesHtml = '';
+                const img1 = data.img1;
+                const img2 = data.img2;
+
+                if (img1 && img2) {
+                    // 2枚ある場合: 並列表示
+                    imagesHtml = `
+                        <div class="flex gap-3 mb-5">
+                            <div class="flex-1 relative group w-full">
+                                <img src="${img1}" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                            </div>
+                            <div class="flex-1 relative group w-full">
+                                <img src="${img2}" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                            </div>
+                        </div>`;
+                } else if (img1 || img2) {
+                    // 1枚のみの場合: 中央寄せ・サイズ制限
+                    const targetImg = img1 || img2;
+                    imagesHtml = `
+                        <div class="flex justify-center mb-5">
+                            <div class="w-2/3 relative group">
+                                <img src="${targetImg}" class="cd-jacket" alt="CD" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                            </div>
+                        </div>`;
+                } else {
+                    // 両方ない場合: No Imageを中央に
+                    imagesHtml = `
+                        <div class="flex justify-center mb-5">
+                            <div class="w-2/3 relative group">
+                                <img src="https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image" class="cd-jacket" alt="No Image">
+                            </div>
+                        </div>`;
+                }
+                // -------------------------------------
+
                 const cardHtml = `
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
@@ -1056,20 +1123,7 @@
                         <div class="p-4">
                             <h3 class="text-lg font-bold text-gray-800 leading-tight mb-4 text-center">${data.title}</h3>
                             
-                            <div class="flex gap-3 mb-5">
-                                <div class="flex-1">
-                                    <div class="relative group w-full">
-                                        <img src="${data.img1 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                        <div class="jacket-label">初回限定盤</div>
-                                    </div>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="relative group w-full">
-                                        <img src="${data.img2 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                        <div class="jacket-label">通常盤</div>
-                                    </div>
-                                </div>
-                            </div>
+                            ${imagesHtml}
 
                             <div class="bg-[#e0f2f1]/50 rounded-lg p-3 text-xs flex justify-between items-center mb-4">
                                 <span class="font-bold text-[#1F7A6F] opacity-70">当時のaiko</span>
