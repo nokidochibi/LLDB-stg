@@ -437,7 +437,7 @@ let isUpdateHistoryLoaded = false; // 読み込み完了フラグ
 
 // 強制再起動機能
         function forceReloadApp() {
-          if (!confirm('キャッシュを削除してアプリを再起動しますか？\n（表示がおかしい時などにお使いください）')) return;
+          if (!confirm('アプリを再起動しますか？\n（表示がおかしい時などにお使いください）')) return;
           
           toggleNoren(); // 暖簾を閉じる
           localStorage.clear(); // キャッシュ削除
