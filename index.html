@@ -354,6 +354,35 @@
             }, 300);
         }
 
+        // ★追加: 更新履歴をロードして描画する関数
+        function loadUpdateHistory() {
+            const container = document.getElementById('update-history-content');
+            
+            fetch(`${GAS_API_URL}?action=getUpdateHistory`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.data.length > 0) {
+                        const html = data.data.map(item => `
+                            <div class="history-item">
+                                <span class="history-date">
+                                    ${item.date}
+                                    <br><span style="font-size:10px; opacity:0.6;">${item.version}</span>
+                                </span>
+                                <span class="history-content">${item.content}</span>
+                            </div>
+                        `).join('');
+                        container.innerHTML = html;
+                    } else {
+                        container.innerHTML = '<div class="text-center py-4 text-gray-400 text-xs">更新履歴はありません</div>';
+                    }
+                    isUpdateHistoryLoaded = true;
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = '<div class="text-center py-4 text-gray-400 text-xs">読み込みに失敗しました</div>';
+                });
+        }
+
         function closeAboutModal() {
             const modal = document.getElementById('about-modal');
             modal.classList.remove('open');
