@@ -172,18 +172,23 @@
            ★NEW: マップ（グリッド）機能用のスタイル追加
            --------------------------------------------------------- */
         
-        /* コンテナのスクロール設定削除（Stickyを機能させるため） */
         #view-map {
-            /* overflow-x: auto; 削除 */
-            /* overflow-y: hidden; 削除 */
-            overflow: visible; /* デフォルトに戻す */
+            overflow: visible; 
+        }
+
+        /* 横向き対応: 全画面幅にする */
+        @media (orientation: landscape) {
+            .max-w-lg { max-width: none !important; }
+            .mx-auto { margin-left: 0; margin-right: 0; }
+            .disco-grid { width: 100vw; } /* 画面幅いっぱい */
+            #input-area { max-width: 512px; margin: 16px auto; } /* 入力欄は中央寄せ維持 */
         }
 
         .disco-grid {
             display: grid;
             grid-template-columns: 36px repeat(12, 1fr);
             gap: var(--cell-gap);
-            width: 100%; /* 画面幅いっぱいに */
+            width: 100%;
             padding: 0 4px;
         }
 
@@ -199,11 +204,11 @@
             gap: var(--cell-gap);
         }
 
-        /* レスポンシブ文字サイズ (clampを使用) */
+        /* レスポンシブ文字サイズ */
         .header-cell { 
             text-align: center; 
-            font-size: clamp(9px, 2vw, 13px); /* 画面幅に応じて拡大 */
-            font-weight: bold; color: #94a3b8; 
+            font-size: clamp(11px, 2.5vw, 16px); /* ★修正: 文字サイズを大きく */
+            font-weight: 900; color: #64748b; /* 色を少し濃く */
             height: 32px; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 2px;
         }
         
@@ -215,7 +220,7 @@
         .year-cell {
             position: sticky; left: 0; z-index: 30;
             background-color: #fff;
-            font-size: clamp(10px, 2.2vw, 14px); /* 画面幅に応じて拡大 */
+            font-size: clamp(10px, 2.2vw, 14px);
             font-weight: 900; color: #cbd5e1;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
@@ -230,7 +235,7 @@
 
         .year-label { display: block; }
         .age-label { 
-            font-size: clamp(8px, 1.8vw, 11px); /* 画面幅に応じて拡大 */
+            font-size: clamp(8px, 1.8vw, 11px);
             color: var(--accent-color); margin-top: 1px; 
             font-weight: bold; opacity: 0.8; white-space: nowrap; transform: scale(0.9);
         }
@@ -251,23 +256,28 @@
             width: 100%; height: 100%;
             display: flex; flex-direction: column;
             border-radius: 3px; overflow: hidden;
+            position: relative; z-index: 2; /* 絵文字の上に表示 */
         }
         .live-item {
             flex: 1;
             display: flex; align-items: center; justify-content: center;
             text-align: center;
-            font-size: clamp(6px, 1.4vw, 11px); /* ★修正: 画面幅に応じて拡大 */
+            font-size: clamp(6px, 1.4vw, 11px);
             line-height: 1.1;
-            font-weight: bold;
+            font-weight: 900;
             word-break: break-all;
             padding: 1px;
             overflow: hidden;
+            /* 背景色削除（親の季節色＋絵文字を見せるため） */
+            background-color: transparent;
+            text-shadow: 0 1px 1px rgba(255,255,255,0.8); /* 可読性向上 */
         }
-        /* LLDB Live たすき色設定 */
-        .live-pop { background-color: #fee2e2; color: #ef4444; } /* Red */
-        .live-rock { background-color: #e0f2fe; color: #0ea5e9; } /* Blue */
-        .live-aloha { background-color: #fef9c3; color: #eab308; } /* Yellow */
-        .live-event { background-color: #f1f5f9; color: #64748b; } /* Gray */
+        
+        /* 文字色のみ指定 */
+        .text-pop { color: #ef4444; } /* Red */
+        .text-rock { color: #0284c7; } /* Blue (濃いめ) */
+        .text-aloha { color: #d97706; } /* Yellow (濃いめ/Orange) */
+        .text-event { color: #475569; } /* Slate */
 
         /* 枠線スタイル */
         .border-album { border: 2px solid var(--border-album); }
@@ -293,32 +303,24 @@
         .season-summer { background-color: #ecfeff; }
         .season-autumn { background-color: #fff7ed; }
 
-        /* 季節の絵文字（透かし） */
-        .empty-cell {
-            border-radius: 2px; display: flex; align-items: center; justify-content: center; overflow: hidden;
-        }
-        .empty-cell::after {
-            font-size: clamp(14px, 3vw, 20px); /* 絵文字も拡大 */
-            opacity: 0.15; pointer-events: none; filter: grayscale(30%);
-        }
-        .empty-cell.season-winter::after { content: '❄️'; }
-        .empty-cell.season-spring::after { content: '🌸'; }
-        .empty-cell.season-summer::after { content: '🌻'; }
-        .empty-cell.season-autumn::after { content: '🍁'; }
-        
-        /* Liveのみセル用の追加スタイル（背景・透かし適用用） */
-        .live-only-bg::after {
-            font-size: clamp(14px, 3vw, 20px); 
+        /* 絵文字透かし（共通クラス） */
+        .bg-emoji::after, .empty-cell::after {
+            font-size: clamp(14px, 3vw, 24px); 
             opacity: 0.15; pointer-events: none; filter: grayscale(30%);
             content: '';
             position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            z-index: 0;
         }
-        .live-only-bg.season-winter::after { content: '❄️'; }
-        .live-only-bg.season-spring::after { content: '🌸'; }
-        .live-only-bg.season-summer::after { content: '🌻'; }
-        .live-only-bg.season-autumn::after { content: '🍁'; }
-        .live-only-bg .live-cell { z-index: 1; position: relative; background: transparent; } /* 文字を上に */
+        .bg-emoji.season-winter::after, .empty-cell.season-winter::after { content: '❄️'; }
+        .bg-emoji.season-spring::after, .empty-cell.season-spring::after { content: '🌸'; }
+        .bg-emoji.season-summer::after, .empty-cell.season-summer::after { content: '🌻'; }
+        .bg-emoji.season-autumn::after, .empty-cell.season-autumn::after { content: '🍁'; }
         
+        .empty-cell {
+            border-radius: 2px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+            position: relative;
+        }
+
         .future-cell { border: 1px dashed rgba(0,0,0,0.1); }
         .birth-month-header { color: var(--accent-color); font-weight: 900; }
 
@@ -547,7 +549,6 @@
             lucide.createIcons();
             populateDates();
             startDataLoading();
-            // setupPinchZoom(); // ★廃止
             
             const savedBirth = localStorage.getItem('lldb_user_birth');
             if (savedBirth) {
@@ -557,8 +558,6 @@
                 document.getElementById('day').value = parseInt(d);
             }
         });
-
-        // ピンチズーム関連処理は削除
 
         function startDataLoading() {
             loadingPromise = new Promise(async (resolve) => {
@@ -868,13 +867,13 @@
             return liveName;
         }
 
-        // ライブタイプの色決定ヘルパー
+        // ライブタイプの文字色クラス決定
         function getLiveColorClass(liveName) {
-            if (!liveName) return 'live-event';
-            if (liveName.includes('Pop')) return 'live-pop';
-            if (liveName.includes('Rock')) return 'live-rock';
-            if (liveName.includes('Aloha')) return 'live-aloha';
-            return 'live-event';
+            if (!liveName) return 'text-event';
+            if (liveName.includes('Pop')) return 'text-pop';
+            if (liveName.includes('Rock')) return 'text-rock';
+            if (liveName.includes('Aloha')) return 'text-aloha';
+            return 'text-event';
         }
 
         function renderGrid(listData, historyData) {
@@ -913,9 +912,9 @@
 
             let html = '';
             
-            // ヘッダー行生成（col-span-fullでグリッド内配置、sticky適用済み）
+            // ヘッダー行
             html += `<div class="header-row col-span-full">`;
-            html += `<div class="header-cell" style="background-color:rgba(248, 249, 250, 0.95)"></div>`; // 左上空セル
+            html += `<div class="header-cell" style="background-color:rgba(248, 249, 250, 0.95)"></div>`; 
             for (let m = 1; m <= 12; m++) {
                 const isBirthMonth = (m === birthMonth);
                 const cakeHtml = isBirthMonth ? '<span class="birth-cake">🎂</span>' : '';
@@ -976,7 +975,7 @@
                             </div>
                         `;
                     } else if (liveItems.length > 0) {
-                        // --- Liveがある場合 ---
+                        // --- Liveがある場合 (背景＋絵文字＋文字) ---
                         const dummyItems = [{ releaseDate: `${y}/${m}/1`, title: '', tracks: '', type: '' }];
                         const dataJson = JSON.stringify(dummyItems).replace(/"/g, '&quot;');
                         
@@ -987,9 +986,9 @@
                             liveInnerHtml += `<div class="live-item ${colorClass}">${abbr}</div>`;
                         });
 
-                        // ★修正: ライブのみセルに背景クラスと透かしクラス(live-only-bg)を追加
+                        // ★修正: .bg-emoji を追加し、.season-xxx を適用
                         html += `
-                            <div class="jacket-cell cursor-pointer shadow-sm ${colClass} live-only-bg" onclick="openModal(this)" data-items="${dataJson}">
+                            <div class="jacket-cell cursor-pointer shadow-sm ${colClass} bg-emoji" onclick="openModal(this)" data-items="${dataJson}">
                                 <div class="live-cell">
                                     ${liveInnerHtml}
                                 </div>
@@ -1116,7 +1115,6 @@
                         if (!addedLives.has(row.live)) {
                             addedLives.add(row.live);
                             liveFound = true;
-                            // ★修正: JSでエスケープ不要なため、そのままの文字列を使用する
                             const liveName = row.live;
                             const div = document.createElement('div');
                             div.className = 'p-2 bg-red-50 text-red-600 rounded-lg text-xs font-bold border border-red-100 flex justify-between items-center cursor-pointer active:scale-95 transition-transform';
