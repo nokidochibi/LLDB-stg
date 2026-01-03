@@ -366,23 +366,64 @@
         }
 
         function openAboutModal() {
-            toggleNoren();
-            setTimeout(() => {
-                const modal = document.getElementById('about-modal');
-                modal.classList.add('open');
-                
-                // ★追加: 初回のみデータをロードする処理
-                if (!isUpdateHistoryLoaded) {
-                    loadUpdateHistory();
-                }
-            }, 300);
-        }
+        toggleNoren();
+        setTimeout(() => {
+            const modal = document.getElementById('about-modal');
+            modal.classList.add('open');
+            // ここに loadUpdateHistory() は書かなくてOKです（起動時に済ませるため）
+        }, 300);
+    }
 
         function closeAboutModal() {
             const modal = document.getElementById('about-modal');
             modal.classList.remove('open');
         }
+let isUpdateHistoryLoaded = false; // 読み込み完了フラグ
 
+    async function loadUpdateHistory() {
+        // すでに読み込み済みなら何もしない
+        if (isUpdateHistoryLoaded) return;
+
+        const container = document.getElementById('update-history-content');
+        
+        try {
+            console.log("Start loading update history in background...");
+            
+            // APIへリクエスト
+            const response = await fetch(`${GAS_API_URL}?action=getUpdateHistory`);
+            const json = await response.json();
+
+            if (json.status === 'success' && json.data.length > 0) {
+                // HTMLを生成
+                let html = '<div class="flex flex-col gap-3">';
+                json.data.forEach(item => {
+                    html += `
+                        <div class="border-b border-gray-100 pb-2 last:border-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[10px] font-mono text-gray-400">${item.date}</span>
+                                <span class="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">${item.version}</span>
+                            </div>
+                            <p class="text-xs text-gray-600 leading-relaxed">${item.content}</p>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                // 画面に反映 (ユーザーが見ていなくても裏側で書き換わる)
+                if (container) {
+                    container.innerHTML = html;
+                    isUpdateHistoryLoaded = true;
+                    console.log("Update history loaded successfully.");
+                }
+            } else {
+                if (container) container.innerHTML = '<p class="text-center text-gray-400 text-xs py-4">更新履歴はありません</p>';
+            }
+        } catch (e) {
+            console.error("Update history load failed:", e);
+            // 失敗した場合、ユーザーがモーダルを開いたときに「読み込み失敗」と見えるようにする
+            if (container) container.innerHTML = '<p class="text-center text-red-400 text-xs py-4">読み込みに失敗しました</p>';
+        }
+    }
         // ★追加機能: セトリ投稿フォームへの遷移処理
         function openSetlistForm() {
             // ダイアログで確認
@@ -407,14 +448,18 @@
         }
         // --- 追加機能: ヘッダータップでスクロールトップ ---
         document.addEventListener('DOMContentLoaded', () => {
-            // ★順序変更: バージョンチェックを最優先に実行
-            // これにより、iframeの読み込み開始前に確実にキャッシュ状態を整えます
-            const savedVer = localStorage.getItem('lldb_version');
-            if (savedVer !== APP_VERSION) {
-                localStorage.clear();
-                localStorage.setItem('lldb_version', APP_VERSION);
-                console.log(`Version updated to ${APP_VERSION}. Cache cleared.`);
-            }
+        // ★順序変更: バージョンチェックを最優先に実行
+        // これにより、iframeの読み込み開始前に確実にキャッシュ状態を整えます
+        const savedVer = localStorage.getItem('lldb_version');
+        if (savedVer !== APP_VERSION) {
+            localStorage.clear();
+            localStorage.setItem('lldb_version', APP_VERSION);
+            console.log(`Version updated to ${APP_VERSION}. Cache cleared.`);
+        }
+
+        /* ▼▼▼ ここ（358行目の直後）に挿入してください ▼▼▼ */
+        // 裏側で更新履歴を読み込み開始（並走させる）
+        loadUpdateHistory();
 
             // バージョン番号の一括反映処理
             document.querySelectorAll('iframe').forEach(iframe => {
