@@ -370,6 +370,11 @@
             setTimeout(() => {
                 const modal = document.getElementById('about-modal');
                 modal.classList.add('open');
+                
+                // ★追加: 初回のみデータをロードする処理
+                if (!isUpdateHistoryLoaded) {
+                    loadUpdateHistory();
+                }
             }, 300);
         }
 
