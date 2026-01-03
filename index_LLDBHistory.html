@@ -226,17 +226,17 @@
         .border-other { border: 2px solid var(--border-other); }
 
         /* 重ね合わせスタイル */
-        .stacked-1 {
-            position: absolute; top: 0; left: 0; 
-            width: 75%; height: 75%; z-index: 1;
-            border-radius: 2px;
-        }
-        .stacked-2 {
-            position: absolute; bottom: 0; right: 0; 
-            width: 75%; height: 75%; z-index: 2;
-            border-radius: 2px;
-            box-shadow: -1px -1px 2px rgba(0,0,0,0.2);
-        }
+.stacked-1 {
+    position: absolute; top: 2px; left: 2px; /* 少し内側に配置 */
+    width: 60%; height: 60%; z-index: 1;     /* サイズを縮小 */
+    border-radius: 2px;
+}
+.stacked-2 {
+    position: absolute; bottom: 2px; right: 2px; /* 少し内側に配置 */
+    width: 60%; height: 60%; z-index: 2;         /* サイズを縮小 */
+    border-radius: 2px;
+    box-shadow: -1px -1px 2px rgba(0,0,0,0.2);
+}
 
         /* 季節の背景色 */
         .season-winter { background-color: #eff6ff; }
@@ -253,8 +253,8 @@
         }
         .empty-cell.season-winter::after { content: '❄️'; }
         .empty-cell.season-spring::after { content: '🌸'; }
-        .empty-cell.season-summer::after { content: '🎐'; }
-        .empty-cell.season-autumn::after { content: '🍂'; }
+        .empty-cell.season-summer::after { content: '🌻'; }
+        .empty-cell.season-autumn::after { content: '🍁'; }
 
         .future-cell { border: 1px dashed rgba(0,0,0,0.05); }
         .birth-month-header { color: var(--accent-color); font-weight: 900; }
@@ -841,15 +841,17 @@
                         
                         let contentHtml = '';
                         if (items.length === 1) {
+                            // シングル
                             const item = items[0];
-                            const imgUrl = item.img2 || item.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=CD';
+                            const imgUrl = item.img2 || item.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
                             const borderClass = getBorderClass(item.type);
                             contentHtml = `<img src="${imgUrl}" loading="lazy" class="jacket-img-base ${borderClass}">`;
                         } else {
+                            // 重ね合わせ (最初と最後のみ表示)
                             const first = items[0];
                             const last = items[items.length - 1];
-                            const img1 = first.img2 || first.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=CD';
-                            const img2 = last.img2 || last.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=CD';
+                            const img1 = first.img2 || first.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
+                            const img2 = last.img2 || last.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
                             const border1 = getBorderClass(first.type);
                             const border2 = getBorderClass(last.type);
                             
