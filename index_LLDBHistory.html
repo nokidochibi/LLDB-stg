@@ -11,6 +11,8 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
+
+      // iframe内での重複計測を防ぐため、自動PV送信はOFFにし、必要なイベントのみ手動で送る設定
       gtag('config', 'G-0D09G3X4F1', { 'send_page_view': false });
     </script>
 
@@ -106,10 +108,10 @@
         .lifestage-text { font-size: 10px; color: #64748b; font-weight: bold; text-align: center; display: block; }
         .lifestage-highlight { background-color: var(--accent-light); border-radius: 4px; padding: 2px 4px; color: var(--accent-color); }
 
-        .event-chip { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-bottom: 3px; line-height: 1.3; border: 1px solid transparent; max-width: 100%; cursor: pointer; }
+        .event-chip { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-bottom: 3px; line-height: 1.3; border: 1px solid transparent; max-width: 100%; }
         .chip-live { background-color: #fef2f2; color: #ef4444; border-color: #fecaca; }
-        .chip-single { background-color: #f0f9ff; color: #0284c7; border-color: #bae6fd; cursor: default; }
-        .chip-album { background-color: #fefce8; color: #854d0e; border-color: #fef08a; cursor: default; }
+        .chip-single { background-color: #f0f9ff; color: #0284c7; border-color: #bae6fd; }
+        .chip-album { background-color: #fefce8; color: #854d0e; border-color: #fef08a; }
 
         /* ナビゲーション */
         nav {
@@ -148,10 +150,10 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             background-color: #f1f5f9;
             width: 100%;
-            pointer-events: none;
-            -webkit-touch-callout: none;
-            user-select: none;
-            -webkit-user-drag: none;
+            pointer-events: none;        /* 画像へのタッチ・クリック判定を無効化（これが一番効きます） */
+            -webkit-touch-callout: none; /* iOS Safariで長押しメニューを無効化 */
+            user-select: none;           /* 画像を選択できないようにする */
+            -webkit-user-drag: none;     /* 画像のドラッグを禁止 */
         }
         .jacket-label {
             position: absolute; bottom: 0; left: 0; right: 0;
@@ -160,107 +162,117 @@
             border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
             backdrop-filter: blur(2px);
         }
+/* ---------------------------------------------------------
+           ★NEW: マップ（グリッド）機能用のスタイル追加
+           --------------------------------------------------------- */
+        :root {
+            /* 既存変数に追加 */
+            --cell-gap: 2px;
+            --border-album: #FF69B4; /* aiko Pink */
+            --border-single: #F97316; /* Orange-500 */
+            --border-other: #94A3B8; /* Slate-400 */
+        }
 
-        /* --- Chronology Grid Styles (Plan B) --- */
-        .chrono-container {
+        .disco-grid {
             display: grid;
-            /* 左端(月ラベル) + 1998〜2026年(29列) */
-            /* JSで動的に設定しますが、フォールバックとして */
-            grid-template-columns: 40px repeat(29, 140px);
-            /* 上端(年ラベル) + 1〜12月 */
-            grid-template-rows: 30px repeat(12, 120px);
-            gap: 4px;
-            padding: 10px;
-            background-color: #f1f5f9;
-            width: max-content; /* 中身に合わせて広げる */
+            grid-template-columns: 36px repeat(12, 1fr);
+            gap: var(--cell-gap);
+            width: 100%;
+            padding: 0 4px;
+        }
+        .header-row {
+            position: sticky; top: 0; z-index: 30;
+            background-color: rgba(248, 249, 250, 0.95);
+            backdrop-filter: blur(4px);
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 4px; padding-top: 2px;
+            margin-bottom: 4px;
+        }
+        .header-cell { 
+            text-align: center; font-size: 9px; font-weight: bold; color: #94a3b8; 
+            height: 32px; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 2px;
+        }
+        .birth-cake { font-size: 10px; margin-bottom: -2px; display: block; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+
+        .year-cell {
+            font-size: 10px; font-weight: 900; color: #cbd5e1;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            line-height: 1;
+            writing-mode: horizontal-tb; 
+            transform: none;
+        }
+        .year-label { display: block; }
+        .age-label { 
+            font-size: 8px; color: var(--accent-color); margin-top: 1px; 
+            font-weight: bold; opacity: 0.8; white-space: nowrap; transform: scale(0.9);
         }
 
-        /* ヘッダー(年) */
-        .chrono-header-year {
-            position: sticky;
-            top: 0;
-            background: #2A9D8F;
-            color: white;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            font-size: 14px;
-            z-index: 30;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .jacket-cell {
+            aspect-ratio: 1 / 1; background-color: #e2e8f0; border-radius: 3px;
+            position: relative; overflow: hidden; transition: transform 0.1s;
         }
-
-        /* ヘッダー(月) */
-        .chrono-header-month {
-            position: sticky;
-            left: 0;
-            background: #334155;
-            color: white;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            font-size: 12px;
-            z-index: 30;
-            box-shadow: 2px 0 4px rgba(0,0,0,0.1);
-        }
+        .jacket-cell:active { transform: scale(0.9); }
         
-        /* 左上の空白セル */
-        .chrono-header-corner {
-            position: sticky;
-            left: 0;
-            top: 0;
-            background: #334155;
-            z-index: 40;
-            border-radius: 4px;
+        .jacket-img-base {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+            box-sizing: border-box;
         }
 
-        /* データセル */
-        .chrono-cell {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 6px;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .chrono-cell:active { transform: scale(0.95); z-index: 20; border-color: #2A9D8F; }
-        .chrono-cell:hover { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); z-index: 10; }
+        /* 枠線スタイル */
+        .border-album { border: 2px solid var(--border-album); }
+        .border-single { border: 2px solid var(--border-single); }
+        .border-other { border: 2px solid var(--border-other); }
 
-        /* セル内のコンテンツ */
-        .cell-img {
-            width: 80px; height: 80px; object-fit: cover;
-            border-radius: 6px; margin-bottom: 6px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            background-color: #f1f5f9;
+        /* 重ね合わせスタイル */
+        .stacked-1 {
+            position: absolute; top: 0; left: 0; 
+            width: 75%; height: 75%; z-index: 1;
+            border-radius: 2px;
         }
-        .cell-label {
-            font-size: 10px; line-height: 1.2; text-align: center;
-            color: #475569; font-weight: bold;
-            width: 100%; 
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+        .stacked-2 {
+            position: absolute; bottom: 0; right: 0; 
+            width: 75%; height: 75%; z-index: 2;
+            border-radius: 2px;
+            box-shadow: -1px -1px 2px rgba(0,0,0,0.2);
         }
 
-        /* アルバム強調 (画像の紫枠などを再現) */
-        .type-album { border: 2px solid #FFD700; background-color: #fffbeb; }
-        .type-single { border: 1px solid #bae6fd; background-color: #f0f9ff; }
-        
-        /* 空セル */
-        .cell-empty {
-            background-color: #f8fafc;
-            border: 1px dashed #cbd5e1;
+        /* 季節の背景色 */
+        .season-winter { background-color: #eff6ff; }
+        .season-spring { background-color: #fff1f2; }
+        .season-summer { background-color: #ecfeff; }
+        .season-autumn { background-color: #fff7ed; }
+
+        /* 季節の絵文字（透かし） */
+        .empty-cell {
+            border-radius: 2px; display: flex; align-items: center; justify-content: center; overflow: hidden;
         }
+        .empty-cell::after {
+            font-size: 14px; opacity: 0.15; pointer-events: none; filter: grayscale(30%);
+        }
+        .empty-cell.season-winter::after { content: '❄️'; }
+        .empty-cell.season-spring::after { content: '🌸'; }
+        .empty-cell.season-summer::after { content: '🎐'; }
+        .empty-cell.season-autumn::after { content: '🍂'; }
+
+        .future-cell { border: 1px dashed rgba(0,0,0,0.05); }
+        .birth-month-header { color: var(--accent-color); font-weight: 900; }
+
+        /* モーダル拡張 */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
+            display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+            opacity: 0; transition: opacity 0.2s; padding: 16px;
+        }
+        .modal-overlay.open { display: flex; opacity: 1; }
+        .modal-card-expanded {
+            background: white; width: 100%; max-width: 360px; border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            transform: scale(0.95); transition: transform 0.2s;
+            max-height: 85vh; overflow-y: auto; overflow-x: hidden;
+        }
+        .modal-overlay.open .modal-card-expanded { transform: scale(1); }
     </style>
 </head>
 <body>
@@ -286,52 +298,42 @@
 
         <div id="content-area" class="hidden fade-in px-2">
             
-            <!-- 年表タブ -->
+            <!-- 年表タブ (変更なし) -->
             <div id="view-history" class="hidden">
-                <!-- 追加: 表示切り替えスイッチ -->
-                <div class="flex justify-center my-4 sticky top-0 z-40">
-                    <div class="bg-gray-100 p-1 rounded-xl flex text-xs font-bold shadow-sm border border-gray-200 backdrop-blur-md bg-opacity-90">
-                        <button onclick="toggleHistoryView('list')" id="btn-view-list" class="px-4 py-2 rounded-lg bg-white shadow text-teal-600 transition duration-200">リスト</button>
-                        <button onclick="toggleHistoryView('grid')" id="btn-view-grid" class="px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-200 transition duration-200 flex items-center gap-1"><i data-lucide="grid" class="w-3 h-3"></i> 全体図</button>
-                    </div>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 12%;">年月</th>
+                                <th style="width: 8%;">年齢</th>
+                                <th style="width: 15%;">ライフ<br>ステージ</th>
+                                <th style="width: 35%;">LIVE</th>
+                                <th style="width: 30%;">CD</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timeline-body"></tbody>
+                    </table>
                 </div>
-
-                <!-- 従来のリスト形式 -->
-                <div id="history-mode-list">
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th style="width: 12%;">年月</th>
-                                    <th style="width: 8%;">年齢</th>
-                                    <th style="width: 15%;">ライフ<br>ステージ</th>
-                                    <th style="width: 35%;">LIVE</th>
-                                    <th style="width: 30%;">CD</th>
-                                </tr>
-                            </thead>
-                            <tbody id="timeline-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- ★新規追加: グリッド表示用コンテナ -->
-                <div id="history-mode-grid" class="hidden">
-                    <p class="text-center text-xs text-gray-400 mb-2">横スクロールで未来へ →</p>
-                    <div class="overflow-x-auto pb-8 rounded-xl border border-gray-200 bg-slate-50 shadow-inner" style="-webkit-overflow-scrolling: touch;">
-                        <!-- JSでここにグリッドを生成します -->
-                        <div id="chronology-grid" class="min-w-max"></div>
-                    </div>
-                </div>
-
                 <div class="h-8"></div>
             </div>
-
+<!-- ★NEW: マップ（グリッド）タブ -->
+            <div id="view-map" class="hidden">
+                <div id="grid-container" class="disco-grid bg-white rounded-2xl shadow-sm border border-gray-100 pb-4 pt-1">
+                    <!-- JSで生成 -->
+                </div>
+                <div class="text-center mt-4 mb-8 text-gray-400 text-xs">
+                    <p>Tap Jacket for Details</p>
+                </div>
+            </div>
+            
             <!-- 今日の自分タブ -->
             <div id="view-today" class="hidden p-2">
+                
                 <!-- 1. 今日のあなたの日数 -->
                 <div class="bg-white rounded-2xl shadow-sm p-6 mb-6 border border-gray-100 text-center relative overflow-hidden">
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">今日のあなた</h3>
                     <div class="flex items-baseline justify-center gap-1">
+                        <!-- フォントサイズを調整 (text-5xl -> text-3xl) -->
                         <span id="user-days" class="text-2xl sm:text-3xl font-black text-[#2A9D8F] tracking-tight">0</span>
                     </div>
                 </div>
@@ -346,6 +348,7 @@
 
                 <!-- 3. CD情報カード -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden relative">
+                    <!-- ヘッダー部分 -->
                     <div class="bg-[#2A9D8F] p-4 text-white text-center">
                          <div class="inline-block bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold mb-1 backdrop-blur-sm border border-white/30">
                              <span id="match-cd-type">TYPE</span>
@@ -354,6 +357,7 @@
                     </div>
 
                     <div class="p-5">
+                        <!-- ジャケット画像 (初回・通常 並列) -->
                         <div class="flex gap-4 mb-6">
                             <div class="flex-1">
                                 <div class="relative group w-full">
@@ -369,13 +373,17 @@
                             </div>
                         </div>
 
+                        <!-- 収録曲 -->
                         <div class="mb-6">
                             <h4 class="text-xs font-bold text-gray-400 border-b border-gray-100 pb-1 mb-2 flex items-center gap-1">
                                 <i data-lucide="music" class="w-3 h-3"></i> 収録曲
                             </h4>
-                            <div id="match-tracks" class="text-sm text-gray-600 leading-relaxed font-medium bg-gray-50 p-4 rounded-xl border border-dashed border-gray-200"></div>
+                            <div id="match-tracks" class="text-sm text-gray-600 leading-relaxed font-medium bg-gray-50 p-4 rounded-xl border border-dashed border-gray-200">
+                                <!-- Tracks will be inserted here -->
+                            </div>
                         </div>
 
+                        <!-- リリース日・aiko年齢 -->
                         <div class="bg-[#e0f2f1] rounded-xl p-4 flex flex-col gap-2 text-xs">
                             <div class="flex justify-between items-center border-b border-[#2A9D8F]/10 pb-2">
                                 <div class="text-[#1F7A6F] font-bold opacity-70">リリース日</div>
@@ -388,6 +396,7 @@
                         </div>
                     </div>
                 </div>
+                
                 <div class="h-8"></div>
             </div>
         </div>
@@ -407,42 +416,67 @@
                 <i data-lucide="scroll" class="w-6 h-6"></i>
                 <span class="text-[10px] font-bold">年表</span>
             </div>
+            <!-- 追加ここから -->
+            <div onclick="switchTab('map')" class="tab-item" data-tab="map">
+                <i data-lucide="grid" class="w-6 h-6"></i>
+                <span class="text-[10px] font-bold">マップ</span>
+            </div>
+            <!-- 追加ここまで -->
             <div onclick="switchTab('today')" class="tab-item" data-tab="today">
                 <i data-lucide="user" class="w-6 h-6"></i>
                 <span class="text-[10px] font-bold">今日の自分</span>
             </div>
         </div>
     </nav>
+    <!-- ★NEW: グリッド詳細モーダル -->
+    <div id="detail-modal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-card-expanded" onclick="event.stopPropagation()">
+            <!-- ヘッダー (年月) -->
+            <div class="bg-[#2A9D8F] p-4 text-white text-center sticky top-0 z-10 shadow-sm">
+                 <h2 id="modal-header-date" class="text-xl font-black leading-tight tracking-widest font-mono">YYYY.MM</h2>
+            </div>
+
+            <div class="p-5">
+                <!-- CD情報リストコンテナ -->
+                <div id="modal-cd-list" class="space-y-12">
+                    <!-- JSで動的生成 -->
+                </div>
+
+                <!-- 共通情報（自分・ライブ） -->
+                <div id="modal-common-info" class="space-y-4 pt-8 mt-8 border-t-2 border-dashed border-gray-100">
+                     <!-- あなたの情報 -->
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold text-gray-400 flex items-center gap-1 border-b border-gray-100 pb-1">
+                            <i data-lucide="user" class="w-3 h-3"></i> 当時のあなた
+                        </h4>
+                        <div class="bg-gray-50 rounded-xl p-3 text-xs flex justify-between items-center border border-gray-100">
+                            <div class="font-bold text-gray-500">年齢: <span id="modal-user-age" class="text-gray-800 text-sm ml-1"></span></div>
+                            <div class="font-bold text-[#2A9D8F] bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100" id="modal-user-stage"></div>
+                        </div>
+                    </div>
+
+                    <!-- ライブ情報 -->
+                    <div id="modal-live-section" class="space-y-2 hidden">
+                        <h4 class="text-xs font-bold text-gray-400 flex items-center gap-1 border-b border-gray-100 pb-1">
+                            <i data-lucide="mic-2" class="w-3 h-3 text-red-400"></i> この月のLIVE
+                        </h4>
+                        <div id="modal-live-list" class="space-y-2"></div>
+                    </div>
+                </div>
+                
+                <div class="pt-6">
+                     <button onclick="closeModal()" class="w-full py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-xl border border-gray-200">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec";
         const AIKO_BIRTH = new Date(1975, 10, 22); // 1975/11/22
         const CACHE_KEY = 'lldb_data_history_v7_1_fix';
 
-        // モックデータ（プレビュー用）
-        const mockListData = [
-            { releaseDate: '1998-07-17', type: 'Single', title: 'あした', img1: 'https://m.media-amazon.com/images/I/512+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '1999-04-21', type: 'Album', title: '小さな丸い好日', img1: 'https://m.media-amazon.com/images/I/51K+c+x+2EL._SY355_.jpg' },
-            { releaseDate: '2000-03-01', type: 'Album', title: '桜の木の下', img1: 'https://m.media-amazon.com/images/I/513+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2000-09-20', type: 'Single', title: 'ボーイフレンド', img1: 'https://m.media-amazon.com/images/I/51+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2001-06-20', type: 'Album', title: '夏服', img1: 'https://m.media-amazon.com/images/I/516+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2002-09-04', type: 'Album', title: '秋 そばにいるよ', img1: 'https://m.media-amazon.com/images/I/519+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2003-11-27', type: 'Album', title: '暁のラブレター', img1: 'https://m.media-amazon.com/images/I/51C+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2005-03-02', type: 'Album', title: '夢の中のまっすぐな道', img1: 'https://m.media-amazon.com/images/I/51F+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2006-08-23', type: 'Album', title: '彼女', img1: 'https://m.media-amazon.com/images/I/51I+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2008-04-02', type: 'Album', title: '秘密', img1: 'https://m.media-amazon.com/images/I/51L+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2010-03-31', type: 'Album', title: 'BABY', img1: 'https://m.media-amazon.com/images/I/51O+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2011-02-23', type: 'Album', title: 'まとめI', img1: 'https://m.media-amazon.com/images/I/51R+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2012-06-20', type: 'Album', title: '時のシルエット', img1: 'https://m.media-amazon.com/images/I/51U+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2013-07-17', type: 'Single', title: 'Loveletter/4月の雨', img1: 'https://m.media-amazon.com/images/I/51X+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2014-05-28', type: 'Album', title: '泡のような愛だった', img1: 'https://m.media-amazon.com/images/I/51a+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2016-05-18', type: 'Album', title: 'May Dream', img1: 'https://m.media-amazon.com/images/I/51d+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2018-06-06', type: 'Album', title: '湿った夏の始まり', img1: 'https://m.media-amazon.com/images/I/51g+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2021-03-03', type: 'Album', title: 'どうしたって伝えられないから', img1: 'https://m.media-amazon.com/images/I/51j+y+x+2EL._SY355_.jpg' },
-            { releaseDate: '2023-03-29', type: 'Album', title: '今の二人をお互いが見てる', img1: 'https://m.media-amazon.com/images/I/51m+y+x+2EL._SY355_.jpg' }
-        ];
-
-        let allData = { listData: mockListData, historyData: [] }; // 初期データとしてモックをセット
+        let allData = null;
         let birthDate = null;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -471,12 +505,18 @@
                 el.classList.toggle('active', el.dataset.tab === tabName);
             });
             document.getElementById('view-history').classList.toggle('hidden', tabName !== 'history');
+            // ★MOD: マップタブの表示切替追加
+            document.getElementById('view-map').classList.toggle('hidden', tabName !== 'map');
             document.getElementById('view-today').classList.toggle('hidden', tabName !== 'today');
             
             if (tabName === 'today') {
-                if (allData && birthDate) {
-                    renderTodayStats();
-                }
+                if (allData && birthDate) renderTodayStats();
+                safeTrackEvent('screen_view', { screen_name: 'History_TodayMe' });
+            } 
+            // ★MOD: マップタブ切り替え時の処理追加
+            else if (tabName === 'map') {
+                if (allData && birthDate) renderGrid(allData.listData);
+                safeTrackEvent('screen_view', { screen_name: 'History_Map' });
             }
             lucide.createIcons();
         }
@@ -488,159 +528,504 @@
             birthDate = new Date(y, m - 1, d);
             localStorage.setItem('lldb_user_birth', `${y}-${m}-${d}`);
 
+            // GA4 Tracking
+            safeTrackEvent('generate_lead', {
+                item_category: 'history_timeline'
+            });
+
             document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('input-area').classList.add('hidden'); // 入力エリアを非表示にする
             document.getElementById('content-area').classList.add('hidden');
 
-            // 実際のアプリではここでfetchしますが、プレビューではモックを使用
-            // ダミーのウェイトを入れる
-            setTimeout(() => {
-                renderTimeline(); // 従来のリスト描画
-                renderTodayStats(); 
-                
-                // グリッドが表示状態なら再描画
-                if(!document.getElementById('history-mode-grid').classList.contains('hidden')) {
-                     renderChronologyGrid();
+            if (!allData) {
+                try {
+                    const cache = localStorage.getItem(CACHE_KEY);
+                    if (cache) {
+                          allData = JSON.parse(cache);
+                    } else {
+                        const res = await fetch(`${GAS_API_URL}?action=getHistoryData`);
+                        const json = await res.json();
+                        allData = json;
+                        try { localStorage.setItem(CACHE_KEY, JSON.stringify(json)); } catch(e){}
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('データの読み込みに失敗しました。');
+                    document.getElementById('loading').classList.add('hidden');
+                    return;
                 }
+            }
 
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('content-area').classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' }); // 画面トップへスクロール
-
-                // データ生成完了後にタブの表示状態を更新する
-                const activeTab = document.querySelector('.tab-item.active');
-                if (activeTab) {
-                    switchTab(activeTab.dataset.tab);
-                } else {
-                    switchTab('history');
-                }
-            }, 800);
+            renderTimeline();
+            renderGrid(allData.listData); // ★MOD: マップ生成処理追加
+            renderTodayStats(); 
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('content-area').classList.remove('hidden');
+            
+            const currentTabEl = document.querySelector('.tab-item.active');
+            const targetTab = currentTabEl ? currentTabEl.dataset.tab : 'history';
+            switchTab(targetTab);
         }
-        
+        // 親画面へライブ検索のリクエストを送信する
         function requestSearchInLive(tourName) {
-            console.log("Search request:", tourName);
+          window.parent.postMessage({
+            type: 'requestLiveSearch',
+            tourName: tourName
+          }, '*');
         }
 
+        // --- 年齢詳細計算ロジック (New) ---
         function calculateDetailedAge(birthDate, targetDate) {
             let b = new Date(birthDate);
             let t = new Date(targetDate);
-            b.setHours(0,0,0,0); t.setHours(0,0,0,0);
+            b.setHours(0,0,0,0);
+            t.setHours(0,0,0,0);
+
             let years = t.getFullYear() - b.getFullYear();
             let months = t.getMonth() - b.getMonth();
             let days = t.getDate() - b.getDate();
-            if (days < 0) { months--; const prev = new Date(t.getFullYear(), t.getMonth(), 0).getDate(); days += prev; }
-            if (months < 0) { years--; months += 12; }
+
+            if (days < 0) {
+                months--;
+                const prevMonthLastDay = new Date(t.getFullYear(), t.getMonth(), 0).getDate();
+                days += prevMonthLastDay;
+            }
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            
             const msPerDay = 1000 * 60 * 60 * 24;
             const totalDays = Math.floor((t - b) / msPerDay);
+
             return `${years}歳${months}カ月${days}日<br><span class="text-sm font-normal text-gray-400">（${totalDays.toLocaleString()}日）</span>`;
         }
 
         function getLifeStage(targetDate, birth) {
-             const getSchoolCohort = (d) => { const y = d.getFullYear(); const m = d.getMonth() + 1; return (m <= 3 || (m === 4 && d.getDate() === 1)) ? y - 1 : y; };
-             const getFiscalYear = (d) => { const y = d.getFullYear(); const m = d.getMonth() + 1; return (m <= 3) ? y - 1 : y; }
-             const birthYearCohort = getSchoolCohort(birth);
-             const targetYearFiscal = getFiscalYear(targetDate);
-             const grade = targetYearFiscal - birthYearCohort;
-             if (grade < 7) return '未就学'; if (grade <= 12) return `小学${grade-6}年`; if (grade <= 15) return `中学${grade-12}年`;
-             if (grade <= 18) return `高校${grade-15}年`; if (grade <= 22) return `大学${grade-18}年`; return '立派な大人';
+            const getSchoolCohort = (d) => {
+                const y = d.getFullYear();
+                const m = d.getMonth() + 1;
+                return (m <= 3 || (m === 4 && d.getDate() === 1)) ? y - 1 : y;
+            };
+            const getFiscalYear = (d) => {
+                const y = d.getFullYear();
+                const m = d.getMonth() + 1;
+                return (m <= 3) ? y - 1 : y;
+            }
+            const birthYearCohort = getSchoolCohort(birth);
+            const targetYearFiscal = getFiscalYear(targetDate);
+            const grade = targetYearFiscal - birthYearCohort;
+            
+            if (grade < 7) return '未就学';
+            if (grade === 7) return '小学1年';
+            if (grade === 8) return '小学2年';
+            if (grade === 9) return '小学3年';
+            if (grade === 10) return '小学4年';
+            if (grade === 11) return '小学5年';
+            if (grade === 12) return '小学6年';
+            if (grade === 13) return '中学1年';
+            if (grade === 14) return '中学2年';
+            if (grade === 15) return '中学3年';
+            if (grade === 16) return '高校1年';
+            if (grade === 17) return '高校2年';
+            if (grade === 18) return '高校3年';
+            if (grade === 19) return '大学1年';
+            if (grade === 20) return '大学2年';
+            if (grade === 21) return '大学3年';
+            if (grade === 22) return '大学4年';
+            if (grade > 22) return '立派な大人';
+            return '';
         }
 
         function renderTimeline() {
             const tbody = document.getElementById('timeline-body');
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-xs text-gray-400">（リスト表示はプレビューでは省略しています）</td></tr>';
+            tbody.innerHTML = '';
+            const startYear = birthDate.getFullYear();
+            const startMonth = birthDate.getMonth();
+            const now = new Date();
+            const endYear = now.getFullYear();
+            const endMonth = now.getMonth();
+            const eventsMap = {}; 
+            
+            if (allData.historyData && Array.isArray(allData.historyData)) {
+                allData.historyData.forEach(row => {
+                    if (!row.date) return;
+                    const d = new Date(row.date);
+                    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+                    if (!eventsMap[key]) eventsMap[key] = { lives: new Set(), singles: [], albums: [] };
+                    if (row.live) eventsMap[key].lives.add(row.live);
+                    if (row.single) eventsMap[key].singles.push(row.single);
+                    if (row.album) eventsMap[key].albums.push(row.album);
+                });
+            }
+
+            let current = new Date(startYear, startMonth, 1);
+            const end = new Date(endYear, endMonth, 1);
+            let prevYear = -1;
+
+            while (current <= end) {
+                const y = current.getFullYear();
+                const m = current.getMonth() + 1;
+                const key = `${y}-${m}`;
+                let age = y - birthDate.getFullYear();
+                if (m < (birthDate.getMonth() + 1)) age--;
+                const stageText = getLifeStage(current, birthDate);
+                const isHighlight = (m === 4 && (stageText.includes('1年') || stageText === '立派な大人'));
+                const stageHtml = `<span class="lifestage-text ${isHighlight ? 'lifestage-highlight' : ''}">${stageText}</span>`;
+                let liveHtml = '';
+                let cdHtml = '';
+                
+                if (eventsMap[key]) {
+                    eventsMap[key].lives.forEach(liveName => { 
+                          const safeName = liveName.replace(/'/g, "\\'");
+                          liveHtml += `<div class="event-chip chip-live cursor-pointer active:scale-95 transition-transform" onclick="requestSearchInLive('${safeName}')">${liveName}</div>`; 
+                        });
+                    eventsMap[key].singles.forEach(s => { cdHtml += `<div class="event-chip chip-single">S: ${s}</div>`; });
+                    eventsMap[key].albums.forEach(a => { cdHtml += `<div class="event-chip chip-album">Al: ${a}</div>`; });
+                }
+
+                const yearDisplay = (y !== prevYear) ? `<span class="text-xs font-bold block text-gray-500">${y}</span>` : '';
+                prevYear = y;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="text-center text-gray-400 font-mono border-r border-gray-100">
+                        ${yearDisplay}
+                        <span class="text-[10px] text-gray-300">${m}月</span>
+                    </td>
+                    <td class="text-center font-bold text-[#2A9D8F] border-r border-gray-100">${age >= 0 ? age : ''}</td>
+                    <td class="text-center border-r border-gray-100">${stageHtml}</td>
+                    <td class="pl-1">${liveHtml}</td>
+                    <td class="pl-1">${cdHtml}</td>
+                `;
+                tbody.appendChild(tr);
+                current.setMonth(current.getMonth() + 1);
+            }
         }
 
+        // --- 今日の自分 ロジック ---
         function renderTodayStats() {
             if (!birthDate || !allData.listData) return;
+
+            // 1. 今日の自分の日数計算
             const today = new Date();
             const ageString = calculateDetailedAge(birthDate, today);
+            
+            // HTMLを挿入
             document.getElementById('user-days').innerHTML = ageString;
-        }
 
-        // --- Plan B: Grid Implementation ---
+            // 2. 最も近いリリース日を探す
+            let bestMatch = null;
+            let minDiff = Infinity;
+            
+            const msPerDay = 1000 * 60 * 60 * 24;
+            const userBirthClean = new Date(birthDate); userBirthClean.setHours(0,0,0,0);
+            const todayClean = new Date(today); todayClean.setHours(0,0,0,0);
+            const userDays = Math.floor((todayClean - userBirthClean) / msPerDay);
 
-        // 1. 表示切り替え機能
-        function toggleHistoryView(mode) {
-            const listDiv = document.getElementById('history-mode-list');
-            const gridDiv = document.getElementById('history-mode-grid');
-            const btnList = document.getElementById('btn-view-list');
-            const btnGrid = document.getElementById('btn-view-grid');
-
-            if (mode === 'list') {
-                listDiv.classList.remove('hidden');
-                gridDiv.classList.add('hidden');
-                btnList.className = "px-4 py-2 rounded-lg bg-white shadow text-teal-600 transition duration-200 font-bold";
-                btnGrid.className = "px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-200 transition duration-200 flex items-center gap-1";
-            } else {
-                listDiv.classList.add('hidden');
-                gridDiv.classList.remove('hidden');
-                btnList.className = "px-4 py-2 rounded-lg text-gray-500 hover:bg-gray-200 transition duration-200";
-                btnGrid.className = "px-4 py-2 rounded-lg bg-white shadow text-teal-600 transition duration-200 font-bold flex items-center gap-1";
+            allData.listData.forEach(cd => {
+                if (!cd.releaseDate) return;
+                const releaseDate = new Date(cd.releaseDate);
+                releaseDate.setHours(0,0,0,0);
                 
-                if (!document.querySelector('.chrono-container')) {
-                    renderChronologyGrid();
+                // aikoの誕生日からリリース日までの日数
+                const aikoDaysAtRelease = Math.floor((releaseDate - AIKO_BIRTH) / msPerDay);
+                
+                // 差分の絶対値
+                const diff = Math.abs(userDays - aikoDaysAtRelease);
+                
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    bestMatch = {
+                        ...cd,
+                        releaseDateObj: releaseDate,
+                        formattedRelease: `${releaseDate.getFullYear()}/${releaseDate.getMonth() + 1}/${releaseDate.getDate()}`
+                    };
                 }
+            });
+
+            // 3. UIに反映
+            if (bestMatch) {
+                document.getElementById('match-cd-title').innerText = bestMatch.title || 'Unknown Title';
+                document.getElementById('match-cd-type').innerText = bestMatch.type || 'CD';
+                
+                // 画像URL
+                const img1 = document.getElementById('match-img-first');
+                const img2 = document.getElementById('match-img-regular');
+                img1.src = bestMatch.img1 || '';
+                img2.src = bestMatch.img2 || '';
+
+                // 収録曲
+                // ★MOD: 曲目リスト修正 (スプレッドシートの内容をそのまま表示)
+                let tracksHtml = '';
+                if (bestMatch.tracks) {
+                    const tracks = String(bestMatch.tracks).split(/[\n]/).map(t => t.trim()).filter(t => t);
+                    if (tracks.length > 0) {
+                        tracksHtml = '<div class="flex flex-col gap-1">';
+                        tracks.forEach(t => {
+                            tracksHtml += `<div class="text-gray-700 leading-normal">${t}</div>`;
+                        });
+                        tracksHtml += '</div>';
+                    } else {
+                        tracksHtml = `<div class="text-gray-700 leading-normal">${bestMatch.tracks}</div>`;
+                    }
+                } else {
+                    tracksHtml = '<span class="text-gray-400">情報なし</span>';
+                }
+                document.getElementById('match-tracks').innerHTML = tracksHtml;
+
+                document.getElementById('match-release-date').innerText = bestMatch.formattedRelease;
+                
+                // aikoの当時の年齢・日数詳細
+                const aikoAgeString = calculateDetailedAge(AIKO_BIRTH, bestMatch.releaseDateObj);
+                document.getElementById('match-aiko-days').innerHTML = aikoAgeString;
             }
         }
+// ------------------------------------------------------------------
+        // ★NEW: マップ（グリッド）レンダリング & モーダル関数
+        // ------------------------------------------------------------------
+        function renderGrid(listData) {
+            const container = document.getElementById('grid-container');
+            if(!listData) return;
 
-        // 2. グリッド描画ロジック
-        function renderChronologyGrid() {
-            const container = document.getElementById('chronology-grid');
+            const releaseMap = {};
+            listData.forEach(item => {
+                if(!item.releaseDate) return;
+                const d = new Date(item.releaseDate);
+                const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+                if (!releaseMap[key]) releaseMap[key] = [];
+                releaseMap[key].push(item);
+            });
+
+            Object.keys(releaseMap).forEach(key => {
+                releaseMap[key].sort((a, b) => new Date(a.releaseDate) - new Date(b.releaseDate));
+            });
+
             const startYear = 1998;
-            const endYear = 2026;
-            const totalYears = endYear - startYear + 1;
+            const currentYear = new Date().getFullYear();
+            const endYear = currentYear; 
+            const birthMonth = birthDate.getMonth() + 1;
 
-            // グリッドの大枠を作成
-            let html = `<div class="chrono-container" style="grid-template-columns: 40px repeat(${totalYears}, 140px);">`;
-
-            // A. 空白セル (左上角)
-            html += `<div class="chrono-header-corner"></div>`;
-
-            // B. 年ヘッダー (横軸)
-            for (let y = startYear; y <= endYear; y++) {
-                html += `<div class="chrono-header-year">${y}</div>`;
-            }
-
-            // C. 月ごとの行生成 (縦軸)
+            let html = '';
+            html += `<div class="header-row col-span-full grid grid-cols-[36px_repeat(12,1fr)] gap-[2px]">`;
+            html += `<div></div>`;
             for (let m = 1; m <= 12; m++) {
-                // 月ラベル
-                html += `<div class="chrono-header-month">${m}月</div>`;
+                const isBirthMonth = (m === birthMonth);
+                const cakeHtml = isBirthMonth ? '<span class="birth-cake">🎂</span>' : '';
+                html += `<div class="header-cell ${isBirthMonth ? 'birth-month-header' : ''}">${cakeHtml}${m}</div>`;
+            }
+            html += `</div>`;
 
-                // 各年のセル
-                for (let y = startYear; y <= endYear; y++) {
-                    const cellContent = getCellContent(y, m);
-                    html += cellContent;
+            for (let y = startYear; y <= endYear; y++) {
+                let ageLabel = '';
+                const birthYear = birthDate.getFullYear();
+                if (y >= birthYear) {
+                    const age = y - birthYear;
+                    ageLabel = `<span class="age-label">${age}歳</span>`;
+                }
+
+                html += `<div class="year-cell"><span class="year-label">${y}</span>${ageLabel}</div>`;
+
+                for (let m = 1; m <= 12; m++) {
+                    const key = `${y}-${m}`;
+                    const items = releaseMap[key];
+                    const isFuture = new Date(y, m-1) > new Date();
+                    
+                    let colClass = '';
+                    if (m === 12 || m === 1 || m === 2) colClass = 'season-winter';
+                    else if (m >= 3 && m <= 5) colClass = 'season-spring';
+                    else if (m >= 6 && m <= 8) colClass = 'season-summer';
+                    else if (m >= 9 && m <= 11) colClass = 'season-autumn';
+
+                    if (items && items.length > 0) {
+                        const dataJson = JSON.stringify(items).replace(/"/g, '&quot;');
+                        
+                        let contentHtml = '';
+                        if (items.length === 1) {
+                            const item = items[0];
+                            const imgUrl = item.img2 || item.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=CD';
+                            const borderClass = getBorderClass(item.type);
+                            contentHtml = `<img src="${imgUrl}" loading="lazy" class="jacket-img-base ${borderClass}">`;
+                        } else {
+                            const first = items[0];
+                            const last = items[items.length - 1];
+                            const img1 = first.img2 || first.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=CD';
+                            const img2 = last.img2 || last.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=CD';
+                            const border1 = getBorderClass(first.type);
+                            const border2 = getBorderClass(last.type);
+                            
+                            contentHtml = `
+                                <img src="${img1}" class="jacket-img-base stacked-1 ${border1}">
+                                <img src="${img2}" class="jacket-img-base stacked-2 ${border2}">
+                            `;
+                        }
+
+                        html += `
+                            <div class="jacket-cell cursor-pointer shadow-sm" onclick="openModal(this)" data-items="${dataJson}">
+                                ${contentHtml}
+                            </div>
+                        `;
+                    } else {
+                        if (isFuture) {
+                            html += `<div class="future-cell ${colClass}"></div>`;
+                        } else {
+                            html += `<div class="empty-cell ${colClass}"></div>`;
+                        }
+                    }
                 }
             }
-
-            html += `</div>`;
             container.innerHTML = html;
         }
 
-        // 3. データ検索とセルの中身生成
-        function getCellContent(year, month) {
-            const targetData = allData.listData.find(item => {
-                const d = new Date(item.releaseDate);
-                return d.getFullYear() === year && (d.getMonth() + 1) === month;
-            });
-
-            if (!targetData) {
-                return `<div class="chrono-cell cell-empty"></div>`;
-            }
-
-            const typeClass = targetData.type && targetData.type.includes('Album') ? 'type-album' : 'type-single';
-            const imgSrc = targetData.img1 || 'https://placehold.co/80x80/e2e8f0/94a3b8?text=No+Img';
-
-            return `
-                <div class="chrono-cell ${typeClass}" onclick="alert('${targetData.title} (${targetData.releaseDate})')">
-                    <img src="${imgSrc}" class="cell-img" loading="lazy">
-                    <div class="cell-label">${targetData.title}</div>
-                </div>
-            `;
+        function getBorderClass(type) {
+            if (!type) return 'border-other';
+            const t = type.toLowerCase();
+            if (t.includes('album') || t.includes('アルバム')) return 'border-album';
+            if (t.includes('single') || t.includes('シングル')) return 'border-single';
+            return 'border-other';
         }
 
+        function openModal(el) {
+            const items = JSON.parse(el.dataset.items);
+            if (!items || items.length === 0) return;
+
+            const firstDate = new Date(items[0].releaseDate);
+            const dateStr = `${firstDate.getFullYear()}.${firstDate.getMonth() + 1}`;
+            document.getElementById('modal-header-date').textContent = dateStr;
+
+            const listContainer = document.getElementById('modal-cd-list');
+            listContainer.innerHTML = '';
+
+            items.forEach(data => {
+                const d = new Date(data.releaseDate);
+                const fullDateStr = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+                const aikoAge = calculateDetailedAge(AIKO_BIRTH, d);
+                
+                let tracksHtml = '';
+                if (data.tracks) {
+                    const tracks = String(data.tracks).split(/[\n]/).map(t => t.trim()).filter(t => t);
+                    if (tracks.length > 0) {
+                        tracksHtml = '<div class="flex flex-col gap-1">';
+                        tracks.forEach(t => {
+                            tracksHtml += `<div class="text-gray-700 leading-normal">${t}</div>`;
+                        });
+                        tracksHtml += '</div>';
+                    } else {
+                        tracksHtml = `<div class="text-gray-700 leading-normal">${data.tracks}</div>`;
+                    }
+                } else { tracksHtml = '<span class="text-gray-400">情報なし</span>'; }
+
+                const borderStyle = data.type && (data.type.includes('Album') || data.type.includes('アルバム')) 
+                    ? 'border-l-4 border-pink-400' 
+                    : 'border-l-4 border-orange-400';
+
+                const cardHtml = `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${borderStyle}">
+                        <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+                            <span class="text-xs font-bold bg-white px-2 py-1 rounded border border-gray-200">${data.type || 'CD'}</span>
+                            <span class="text-xs font-mono text-gray-400">${fullDateStr}</span>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="text-lg font-bold text-gray-800 leading-tight mb-4 text-center">${data.title}</h3>
+                            
+                            <div class="flex gap-3 mb-5">
+                                <div class="flex-1">
+                                    <div class="relative group w-full">
+                                        <img src="${data.img1 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="初回盤">
+                                        <div class="jacket-label">初回限定盤</div>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="relative group w-full">
+                                        <img src="${data.img2 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="通常盤">
+                                        <div class="jacket-label">通常盤</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-[#e0f2f1]/50 rounded-lg p-3 text-xs flex justify-between items-center mb-4">
+                                <span class="font-bold text-[#1F7A6F] opacity-70">当時のaiko</span>
+                                <span class="font-bold text-[#2A9D8F] text-right">${aikoAge}</span>
+                            </div>
+
+                            <div>
+                                <h4 class="text-xs font-bold text-gray-400 flex items-center gap-1 border-b border-gray-100 pb-1 mb-2">
+                                    <i data-lucide="music" class="w-3 h-3"></i> 収録曲
+                                </h4>
+                                <div class="text-sm text-gray-600 leading-relaxed font-medium bg-gray-50 p-3 rounded-lg border border-dashed border-gray-200">
+                                    ${tracksHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listContainer.insertAdjacentHTML('beforeend', cardHtml);
+            });
+
+            const userAge = calculateAgeAtDate(birthDate, firstDate);
+            const userStage = getLifeStage(firstDate, birthDate);
+            document.getElementById('modal-user-age').textContent = `${userAge}歳`;
+            document.getElementById('modal-user-stage').textContent = userStage;
+
+            const liveListEl = document.getElementById('modal-live-list');
+            const liveSection = document.getElementById('modal-live-section');
+            liveListEl.innerHTML = '';
+            
+            const targetKey = `${firstDate.getFullYear()}-${firstDate.getMonth() + 1}`;
+            const addedLives = new Set();
+            let liveFound = false;
+            
+            if (allData && allData.historyData) {
+                allData.historyData.forEach(row => {
+                    if (!row.date) return;
+                    const rd = new Date(row.date);
+                    if (`${rd.getFullYear()}-${rd.getMonth() + 1}` === targetKey && row.live) {
+                        if (!addedLives.has(row.live)) {
+                            addedLives.add(row.live);
+                            liveFound = true;
+                            const safeName = row.live.replace(/'/g, "\\'");
+                            const div = document.createElement('div');
+                            div.className = 'p-2 bg-red-50 text-red-600 rounded-lg text-xs font-bold border border-red-100 flex justify-between items-center cursor-pointer active:scale-95 transition-transform';
+                            div.innerHTML = `<span>${row.live}</span> <i data-lucide="chevron-right" class="w-3 h-3"></i>`;
+                            div.onclick = () => { closeModal(); requestSearchInLive(safeName); };
+                            liveListEl.appendChild(div);
+                        }
+                    }
+                });
+            }
+            
+            if (liveFound) {
+                liveSection.classList.remove('hidden');
+                lucide.createIcons();
+            } else {
+                liveSection.classList.add('hidden');
+            }
+
+            const overlay = document.getElementById('detail-modal');
+            overlay.classList.add('open');
+            document.querySelector('.modal-card-expanded').scrollTop = 0;
+            
+            safeTrackEvent('select_content', { content_type: 'map_detail', item_name: items[0].title });
+        }
+
+        function closeModal() {
+            document.getElementById('detail-modal').classList.remove('open');
+        }
+
+        function calculateAgeAtDate(birth, target) {
+            let age = target.getFullYear() - birth.getFullYear();
+            const m = target.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && target.getDate() < birth.getDate())) age--;
+            return age;
+        }
+        // GA4送信用の安全なラッパー関数
         function safeTrackEvent(eventName, params) {
-            // console.log('Track:', eventName, params);
+            try {
+                if (typeof gtag === 'function') {
+                    gtag('event', eventName, params);
+                }
+            } catch (e) {
+                console.warn('GA4 Tracking Error:', e);
+            }
         }
     </script>
 </body>
