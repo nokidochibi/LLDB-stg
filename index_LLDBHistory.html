@@ -475,10 +475,14 @@
 
         let allData = null;
         let birthDate = null;
+        let loadingPromise = null; // ★追加
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             populateDates();
+            
+            // ★追加: 即時読み込み開始
+            startDataLoading();
             
             const savedBirth = localStorage.getItem('lldb_user_birth');
             if (savedBirth) {
@@ -488,6 +492,39 @@
                 document.getElementById('day').value = parseInt(d);
             }
         });
+
+        // ★追加: データ読み込み関数
+        function startDataLoading() {
+            loadingPromise = new Promise(async (resolve) => {
+                // すでにデータがあれば即終了
+                if (allData) {
+                    resolve(allData);
+                    return;
+                }
+
+                // 1. キャッシュ確認
+                try {
+                    const cache = localStorage.getItem(CACHE_KEY);
+                    if (cache) {
+                        allData = JSON.parse(cache);
+                        resolve(allData);
+                        return;
+                    }
+                } catch (e) { console.error("Cache Error", e); }
+
+                // 2. APIフェッチ
+                try {
+                    const res = await fetch(`${GAS_API_URL}?action=getHistoryData`);
+                    const json = await res.json();
+                    allData = json;
+                    try { localStorage.setItem(CACHE_KEY, JSON.stringify(json)); } catch(e){}
+                    resolve(allData);
+                } catch (e) {
+                    console.error(e);
+                    resolve(null); // エラー時はnull
+                }
+            });
+        }
 
         function populateDates() {
             const yEl = document.getElementById('year'), mEl = document.getElementById('month'), dEl = document.getElementById('day');
@@ -502,7 +539,6 @@
                 el.classList.toggle('active', el.dataset.tab === tabName);
             });
             document.getElementById('view-history').classList.toggle('hidden', tabName !== 'history');
-            // ★MOD: マップタブの表示切替追加
             document.getElementById('view-map').classList.toggle('hidden', tabName !== 'map');
             document.getElementById('view-today').classList.toggle('hidden', tabName !== 'today');
             
@@ -510,7 +546,6 @@
                 if (allData && birthDate) renderTodayStats();
                 safeTrackEvent('screen_view', { screen_name: 'History_TodayMe' });
             } 
-            // ★MOD: マップタブ切り替え時の処理追加
             else if (tabName === 'map') {
                 if (allData && birthDate) renderGrid(allData.listData);
                 safeTrackEvent('screen_view', { screen_name: 'History_Map' });
@@ -533,19 +568,12 @@
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('content-area').classList.add('hidden');
 
+            // ★修正: データ読み込み待ちロジック
             if (!allData) {
-                try {
-                    const cache = localStorage.getItem(CACHE_KEY);
-                    if (cache) {
-                          allData = JSON.parse(cache);
-                    } else {
-                        const res = await fetch(`${GAS_API_URL}?action=getHistoryData`);
-                        const json = await res.json();
-                        allData = json;
-                        try { localStorage.setItem(CACHE_KEY, JSON.stringify(json)); } catch(e){}
-                    }
-                } catch (e) {
-                    console.error(e);
+                // バックグラウンド読み込みの完了を待つ
+                await loadingPromise;
+                
+                if (!allData) {
                     alert('データの読み込みに失敗しました。');
                     document.getElementById('loading').classList.add('hidden');
                     return;
@@ -553,7 +581,7 @@
             }
 
             renderTimeline();
-            renderGrid(allData.listData); // ★MOD: マップ生成処理追加
+            renderGrid(allData.listData);
             renderTodayStats(); 
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('content-area').classList.remove('hidden');
@@ -562,7 +590,7 @@
             const targetTab = currentTabEl ? currentTabEl.dataset.tab : 'history';
             switchTab(targetTab);
         }
-        // 親画面へライブ検索のリクエストを送信する
+
         function requestSearchInLive(tourName) {
           window.parent.postMessage({
             type: 'requestLiveSearch',
@@ -570,7 +598,6 @@
           }, '*');
         }
 
-        // --- 年齢詳細計算ロジック (New) ---
         function calculateDetailedAge(birthDate, targetDate) {
             let b = new Date(birthDate);
             let t = new Date(targetDate);
@@ -699,18 +726,14 @@
             }
         }
 
-        // --- 今日の自分 ロジック ---
         function renderTodayStats() {
             if (!birthDate || !allData.listData) return;
 
-            // 1. 今日の自分の日数計算
             const today = new Date();
             const ageString = calculateDetailedAge(birthDate, today);
             
-            // HTMLを挿入
             document.getElementById('user-days').innerHTML = ageString;
 
-            // 2. 最も近いリリース日を探す
             let bestMatch = null;
             let minDiff = Infinity;
             
@@ -724,10 +747,8 @@
                 const releaseDate = new Date(cd.releaseDate);
                 releaseDate.setHours(0,0,0,0);
                 
-                // aikoの誕生日からリリース日までの日数
                 const aikoDaysAtRelease = Math.floor((releaseDate - AIKO_BIRTH) / msPerDay);
                 
-                // 差分の絶対値
                 const diff = Math.abs(userDays - aikoDaysAtRelease);
                 
                 if (diff < minDiff) {
@@ -740,19 +761,15 @@
                 }
             });
 
-            // 3. UIに反映
             if (bestMatch) {
                 document.getElementById('match-cd-title').innerText = bestMatch.title || 'Unknown Title';
                 document.getElementById('match-cd-type').innerText = bestMatch.type || 'CD';
                 
-                // 画像URL
                 const img1 = document.getElementById('match-img-first');
                 const img2 = document.getElementById('match-img-regular');
                 img1.src = bestMatch.img1 || '';
                 img2.src = bestMatch.img2 || '';
 
-                // 収録曲
-                // ★MOD: 曲目リスト修正 (スプレッドシートの内容をそのまま表示)
                 let tracksHtml = '';
                 if (bestMatch.tracks) {
                     const tracks = String(bestMatch.tracks).split(/[\n]/).map(t => t.trim()).filter(t => t);
@@ -772,14 +789,11 @@
 
                 document.getElementById('match-release-date').innerText = bestMatch.formattedRelease;
                 
-                // aikoの当時の年齢・日数詳細
                 const aikoAgeString = calculateDetailedAge(AIKO_BIRTH, bestMatch.releaseDateObj);
                 document.getElementById('match-aiko-days').innerHTML = aikoAgeString;
             }
         }
-// ------------------------------------------------------------------
-        // ★NEW: マップ（グリッド）レンダリング & モーダル関数
-        // ------------------------------------------------------------------
+
         function renderGrid(listData) {
             const container = document.getElementById('grid-container');
             if(!listData) return;
@@ -838,13 +852,11 @@
                         
                         let contentHtml = '';
                         if (items.length === 1) {
-                            // シングル
                             const item = items[0];
                             const imgUrl = item.img2 || item.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
                             const borderClass = getBorderClass(item.type);
                             contentHtml = `<img src="${imgUrl}" loading="lazy" class="jacket-img-base ${borderClass}">`;
                         } else {
-                            // 重ね合わせ (最初と最後のみ表示)
                             const first = items[0];
                             const last = items[items.length - 1];
                             const img1 = first.img2 || first.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
@@ -913,12 +925,6 @@
                     }
                 } else { tracksHtml = '<span class="text-gray-400">情報なし</span>'; }
 
-                // ★変更: 枠線スタイルロジックを削除
-                // const borderStyle = data.type && (data.type.includes('Album') || data.type.includes('アルバム')) 
-                //     ? 'border-l-4 border-pink-400' 
-                //     : 'border-l-4 border-orange-400';
-
-                // ★変更: borderStyleクラスを削除し、画像のonerrorを追加
                 const cardHtml = `
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
@@ -1018,7 +1024,7 @@
             if (m < 0 || (m === 0 && target.getDate() < birth.getDate())) age--;
             return age;
         }
-        // GA4送信用の安全なラッパー関数
+        
         function safeTrackEvent(eventName, params) {
             try {
                 if (typeof gtag === 'function') {
