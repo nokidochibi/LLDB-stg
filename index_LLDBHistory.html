@@ -173,35 +173,72 @@
             --border-other: #94A3B8; /* Slate-400 */
         }
 
+        /* --- グリッドスクロール・固定表示用スタイル (修正版) --- */
+        
+        /* スクロール領域のラッパー */
+        .grid-scroll-area {
+            overflow: auto;
+            max-height: 70vh; /* 縦スクロール用 */
+            position: relative;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .disco-grid {
             display: grid;
-            grid-template-columns: 36px repeat(12, 1fr);
+            /* minmax(40px, 1fr) で幅を確保し、画面幅を超えたら横スクロールさせる */
+            grid-template-columns: 36px repeat(12, minmax(40px, 1fr));
             gap: var(--cell-gap);
             width: 100%;
-            padding: 0 4px;
+            padding: 0;
         }
+
+        /* 横軸（月）の固定 */
         .header-row {
-            position: sticky; top: 0; z-index: 30;
-            background-color: rgba(248, 249, 250, 0.95);
+            position: sticky; 
+            top: 0; 
+            z-index: 40;
+            background-color: rgba(248, 249, 250, 0.98);
             backdrop-filter: blur(4px);
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 4px; padding-top: 2px;
-            margin-bottom: 4px;
+            margin-bottom: 0;
+            
+            /* グリッドの設定を親に合わせる */
+            display: grid;
+            grid-template-columns: 36px repeat(12, minmax(40px, 1fr));
+            gap: var(--cell-gap);
         }
-        .header-cell { 
-            text-align: center; font-size: 9px; font-weight: bold; color: #94a3b8; 
-            height: 32px; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 2px;
+        
+        /* 左上の交点（空セル）を固定 */
+        .header-corner {
+            position: sticky;
+            left: 0;
+            z-index: 50;
+            background-color: rgba(248, 249, 250, 0.98);
         }
-        .birth-cake { font-size: 10px; margin-bottom: -2px; display: block; animation: bounce 2s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
 
+        /* 縦軸（年）の固定 */
         .year-cell {
+            position: sticky;
+            left: 0;
+            z-index: 30;
+            background-color: rgba(248, 249, 250, 0.95);
+            border-right: 1px solid #f1f5f9;
+            
             font-size: 10px; font-weight: 900; color: #cbd5e1;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             line-height: 1;
-            writing-mode: horizontal-tb; 
-            transform: none;
+        }
+
+        /* 案内文 */
+        .zoom-hint {
+            text-align: center;
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 8px;
+            padding-bottom: 4px;
         }
         .year-label { display: block; }
         .age-label { 
@@ -389,8 +426,12 @@
             </div>
 <!-- ★NEW: マップ（グリッド）タブ -->
             <div id="view-map" class="hidden">
-                <div id="grid-container" class="disco-grid bg-white rounded-2xl shadow-sm border border-gray-100 pb-4 pt-1">
-                    <!-- JSで生成 -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 pb-2 pt-1 overflow-hidden">
+                    <div class="grid-scroll-area">
+                        <div id="grid-container" class="disco-grid">
+                            </div>
+                    </div>
+                    <p class="zoom-hint">※２本指で拡大/縮小できるよ</p>
                 </div>
             </div>
             
@@ -922,7 +963,6 @@
                     const d = new Date(row.date);
                     const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
                     if (!liveMap[key]) liveMap[key] = [];
-                    // 同じ月内で重複排除して追加
                     if (!liveMap[key].includes(row.live)) {
                         liveMap[key].push(row.live);
                     }
@@ -935,14 +975,17 @@
             const birthMonth = birthDate.getMonth() + 1;
 
             let html = '';
-            html += `<div class="header-row col-span-full grid grid-cols-[36px_repeat(12,1fr)] gap-[2px]">`;
-            html += `<div></div>`;
+            
+            // --- ヘッダー行の生成 (修正: grid-column指定を削除し、クラス構造を変更) ---
+            html += `<div class="header-row col-span-full">`;
+            html += `<div class="header-corner"></div>`; // 左上交点用div
             for (let m = 1; m <= 12; m++) {
                 const isBirthMonth = (m === birthMonth);
                 const cakeHtml = isBirthMonth ? '<span class="birth-cake">🎂</span>' : '';
                 html += `<div class="header-cell ${isBirthMonth ? 'birth-month-header' : ''}">${cakeHtml}${m}</div>`;
             }
             html += `</div>`;
+            // -------------------------------------------------------------
 
             for (let y = startYear; y <= endYear; y++) {
                 let ageLabel = '';
@@ -966,11 +1009,12 @@
                     else if (m >= 6 && m <= 8) colClass = 'season-summer';
                     else if (m >= 9 && m <= 11) colClass = 'season-autumn';
 
-                    // 優先順位: 1.CDジャケット -> 2.ライブ情報 -> 3.空セル
+                    // (中略：セルの生成ロジックは変更なし)
+                    // ... (既存のif-else if-elseブロックをそのまま使用) ...
+                    
+                    // ※以下は既存ロジックの再掲（変更なし）
                     if (items && items.length > 0) {
-                        // --- 既存: CDジャケット表示 ---
                         const dataJson = JSON.stringify(items).replace(/"/g, '&quot;');
-                        
                         let contentHtml = '';
                         if (items.length === 1) {
                             const item = items[0];
@@ -984,56 +1028,25 @@
                             const img2 = last.img2 || last.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
                             const border1 = getBorderClass(first.type);
                             const border2 = getBorderClass(last.type);
-                            
-                            contentHtml = `
-                                <img src="${img1}" class="jacket-img-base stacked-1 ${border1}">
-                                <img src="${img2}" class="jacket-img-base stacked-2 ${border2}">
-                            `;
+                            contentHtml = `<img src="${img1}" class="jacket-img-base stacked-1 ${border1}"><img src="${img2}" class="jacket-img-base stacked-2 ${border2}">`;
                         }
-
-                        html += `
-                            <div class="jacket-cell cursor-pointer shadow-sm" onclick="openModal(this)" data-items="${dataJson}">
-                                ${contentHtml}
-                            </div>
-                        `;
+                        html += `<div class="jacket-cell cursor-pointer shadow-sm" onclick="openModal(this)" data-items="${dataJson}">${contentHtml}</div>`;
                     } else if (lives && lives.length > 0) {
-                        // --- ★NEW: ライブテキスト表示 (CDがない場合) ---
                         let liveHtml = '';
-                        
                         lives.forEach(name => {
-                            // 1. 略称生成
-                            let shortName = name
-                                .replace(/Love Like Pop/i, 'LLP')
-                                .replace(/Love Like Rock/i, 'LLR')
-                                .replace(/Love Like Aloha/i, 'LLA')
-                                .replace(/ vol\./i, '')
-                                .replace(/追加公演/g, '')
-                                .replace(/(\d+)\.\d+/g, '$1');
-
-                            // 2. ツアータイプ判定と色クラス決定
+                            let shortName = name.replace(/Love Like Pop/i, 'LLP').replace(/Love Like Rock/i, 'LLR').replace(/Love Like Aloha/i, 'LLA').replace(/ vol\./i, '').replace(/追加公演/g, '').replace(/(\d+)\.\d+/g, '$1');
                             let typeClass = 'live-other';
                             const nLower = name.toLowerCase();
                             if (nLower.includes('love like pop')) typeClass = 'live-pop';
                             else if (nLower.includes('love like rock')) typeClass = 'live-rock';
                             else if (nLower.includes('love like aloha')) typeClass = 'live-aloha';
-
                             liveHtml += `<span class="live-text-item ${typeClass}">${shortName}</span>`;
                         });
-
-                        // クリックでそのライブ(最初の1件)を検索
                         const firstLiveName = lives[0].replace(/'/g, "\\'");
-                        html += `
-                            <div class="live-text-cell cursor-pointer" onclick="requestSearchInLive('${firstLiveName}')">
-                                ${liveHtml}
-                            </div>
-                        `;
+                        html += `<div class="live-text-cell cursor-pointer" onclick="requestSearchInLive('${firstLiveName}')">${liveHtml}</div>`;
                     } else {
-                        // --- 既存: 空セル/未来セル ---
-                        if (isFuture) {
-                            html += `<div class="future-cell ${colClass}"></div>`;
-                        } else {
-                            html += `<div class="empty-cell ${colClass}"></div>`;
-                        }
+                        if (isFuture) { html += `<div class="future-cell ${colClass}"></div>`; } 
+                        else { html += `<div class="empty-cell ${colClass}"></div>`; }
                     }
                 }
             }
