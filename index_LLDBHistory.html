@@ -155,7 +155,6 @@
             user-select: none;           /* 画像を選択できないようにする */
             -webkit-user-drag: none;     /* 画像のドラッグを禁止 */
         }
-        /* ラベル削除のため jacket-label は削除またはコメントアウト */
         
         /* ---------------------------------------------------------
            ★NEW: マップ（グリッド）機能用のスタイル追加 (再修正版)
@@ -921,7 +920,7 @@
             }
         }
 
-        // ★修正: renderGrid 関数を独立した正しい位置に配置
+        // renderGrid関数の重複定義を解消
         function renderGrid(listData) {
             const container = document.getElementById('grid-container');
             if(!listData) return;
