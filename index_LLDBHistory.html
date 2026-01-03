@@ -155,25 +155,19 @@
             user-select: none;           /* 画像を選択できないようにする */
             -webkit-user-drag: none;     /* 画像のドラッグを禁止 */
         }
-        .jacket-label {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            background: rgba(0,0,0,0.6); color: white;
-            font-size: 10px; padding: 2px; text-align: center;
-            border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;
-            backdrop-filter: blur(2px);
-        }
-/* ---------------------------------------------------------
-   ★NEW: マップ（グリッド）機能用のスタイル追加 (修正版)
-   --------------------------------------------------------- */
+        /* ラベル削除のため jacket-label は削除またはコメントアウト */
+        
+        /* ---------------------------------------------------------
+           ★NEW: マップ（グリッド）機能用のスタイル追加 (再修正版)
+           --------------------------------------------------------- */
         :root {
             /* 既存変数に追加 */
             --cell-gap: 2px;
             --border-album: #FF69B4; /* aiko Pink */
             --border-single: #F97316; /* Orange-500 */
             --border-other: #94A3B8; /* Slate-400 */
-            --col-min-width: 8vw;    /* 拡大時の最小セル幅 */
         }
-        
+
         /* スクロール領域全体 */
         .grid-scroll-area {
             overflow: auto;
@@ -181,22 +175,21 @@
             position: relative;
             overscroll-behavior: contain;
             -webkit-overflow-scrolling: touch;
-            touch-action: pan-x pan-y pinch-zoom; /* ピンチズームを許可 */
+            touch-action: pan-x pan-y pinch-zoom; /* ピンチズーム許可 */
         }
-        
+
         /* グリッド本体 */
         .disco-grid {
             display: grid;
-            /* 年列(36px) + 12ヶ月分 */
-            /* minmax(0, 1fr) でデフォルトは画面幅に収まる。拡大時は中身に応じて広がる */
-            grid-template-columns: 36px repeat(12, minmax(0, 1fr));
+            /* 年列(36px) + 12ヶ月分 (最小40px, 拡大時は画面に合わせて伸縮) */
+            grid-template-columns: 36px repeat(12, minmax(40px, 1fr));
             gap: var(--cell-gap);
             
-            /* 重要: 拡大縮小の基点 */
-            width: 100%;
-            min-width: 100%; /* 縮小しすぎない */
+            /* 重要: 幅の設定 */
+            width: 100%; 
+            min-width: 100%; /* これで「デフォルトは画面いっぱい」を実現 */
         }
-        
+
         /* ヘッダー行 (月) の固定 */
         .header-row {
             position: sticky; 
@@ -210,7 +203,7 @@
             
             /* グリッドレイアウトを親に合わせる */
             display: grid;
-            grid-template-columns: 36px repeat(12, minmax(0, 1fr));
+            grid-template-columns: 36px repeat(12, minmax(40px, 1fr));
             gap: var(--cell-gap);
         }
         
@@ -221,12 +214,12 @@
             z-index: 50;
             background-color: rgba(248, 249, 250, 0.98);
         }
-        
+
         .header-cell { 
             text-align: center; font-size: 9px; font-weight: bold; color: #94a3b8; 
             height: 32px; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 2px;
         }
-        
+
         /* 縦軸 (年) の固定 */
         .year-cell {
             position: sticky;
@@ -240,15 +233,15 @@
             align-items: center; justify-content: center;
             line-height: 1;
         }
-        
+
         /* 案内文 */
         .zoom-hint {
             text-align: center; font-size: 10px; color: #94a3b8; margin-top: 8px; padding-bottom: 4px;
         }
-        
-        /* その他既存スタイルはそのまま維持 */
+
         .birth-cake { font-size: 10px; margin-bottom: -2px; display: block; animation: bounce 2s infinite; }
-        /* ... (jacket-cell, live-text-cell 等は変更なし) ... */
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+
         .year-label { display: block; }
         .age-label { 
             font-size: 8px; color: var(--accent-color); margin-top: 1px; 
@@ -272,17 +265,17 @@
         .border-other { border: 2px solid var(--border-other); }
 
         /* 重ね合わせスタイル */
-.stacked-1 {
-    position: absolute; top: 2px; left: 2px; /* 少し内側に配置 */
-    width: 60%; height: 60%; z-index: 1;     /* サイズを縮小 */
-    border-radius: 2px;
-}
-.stacked-2 {
-    position: absolute; bottom: 2px; right: 2px; /* 少し内側に配置 */
-    width: 60%; height: 60%; z-index: 2;         /* サイズを縮小 */
-    border-radius: 2px;
-    box-shadow: -1px -1px 2px rgba(0,0,0,0.2);
-}
+        .stacked-1 {
+            position: absolute; top: 2px; left: 2px; /* 少し内側に配置 */
+            width: 60%; height: 60%; z-index: 1;     /* サイズを縮小 */
+            border-radius: 2px;
+        }
+        .stacked-2 {
+            position: absolute; bottom: 2px; right: 2px; /* 少し内側に配置 */
+            width: 60%; height: 60%; z-index: 2;         /* サイズを縮小 */
+            border-radius: 2px;
+            box-shadow: -1px -1px 2px rgba(0,0,0,0.2);
+        }
 
         /* 季節の背景色 */
         .season-winter { background-color: #eff6ff; }
@@ -319,32 +312,8 @@
             max-height: 85vh; overflow-y: auto; overflow-x: hidden;
         }
         .modal-overlay.open .modal-card-expanded { transform: scale(1); }
-/* ---------------------------------------------------------
-           ★NEW: ライブテキスト表示用スタイル（追加）
-           --------------------------------------------------------- */
-        .live-text-cell {
-            width: 100%; height: 100%;
-            display: flex; 
-            flex-direction: column; /* 複数ある場合は縦に積む */
-            align-items: center; 
-            justify-content: center;
-            background-color: #fff1f2; /* 薄い赤色背景（ライブ感） */
-            border-radius: 2px;
-            overflow: hidden;
-            border: 1px solid #fecaca;
-            padding: 1px;
-        }
-        .live-text-item {
-            font-size: 8px; /* 年齢軸と同じサイズ */
-            line-height: 1.1;
-            text-align: center;
-            color: #e11d48; 
-            font-weight: 900;
-            width: 100%;
-            white-space: nowrap;
-            overflow: hidden; /* はみ出し防止 */
-        }
-    /* ---------------------------------------------------------
+
+        /* ---------------------------------------------------------
            ★NEW: ライブテキスト表示用スタイル（詳細版）
            --------------------------------------------------------- */
         .live-text-cell {
@@ -361,7 +330,7 @@
             align-items: center;
             justify-content: center;
             
-            font-size: 7px; /* 指定: 7px */
+            font-size: 6px; /* 指定: 6px */
             line-height: 1.0; /* 行間を詰める */
             text-align: center;
             font-weight: 900;
@@ -433,13 +402,18 @@
                 </div>
                 <div class="h-8"></div>
             </div>
-<!-- ★NEW: マップ（グリッド）タブ -->
-           <div id="view-map" class="hidden">
+
+            <!-- ★NEW: マップ（グリッド）タブ -->
+            <div id="view-map" class="hidden">
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 pb-2 pt-1 overflow-hidden">
+                    <!-- スクロール領域ラッパー -->
                     <div class="grid-scroll-area">
+                        <!-- ピンチイン・アウト対象のコンテナ -->
                         <div id="grid-container" class="disco-grid">
-                            </div>
+                            <!-- JSで生成 -->
+                        </div>
                     </div>
+                    <!-- 案内文 -->
                     <p class="zoom-hint">※２本指で拡大/縮小できるよ</p>
                 </div>
             </div>
@@ -475,7 +449,7 @@
                     </div>
 
                     <div class="p-5">
-                        <!-- ジャケット画像 (初回・通常 並列) -->
+                        <!-- ジャケット画像エリア (ID付与・構造変更) -->
                         <div id="today-jacket-container" class="flex gap-4 mb-6 justify-center items-center">
                             <div id="today-wrapper-first" class="flex-1 relative group w-full hidden">
                                 <img id="match-img-first" src="" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
@@ -483,6 +457,7 @@
                             <div id="today-wrapper-regular" class="flex-1 relative group w-full hidden">
                                 <img id="match-img-regular" src="" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
                             </div>
+                            <!-- 両方ない場合のプレースホルダー用 -->
                             <div id="today-wrapper-none" class="flex-1 relative group w-full hidden max-w-[60%]">
                                 <img src="https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image" class="cd-jacket" alt="No Image">
                             </div>
@@ -946,45 +921,8 @@
             }
         }
 
+        // ★修正: renderGrid 関数を独立した正しい位置に配置
         function renderGrid(listData) {
-            const container = document.getElementById('grid-container');
-            if(!listData) return;
-
-            // 1. CDデータのマップ作成 (既存)
-            const releaseMap = {};
-            listData.forEach(item => {
-                if(!item.releaseDate) return;
-                const d = new Date(item.releaseDate);
-                const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-                if (!releaseMap[key]) releaseMap[key] = [];
-                releaseMap[key].push(item);
-            });
-
-            Object.keys(releaseMap).forEach(key => {
-                releaseMap[key].sort((a, b) => new Date(a.releaseDate) - new Date(b.releaseDate));
-            });
-
-            // ★NEW: ライブデータのマップ作成 (抽出ロジック)
-            const liveMap = {};
-            if (allData && allData.historyData) {
-                allData.historyData.forEach(row => {
-                    if (!row.date || !row.live) return;
-                    const d = new Date(row.date);
-                    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-                    if (!liveMap[key]) liveMap[key] = [];
-                    // 同じ月内で重複排除して追加
-                    if (!liveMap[key].includes(row.live)) {
-                        liveMap[key].push(row.live);
-                    }
-                });
-            }
-
-            const startYear = 1998;
-            const currentYear = new Date().getFullYear();
-            const endYear = currentYear; 
-            const birthMonth = birthDate.getMonth() + 1;
-
-            function renderGrid(listData) {
             const container = document.getElementById('grid-container');
             if(!listData) return;
 
@@ -1019,11 +957,11 @@
             const startYear = 1998;
             const currentYear = new Date().getFullYear();
             const endYear = currentYear; 
-            const birthMonth = birthDate.getMonth() + 1;
+            const birthMonth = birthDate.getMonth() + 1; // ここで定義を使用
 
             let html = '';
             
-            // --- ヘッダー行の生成 (修正) ---
+            // --- ヘッダー行の生成 ---
             html += `<div class="header-row col-span-full">`;
             html += `<div class="header-corner"></div>`; // 左上固定用
             for (let m = 1; m <= 12; m++) {
@@ -1042,7 +980,6 @@
                     ageLabel = `<span class="age-label">${age}歳</span>`;
                 }
 
-                // 年セル (CSSで固定設定済み)
                 html += `<div class="year-cell"><span class="year-label">${y}</span>${ageLabel}</div>`;
 
                 for (let m = 1; m <= 12; m++) {
@@ -1079,13 +1016,11 @@
                         let liveHtml = '';
                         lives.forEach(name => {
                             let shortName = name.replace(/Love Like Pop/i, 'LLP').replace(/Love Like Rock/i, 'LLR').replace(/Love Like Aloha/i, 'LLA').replace(/ vol\./i, '').replace(/追加公演/g, '').replace(/(\d+)\.\d+/g, '$1');
-                            
                             let typeClass = 'live-other';
                             const nLower = name.toLowerCase();
                             if (nLower.includes('love like pop')) typeClass = 'live-pop';
                             else if (nLower.includes('love like rock')) typeClass = 'live-rock';
                             else if (nLower.includes('love like aloha')) typeClass = 'live-aloha';
-
                             liveHtml += `<span class="live-text-item ${typeClass}">${shortName}</span>`;
                         });
                         const firstLiveName = lives[0].replace(/'/g, "\\'");
@@ -1093,102 +1028,6 @@
                     } else {
                         if (isFuture) { html += `<div class="future-cell ${colClass}"></div>`; } 
                         else { html += `<div class="empty-cell ${colClass}"></div>`; }
-                    }
-                }
-            }
-            container.innerHTML = html;
-        }
-
-            for (let y = startYear; y <= endYear; y++) {
-                let ageLabel = '';
-                const birthYear = birthDate.getFullYear();
-                if (y >= birthYear) {
-                    const age = y - birthYear;
-                    ageLabel = `<span class="age-label">${age}歳</span>`;
-                }
-
-                html += `<div class="year-cell"><span class="year-label">${y}</span>${ageLabel}</div>`;
-
-                for (let m = 1; m <= 12; m++) {
-                    const key = `${y}-${m}`;
-                    const items = releaseMap[key]; // CD
-                    const lives = liveMap[key];    // Live
-                    const isFuture = new Date(y, m-1) > new Date();
-                    
-                    let colClass = '';
-                    if (m === 12 || m === 1 || m === 2) colClass = 'season-winter';
-                    else if (m >= 3 && m <= 5) colClass = 'season-spring';
-                    else if (m >= 6 && m <= 8) colClass = 'season-summer';
-                    else if (m >= 9 && m <= 11) colClass = 'season-autumn';
-
-                    // 優先順位: 1.CDジャケット -> 2.ライブ情報 -> 3.空セル
-                    if (items && items.length > 0) {
-                        // --- 既存: CDジャケット表示 ---
-                        const dataJson = JSON.stringify(items).replace(/"/g, '&quot;');
-                        
-                        let contentHtml = '';
-                        if (items.length === 1) {
-                            const item = items[0];
-                            const imgUrl = item.img2 || item.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
-                            const borderClass = getBorderClass(item.type);
-                            contentHtml = `<img src="${imgUrl}" loading="lazy" class="jacket-img-base ${borderClass}">`;
-                        } else {
-                            const first = items[0];
-                            const last = items[items.length - 1];
-                            const img1 = first.img2 || first.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
-                            const img2 = last.img2 || last.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
-                            const border1 = getBorderClass(first.type);
-                            const border2 = getBorderClass(last.type);
-                            
-                            contentHtml = `
-                                <img src="${img1}" class="jacket-img-base stacked-1 ${border1}">
-                                <img src="${img2}" class="jacket-img-base stacked-2 ${border2}">
-                            `;
-                        }
-
-                        html += `
-                            <div class="jacket-cell cursor-pointer shadow-sm" onclick="openModal(this)" data-items="${dataJson}">
-                                ${contentHtml}
-                            </div>
-                        `;
-                    } else if (lives && lives.length > 0) {
-                        // --- ★NEW: ライブテキスト表示 (CDがない場合) ---
-                        let liveHtml = '';
-                        
-                        lives.forEach(name => {
-                            // 1. 略称生成
-                            let shortName = name
-                                .replace(/Love Like Pop/i, 'LLP')
-                                .replace(/Love Like Rock/i, 'LLR')
-                                .replace(/Love Like Aloha/i, 'LLA')
-                                .replace(/ vol\./i, '')
-                                .replace(/追加公演/g, '')
-                                .replace(/(\d+)\.\d+/g, '$1');
-
-                            // 2. ツアータイプ判定と色クラス決定
-                            let typeClass = 'live-other';
-                            const nLower = name.toLowerCase();
-                            if (nLower.includes('love like pop')) typeClass = 'live-pop';
-                            else if (nLower.includes('love like rock')) typeClass = 'live-rock';
-                            else if (nLower.includes('love like aloha')) typeClass = 'live-aloha';
-
-                            liveHtml += `<span class="live-text-item ${typeClass}">${shortName}</span>`;
-                        });
-
-                        // クリックでそのライブ(最初の1件)を検索
-                        const firstLiveName = lives[0].replace(/'/g, "\\'");
-                        html += `
-                            <div class="live-text-cell cursor-pointer" onclick="requestSearchInLive('${firstLiveName}')">
-                                ${liveHtml}
-                            </div>
-                        `;
-                    } else {
-                        // --- 既存: 空セル/未来セル ---
-                        if (isFuture) {
-                            html += `<div class="future-cell ${colClass}"></div>`;
-                        } else {
-                            html += `<div class="empty-cell ${colClass}"></div>`;
-                        }
                     }
                 }
             }
