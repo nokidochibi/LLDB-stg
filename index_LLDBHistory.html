@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LLDB History</title>
 
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0D09G3X4F1"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -31,12 +30,6 @@
             --text-main: #334155;
             --nav-height: 85px;        
             --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            
-            /* Grid Settings */
-            --cell-gap: 2px;
-            --border-album: #FF69B4; /* aiko Pink */
-            --border-single: #F97316; /* Orange-500 */
-            --border-other: #94A3B8; /* Slate-400 */
         }
 
         body {
@@ -47,7 +40,7 @@
             padding-bottom: calc(var(--nav-height) + 20px + env(safe-area-inset-bottom));
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: none; /* バウンス抑制 */
+            overscroll-behavior-y: none; /* スクロールバウンス防止 */
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -157,85 +150,94 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             background-color: #f1f5f9;
             width: 100%;
-            pointer-events: none;
-            -webkit-touch-callout: none;
-            user-select: none;
-            -webkit-user-drag: none;
+            pointer-events: none;        /* 画像へのタッチ・クリック判定を無効化 */
+            -webkit-touch-callout: none; /* iOS Safariで長押しメニューを無効化 */
+            user-select: none;           /* 画像を選択できないようにする */
+            -webkit-user-drag: none;     /* 画像のドラッグを禁止 */
         }
-        /* No Image時のセンタリング用（JSでクラス制御する代わりにonerrorで画像入れ替え済みだが、配置を調整） */
-        .cd-jacket-container {
-            display: flex; align-items: center; justify-content: center;
-            background-color: #f1f5f9; border-radius: 8px; overflow: hidden;
-            aspect-ratio: 1/1;
-        }
+        /* .jacket-label 削除 (要件により非表示) */
+        .jacket-label { display: none; }
 
         /* ---------------------------------------------------------
-           ★NEW: マップ（グリッド）機能用のスタイル追加
+           ★NEW: マップ（グリッド）機能用のスタイル修正版
            --------------------------------------------------------- */
-        
-        /* コンテナ自体のスクロール設定（ピンチイン・アウト用） */
+        :root {
+            --scale: 1.0; /* 拡大縮小用スケール */
+            --border-album: #FF69B4; /* aiko Pink */
+            --border-single: #F97316; /* Orange-500 */
+            --border-other: #94A3B8; /* Slate-400 */
+        }
+
+        /* ズーム用コンテナ設定 */
         #view-map {
-            overflow-x: auto; /* 横スクロール許可 */
-            overflow-y: hidden;
-            -webkit-overflow-scrolling: touch;
+            overflow: auto;
+            height: calc(100vh - var(--nav-height) - 100px); /* ナビと入力欄の高さを引く */
+            touch-action: none; /* ブラウザ標準のピンチズーム等を無効化してJSで制御 */
+            position: relative;
         }
 
         .disco-grid {
+            /* スケールに応じて全体の幅を変える */
+            width: calc(100% * var(--scale)); 
+            min-width: 100%; /* 縮小しすぎても画面幅以下にはしない */
             display: grid;
-            grid-template-columns: 36px repeat(12, 1fr);
-            gap: var(--cell-gap);
-            width: 100%; /* JSで動的に変更される */
-            min-width: 100%;
-            padding: 0 4px;
+            /* 1列目(年)の幅もスケールさせる */
+            grid-template-columns: calc(36px * var(--scale)) repeat(12, 1fr);
+            gap: 2px;
+            padding: 0 4px 40px 4px; /* 下部に余白 */
             transform-origin: top left;
         }
 
         .header-row {
-            position: sticky; top: 0; z-index: 40; /* z-index増加 */
+            position: sticky; top: 0; z-index: 30;
             background-color: rgba(248, 249, 250, 0.95);
             backdrop-filter: blur(4px);
             border-bottom: 1px solid #e2e8f0;
             padding-bottom: 4px; padding-top: 2px;
             margin-bottom: 4px;
+            /* グリッドと同じカラム定義を適用 */
             display: grid;
-            grid-template-columns: 36px repeat(12, 1fr); /* 明示的に指定 */
-            gap: var(--cell-gap);
+            grid-template-columns: calc(36px * var(--scale)) repeat(12, 1fr);
+            gap: 2px;
+            width: 100%; /* 親グリッドと同じ幅 */
         }
 
         .header-cell { 
-            text-align: center; font-size: 9px; font-weight: bold; color: #94a3b8; 
-            height: 32px; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 2px;
+            text-align: center; 
+            font-size: calc(9px * var(--scale)); 
+            font-weight: bold; color: #94a3b8; 
+            height: calc(32px * var(--scale)); /* 高さもスケール */
+            display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 2px;
         }
-        
-        /* 縦軸固定用のスタイル */
-        .header-cell:first-child {
-            position: sticky; left: 0; z-index: 50;
-            background-color: rgba(248, 249, 250, 0.95);
-        }
+        .birth-cake { font-size: calc(10px * var(--scale)); margin-bottom: -2px; display: block; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+
         .year-cell {
-            position: sticky; left: 0; z-index: 30;
-            background-color: #fff; /* 背景色必須 */
-            font-size: 10px; font-weight: 900; color: #cbd5e1;
+            position: sticky; left: 0; z-index: 20; /* 左固定 */
+            background-color: rgba(248, 249, 250, 0.95); /* 透過防止 */
+            font-size: calc(10px * var(--scale)); 
+            font-weight: 900; color: #cbd5e1;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             line-height: 1;
             writing-mode: horizontal-tb; 
             transform: none;
-            border-right: 1px solid transparent; /* 見た目調整 */
+            /* セル高さの確保（正方形グリッドに合わせる） */
+            height: auto; 
+            aspect-ratio: 36 / 100; /* 大体の比率 */
         }
-
-        .birth-cake { font-size: 10px; margin-bottom: -2px; display: block; animation: bounce 2s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
-
         .year-label { display: block; }
         .age-label { 
-            font-size: 8px; color: var(--accent-color); margin-top: 1px; 
-            font-weight: bold; opacity: 0.8; white-space: nowrap; transform: scale(0.9);
+            font-size: calc(8px * var(--scale)); 
+            color: var(--accent-color); margin-top: 1px; 
+            font-weight: bold; opacity: 0.8; white-space: nowrap; 
         }
 
         .jacket-cell {
-            aspect-ratio: 1 / 1; background-color: #e2e8f0; border-radius: 3px;
+            aspect-ratio: 1 / 1; 
+            background-color: #e2e8f0; border-radius: 3px;
             position: relative; overflow: hidden; transition: transform 0.1s;
+            display: flex; align-items: center; justify-content: center; /* 左右中央揃え */
         }
         .jacket-cell:active { transform: scale(0.9); }
         
@@ -243,29 +245,6 @@
             width: 100%; height: 100%; object-fit: cover; display: block;
             box-sizing: border-box;
         }
-
-        /* LIVEセル用スタイル */
-        .live-cell {
-            width: 100%; height: 100%;
-            display: flex; flex-direction: column;
-            border-radius: 3px; overflow: hidden;
-        }
-        .live-item {
-            flex: 1;
-            display: flex; align-items: center; justify-content: center;
-            text-align: center;
-            font-size: 6px; /* 指定: 6px */
-            line-height: 1.1;
-            font-weight: bold;
-            word-break: break-all; /* 折り返し */
-            padding: 1px;
-            overflow: hidden;
-        }
-        /* LLDB Live たすき色設定 */
-        .live-pop { background-color: #fee2e2; color: #ef4444; } /* Red */
-        .live-rock { background-color: #e0f2fe; color: #0ea5e9; } /* Blue */
-        .live-aloha { background-color: #fef9c3; color: #eab308; } /* Yellow */
-        .live-event { background-color: #f1f5f9; color: #64748b; } /* Gray */
 
         /* 枠線スタイル */
         .border-album { border: 2px solid var(--border-album); }
@@ -294,17 +273,47 @@
         /* 季節の絵文字（透かし） */
         .empty-cell {
             border-radius: 2px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+            aspect-ratio: 1 / 1;
+            flex-direction: column; /* ライブ情報を縦に積むため */
+            padding: 1px;
         }
-        .empty-cell::after {
-            font-size: 14px; opacity: 0.15; pointer-events: none; filter: grayscale(30%);
+        .empty-cell.no-live::after {
+            font-size: calc(14px * var(--scale)); 
+            opacity: 0.15; pointer-events: none; filter: grayscale(30%);
         }
-        .empty-cell.season-winter::after { content: '❄️'; }
-        .empty-cell.season-spring::after { content: '🌸'; }
-        .empty-cell.season-summer::after { content: '🌻'; }
-        .empty-cell.season-autumn::after { content: '🍁'; }
+        .empty-cell.no-live.season-winter::after { content: '❄️'; }
+        .empty-cell.no-live.season-spring::after { content: '🌸'; }
+        .empty-cell.no-live.season-summer::after { content: '🌻'; }
+        .empty-cell.no-live.season-autumn::after { content: '🍁'; }
 
-        .future-cell { border: 1px dashed rgba(0,0,0,0.05); }
+        .future-cell { border: 1px dashed rgba(0,0,0,0.05); aspect-ratio: 1/1; }
         .birth-month-header { color: var(--accent-color); font-weight: 900; }
+
+        /* ライブ情報のスタイル */
+        .live-text {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6px; /* 要件により6px固定 (ただしzoomで変わるように変数は使う) */
+            font-size: calc(6px * var(--scale));
+            line-height: 1.1;
+            text-align: center;
+            word-break: break-all;
+            white-space: normal;
+            font-weight: bold;
+            border-radius: 1px;
+            margin-bottom: 1px;
+            overflow: hidden;
+        }
+        .live-text:last-child { margin-bottom: 0; }
+
+        /* ライブ色分け (LLDB Liveと統一) */
+        .type-pop { background-color: #FEE2E2; color: #EF4444; } /* Red */
+        .type-rock { background-color: #E0F2FE; color: #0284C7; } /* Blue */
+        .type-aloha { background-color: #FEF9C3; color: #A16207; } /* Yellow (文字色濃いめ) */
+        .type-event { background-color: #F1F5F9; color: #475569; } /* Gray */
 
         /* モーダル拡張 */
         .modal-overlay {
@@ -320,14 +329,27 @@
             max-height: 85vh; overflow-y: auto; overflow-x: hidden;
         }
         .modal-overlay.open .modal-card-expanded { transform: scale(1); }
+
+        /* 注釈テキスト */
+        .zoom-hint {
+            text-align: center;
+            font-size: 10px;
+            color: #94a3b8;
+            padding: 8px 0;
+            background-color: var(--bg-color);
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 25;
+        }
     </style>
 </head>
 <body>
 
-    <main class="w-full max-w-lg mx-auto">
+    <main class="w-full max-w-lg mx-auto flex flex-col h-screen">
         
-        <!-- 入力エリア -->
-        <div id="input-area" class="card-base m-4 bg-white">
+        <div id="input-area" class="card-base m-4 bg-white flex-shrink-0">
             <div class="flex items-end gap-3">
                 <div class="flex-1">
                     <label class="block text-xs font-bold text-gray-400 mb-1.5 ml-1">生年月日を選択してね</label>
@@ -343,10 +365,9 @@
             </div>
         </div>
 
-        <div id="content-area" class="hidden fade-in px-2">
+        <div id="content-area" class="hidden fade-in px-2 flex-1 overflow-hidden flex flex-col">
             
-            <!-- 年表タブ (変更なし) -->
-            <div id="view-history" class="hidden">
+            <div id="view-history" class="hidden h-full overflow-y-auto pb-24">
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
                     <table class="history-table">
                         <thead>
@@ -364,24 +385,14 @@
                 <div class="h-8"></div>
             </div>
 
-            <!-- マップ（グリッド）タブ -->
-            <div id="view-map" class="hidden">
-                <!-- Grid Container -->
-                <div id="grid-container" class="disco-grid bg-white rounded-2xl shadow-sm border border-gray-100 pb-4 pt-1 select-none">
-                    <!-- JSで生成 -->
-                </div>
-                <!-- 拡大縮小のヒント -->
-                <div class="text-center mt-4 mb-8">
-                    <p class="text-[10px] text-gray-400 font-bold bg-white/50 inline-block px-3 py-1 rounded-full border border-gray-100">
-                        ※２本指で拡大/縮小できるよ
-                    </p>
-                </div>
+            <div id="view-map" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 relative">
+                <div id="grid-wrapper">
+                    </div>
+                <div class="zoom-hint">※２本指で拡大/縮小できるよ</div>
             </div>
             
-            <!-- 今日の自分タブ -->
-            <div id="view-today" class="hidden p-2">
+            <div id="view-today" class="hidden p-2 h-full overflow-y-auto pb-24">
                 
-                <!-- 1. 今日のあなたの日数 -->
                 <div class="bg-white rounded-2xl shadow-sm p-6 mb-6 border border-gray-100 text-center relative overflow-hidden">
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">今日のあなた</h3>
                     <div class="flex items-baseline justify-center gap-1">
@@ -389,7 +400,6 @@
                     </div>
                 </div>
 
-                <!-- 2. つなぎのテキスト -->
                 <div class="text-center mb-6">
                     <div class="inline-block bg-gray-100 text-gray-600 text-xs font-bold px-4 py-2 rounded-full shadow-inner border border-gray-200">
                         そのころ aikoがリリースしたCDは...
@@ -397,9 +407,7 @@
                     <div class="h-4 w-0.5 bg-gray-200 mx-auto mt-1"></div>
                 </div>
 
-                <!-- 3. CD情報カード -->
                 <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden relative">
-                    <!-- ヘッダー部分 -->
                     <div class="bg-[#2A9D8F] p-4 text-white text-center">
                          <div class="inline-block bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold mb-1 backdrop-blur-sm border border-white/30">
                              <span id="match-cd-type">TYPE</span>
@@ -408,31 +416,27 @@
                     </div>
 
                     <div class="p-5">
-                        <!-- ジャケット画像 (初回・通常 並列 / 帯なし) -->
                         <div class="flex gap-4 mb-6">
                             <div class="flex-1">
-                                <div class="cd-jacket-container relative group w-full">
+                                <div class="relative group w-full">
                                     <img id="match-img-first" src="" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                </div>
+                                    </div>
                             </div>
                             <div class="flex-1">
-                                <div class="cd-jacket-container relative group w-full">
+                                <div class="relative group w-full">
                                     <img id="match-img-regular" src="" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                </div>
+                                    </div>
                             </div>
                         </div>
 
-                        <!-- 収録曲 -->
                         <div class="mb-6">
                             <h4 class="text-xs font-bold text-gray-400 border-b border-gray-100 pb-1 mb-2 flex items-center gap-1">
                                 <i data-lucide="music" class="w-3 h-3"></i> 収録曲
                             </h4>
                             <div id="match-tracks" class="text-sm text-gray-600 leading-relaxed font-medium bg-gray-50 p-4 rounded-xl border border-dashed border-gray-200">
-                                <!-- Tracks will be inserted here -->
-                            </div>
+                                </div>
                         </div>
 
-                        <!-- リリース日・aiko年齢 -->
                         <div class="bg-[#e0f2f1] rounded-xl p-4 flex flex-col gap-2 text-xs">
                             <div class="flex justify-between items-center border-b border-[#2A9D8F]/10 pb-2">
                                 <div class="text-[#1F7A6F] font-bold opacity-70">リリース日</div>
@@ -450,7 +454,7 @@
             </div>
         </div>
 
-        <div id="loading" class="hidden text-center py-20">
+        <div id="loading" class="hidden text-center py-20 absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center">
             <div class="animate-spin text-[#2A9D8F] mb-3 mx-auto w-10 h-10"><i data-lucide="loader-2" class="w-10 h-10"></i></div>
             <p class="text-sm text-gray-400 animate-pulse">
                 データを読み込んでいます...<br>
@@ -475,24 +479,18 @@
             </div>
         </div>
     </nav>
-    <!-- グリッド詳細モーダル -->
     <div id="detail-modal" class="modal-overlay" onclick="closeModal()">
         <div class="modal-card-expanded" onclick="event.stopPropagation()">
-            <!-- ヘッダー (年月) -->
             <div class="bg-[#2A9D8F] p-4 text-white text-center sticky top-0 z-10 shadow-sm">
                  <h2 id="modal-header-date" class="text-xl font-black leading-tight tracking-widest font-mono">YYYY.MM</h2>
             </div>
 
             <div class="p-5">
-                <!-- CD情報リストコンテナ -->
                 <div id="modal-cd-list" class="space-y-12">
-                    <!-- JSで動的生成 -->
-                </div>
+                    </div>
 
-                <!-- 共通情報（自分・ライブ） -->
                 <div id="modal-common-info" class="space-y-4 pt-8 mt-8 border-t-2 border-dashed border-gray-100">
-                     <!-- あなたの情報 -->
-                    <div class="space-y-2">
+                     <div class="space-y-2">
                         <h4 class="text-xs font-bold text-gray-400 flex items-center gap-1 border-b border-gray-100 pb-1">
                             <i data-lucide="user" class="w-3 h-3"></i> 当時のあなた
                         </h4>
@@ -502,7 +500,6 @@
                         </div>
                     </div>
 
-                    <!-- ライブ情報 -->
                     <div id="modal-live-section" class="space-y-2 hidden">
                         <h4 class="text-xs font-bold text-gray-400 flex items-center gap-1 border-b border-gray-100 pb-1">
                             <i data-lucide="mic-2" class="w-3 h-3 text-red-400"></i> この月のLIVE
@@ -525,13 +522,14 @@
 
         let allData = null;
         let birthDate = null;
-        let loadingPromise = null;
+        let loadingPromise = null; // ★追加
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             populateDates();
+            
+            // ★追加: 即時読み込み開始
             startDataLoading();
-            setupPinchZoom(); // ★追加: ピンチズーム初期化
             
             const savedBirth = localStorage.getItem('lldb_user_birth');
             if (savedBirth) {
@@ -540,52 +538,21 @@
                 document.getElementById('month').value = parseInt(m);
                 document.getElementById('day').value = parseInt(d);
             }
+
+            // ピンチズームのセットアップ
+            setupPinchZoom();
         });
 
-        // ★追加: ピンチイン/ピンチアウト機能の実装
-        function setupPinchZoom() {
-            const gridContainer = document.getElementById('grid-container');
-            const mapContainer = document.getElementById('view-map');
-            let initialDistance = 0;
-            let initialWidth = 100; // %
-            let currentWidth = 100; // %
-
-            mapContainer.addEventListener('touchstart', (e) => {
-                if (e.touches.length === 2) {
-                    initialDistance = Math.hypot(
-                        e.touches[0].pageX - e.touches[1].pageX,
-                        e.touches[0].pageY - e.touches[1].pageY
-                    );
-                    // 現在のwidth%を取得 (styleから取得できなければ100)
-                    const styleWidth = gridContainer.style.width;
-                    currentWidth = styleWidth ? parseFloat(styleWidth) : 100;
-                }
-            }, { passive: true });
-
-            mapContainer.addEventListener('touchmove', (e) => {
-                if (e.touches.length === 2) {
-                    const dist = Math.hypot(
-                        e.touches[0].pageX - e.touches[1].pageX,
-                        e.touches[0].pageY - e.touches[1].pageY
-                    );
-                    
-                    if (initialDistance > 0) {
-                        const scale = dist / initialDistance;
-                        let newWidth = currentWidth * scale;
-                        
-                        // 最小100%（画面幅）、最大400%に制限
-                        if (newWidth < 100) newWidth = 100;
-                        if (newWidth > 400) newWidth = 400;
-
-                        gridContainer.style.width = `${newWidth}%`;
-                    }
-                }
-            }, { passive: true });
-        }
-
+        // ★追加: データ読み込み関数
         function startDataLoading() {
             loadingPromise = new Promise(async (resolve) => {
-                if (allData) { resolve(allData); return; }
+                // すでにデータがあれば即終了
+                if (allData) {
+                    resolve(allData);
+                    return;
+                }
+
+                // 1. キャッシュ確認
                 try {
                     const cache = localStorage.getItem(CACHE_KEY);
                     if (cache) {
@@ -595,6 +562,7 @@
                     }
                 } catch (e) { console.error("Cache Error", e); }
 
+                // 2. APIフェッチ
                 try {
                     const res = await fetch(`${GAS_API_URL}?action=getHistoryData`);
                     const json = await res.json();
@@ -603,7 +571,7 @@
                     resolve(allData);
                 } catch (e) {
                     console.error(e);
-                    resolve(null);
+                    resolve(null); // エラー時はnull
                 }
             });
         }
@@ -629,7 +597,7 @@
                 safeTrackEvent('screen_view', { screen_name: 'History_TodayMe' });
             } 
             else if (tabName === 'map') {
-                if (allData && birthDate) renderGrid(allData.listData, allData.historyData);
+                if (allData && birthDate) renderGrid(allData.listData);
                 safeTrackEvent('screen_view', { screen_name: 'History_Map' });
             }
             lucide.createIcons();
@@ -642,13 +610,19 @@
             birthDate = new Date(y, m - 1, d);
             localStorage.setItem('lldb_user_birth', `${y}-${m}-${d}`);
 
-            safeTrackEvent('generate_lead', { item_category: 'history_timeline' });
+            // GA4 Tracking
+            safeTrackEvent('generate_lead', {
+                item_category: 'history_timeline'
+            });
 
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('content-area').classList.add('hidden');
 
+            // ★修正: データ読み込み待ちロジック
             if (!allData) {
+                // バックグラウンド読み込みの完了を待つ
                 await loadingPromise;
+                
                 if (!allData) {
                     alert('データの読み込みに失敗しました。');
                     document.getElementById('loading').classList.add('hidden');
@@ -657,7 +631,7 @@
             }
 
             renderTimeline();
-            renderGrid(allData.listData, allData.historyData); // HistoryDataも渡す
+            renderGrid(allData.listData);
             renderTodayStats(); 
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('content-area').classList.remove('hidden');
@@ -870,41 +844,79 @@
             }
         }
 
-        // 略称変換ヘルパー
-        function getLiveAbbr(liveName) {
-            if (!liveName) return '';
-            // 正規表現でLLP, LLR, LLAを抽出
-            if (liveName.includes('Love Like Pop')) {
-                const match = liveName.match(/Love Like Pop\s*(\S+)/);
-                return match ? `LLP${match[1]}` : 'LLP';
-            }
-            if (liveName.includes('Love Like Rock')) {
-                 const match = liveName.match(/Love Like Rock\s*(\S+)/);
-                 // "Limited" などの扱いも考慮しつつ、数字があればLLR+数字にする
-                 return match ? `LLR${match[1]}` : 'LLR';
-            }
-            if (liveName.includes('Love Like Aloha')) {
-                 const match = liveName.match(/Love Like Aloha\s*(\S+)/);
-                 return match ? `LLA${match[1]}` : 'LLA';
-            }
-            // それ以外はそのまま表示（長い場合はCSSで折り返される）
-            return liveName;
+        // --- ★NEW: ピンチズーム制御ロジック ---
+        function setupPinchZoom() {
+            const container = document.getElementById('view-map');
+            let initialDistance = 0;
+            let currentScale = 1.0;
+            const minScale = 0.5;
+            const maxScale = 2.0;
+
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    e.preventDefault(); // ブラウザ標準ズーム無効化
+                    initialDistance = getDistance(e.touches[0], e.touches[1]);
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const newDistance = getDistance(e.touches[0], e.touches[1]);
+                    const delta = newDistance / initialDistance;
+                    
+                    let newScale = currentScale * delta;
+                    // 制限
+                    if (newScale < minScale) newScale = minScale;
+                    if (newScale > maxScale) newScale = maxScale;
+
+                    document.documentElement.style.setProperty('--scale', newScale);
+                    // 次の計算のために現在値を更新しない（指を離すまで継続計算）... ではなく
+                    // deltaは「前回からの変化」ではなく「開始時からの変化」として扱うと飛びにくいが
+                    // ここではシンプルに直前の距離で更新していく方式をとる
+                    // initialDistance = newDistance; 
+                    // currentScale = newScale; 
+                    // ↑これだと感度が良すぎるので、
+                    // requestAnimationFrame等で描画するのがベターだが、簡易実装として
+                    // scaleを反映だけして、touchendで保存する方式にするのが安定するが、
+                    // 今回はシンプルに CSS変数更新だけ行う。
+                    
+                    // タッチのたびに初期値をリセットする方式で実装
+                    // (touchmove内で initialDistance を更新すると加速してしまうので、比率計算はしない)
+                    // 代わりに scale を加算減算する
+                    
+                    const diff = newDistance - initialDistance;
+                    // 感度調整
+                    const sensitivity = 0.005;
+                    newScale = currentScale + (diff * sensitivity);
+                    
+                    if (newScale < minScale) newScale = minScale;
+                    if (newScale > maxScale) newScale = maxScale;
+                    
+                    document.documentElement.style.setProperty('--scale', newScale);
+                }
+            }, { passive: false });
+
+            container.addEventListener('touchend', (e) => {
+                if (e.touches.length < 2) {
+                    // 現在のCSS変数の値を保存
+                    const style = getComputedStyle(document.documentElement);
+                    currentScale = parseFloat(style.getPropertyValue('--scale'));
+                }
+            });
         }
 
-        // ライブタイプの色決定ヘルパー
-        function getLiveColorClass(liveName) {
-            if (!liveName) return 'live-event';
-            if (liveName.includes('Pop')) return 'live-pop';
-            if (liveName.includes('Rock')) return 'live-rock';
-            if (liveName.includes('Aloha')) return 'live-aloha';
-            return 'live-event';
+        function getDistance(touch1, touch2) {
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            return Math.sqrt(dx * dx + dy * dy);
         }
 
-        function renderGrid(listData, historyData) {
-            const container = document.getElementById('grid-container');
+        function renderGrid(listData) {
+            const wrapper = document.getElementById('grid-wrapper');
             if(!listData) return;
 
-            // 1. CDデータをマップ化
+            // リリースデータのマップ化
             const releaseMap = {};
             listData.forEach(item => {
                 if(!item.releaseDate) return;
@@ -913,21 +925,23 @@
                 if (!releaseMap[key]) releaseMap[key] = [];
                 releaseMap[key].push(item);
             });
+
+            // ライブデータのマップ化
+            const liveMap = {};
+            if (allData.historyData) {
+                allData.historyData.forEach(row => {
+                    if (row.date && row.live) {
+                        const d = new Date(row.date);
+                        const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+                        if (!liveMap[key]) liveMap[key] = [];
+                        liveMap[key].push(row.live);
+                    }
+                });
+            }
+
             Object.keys(releaseMap).forEach(key => {
                 releaseMap[key].sort((a, b) => new Date(a.releaseDate) - new Date(b.releaseDate));
             });
-
-            // 2. Liveデータをマップ化（重複除外）
-            const liveMap = {};
-            if(historyData) {
-                historyData.forEach(item => {
-                    if(!item.date || !item.live) return;
-                    const d = new Date(item.date);
-                    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-                    if (!liveMap[key]) liveMap[key] = new Set();
-                    liveMap[key].add(item.live);
-                });
-            }
 
             const startYear = 1998;
             const currentYear = new Date().getFullYear();
@@ -936,9 +950,9 @@
 
             let html = '';
             
-            // ヘッダー行生成（col-span-fullでグリッド内配置、sticky適用済み）
-            html += `<div class="header-row col-span-full">`;
-            html += `<div class="header-cell" style="background-color:rgba(248, 249, 250, 0.95)"></div>`; // 左上空セル
+            // ヘッダー行
+            html += `<div class="header-row">`;
+            html += `<div></div>`; // 左上空セル
             for (let m = 1; m <= 12; m++) {
                 const isBirthMonth = (m === birthMonth);
                 const cakeHtml = isBirthMonth ? '<span class="birth-cake">🎂</span>' : '';
@@ -946,6 +960,9 @@
             }
             html += `</div>`;
 
+            // グリッド本体
+            html += `<div class="disco-grid">`;
+            
             for (let y = startYear; y <= endYear; y++) {
                 let ageLabel = '';
                 const birthYear = birthDate.getFullYear();
@@ -958,8 +975,8 @@
 
                 for (let m = 1; m <= 12; m++) {
                     const key = `${y}-${m}`;
-                    const cdItems = releaseMap[key];
-                    const liveItems = liveMap[key] ? Array.from(liveMap[key]) : [];
+                    const releases = releaseMap[key];
+                    const lives = liveMap[key];
                     const isFuture = new Date(y, m-1) > new Date();
                     
                     let colClass = '';
@@ -968,20 +985,19 @@
                     else if (m >= 6 && m <= 8) colClass = 'season-summer';
                     else if (m >= 9 && m <= 11) colClass = 'season-autumn';
 
-                    // 優先順位: CD > Live > 空白
-                    if (cdItems && cdItems.length > 0) {
-                        // --- CDがある場合（既存ロジック） ---
-                        const dataJson = JSON.stringify(cdItems).replace(/"/g, '&quot;');
-                        
+                    // 1. CDがある場合 (画像優先)
+                    if (releases && releases.length > 0) {
+                        const dataJson = JSON.stringify(releases).replace(/"/g, '&quot;');
                         let contentHtml = '';
-                        if (cdItems.length === 1) {
-                            const item = cdItems[0];
+                        
+                        if (releases.length === 1) {
+                            const item = releases[0];
                             const imgUrl = item.img2 || item.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
                             const borderClass = getBorderClass(item.type);
                             contentHtml = `<img src="${imgUrl}" loading="lazy" class="jacket-img-base ${borderClass}">`;
                         } else {
-                            const first = cdItems[0];
-                            const last = cdItems[cdItems.length - 1];
+                            const first = releases[0];
+                            const last = releases[releases.length - 1];
                             const img1 = first.img2 || first.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
                             const img2 = last.img2 || last.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
                             const border1 = getBorderClass(first.type);
@@ -998,44 +1014,42 @@
                                 ${contentHtml}
                             </div>
                         `;
-                    } else if (liveItems.length > 0) {
-                        // --- CDはなく、Liveがある場合（新規ロジック） ---
-                        // LiveデータをJSON化して渡すため、ダミーのオブジェクト構造を作成
-                        // ※既存のopenModalはCD情報を期待しているが、クリック時の挙動は維持するか、Live検索にするか。
-                        // 今回の指示では「マップの中に文字だけ記載」とあるため、クリック挙動は既存のLive検索と同様が望ましいが
-                        // jacket-cellのクリックはopenModal(詳細表示)に紐付いている。
-                        // 一旦、クリックでその月の詳細モーダルが開くように、ダミーCDデータ(空)を作成して渡す
-                        // モーダル側でLive情報が表示されるため。
-                        
-                        const dummyItems = [{ releaseDate: `${y}/${m}/1`, title: '', tracks: '', type: '' }]; // 日付だけ渡す
-                        const dataJson = JSON.stringify(dummyItems).replace(/"/g, '&quot;');
-                        
-                        let liveInnerHtml = '';
-                        liveItems.forEach(liveName => {
-                            const abbr = getLiveAbbr(liveName);
-                            const colorClass = getLiveColorClass(abbr);
-                            liveInnerHtml += `<div class="live-item ${colorClass}">${abbr}</div>`;
+                    } 
+                    // 2. CDはないがライブがある場合
+                    else if (lives && lives.length > 0) {
+                        let liveHtml = '';
+                        lives.forEach(liveName => {
+                            const type = getLiveType(liveName);
+                            // 略称生成（長いので適当に切り詰めるロジックを入れるか、そのまま表示してCSSで隠すか）
+                            // 要件：文字サイズ6px、セル内で折り返す
+                            // 略称: "Love Like " を削除
+                            let shortName = liveName.replace(/Love Like /g, '').replace(/ vol./g, '');
+                            
+                            liveHtml += `<div class="live-text type-${type}">${shortName}</div>`;
                         });
-
-                        html += `
-                            <div class="jacket-cell cursor-pointer shadow-sm" onclick="openModal(this)" data-items="${dataJson}">
-                                <div class="live-cell">
-                                    ${liveInnerHtml}
-                                </div>
-                            </div>
-                        `;
-
-                    } else {
-                        // --- 空白 ---
+                        
+                        html += `<div class="empty-cell ${colClass}">${liveHtml}</div>`;
+                    }
+                    // 3. 何もない場合
+                    else {
                         if (isFuture) {
                             html += `<div class="future-cell ${colClass}"></div>`;
                         } else {
-                            html += `<div class="empty-cell ${colClass}"></div>`;
+                            html += `<div class="empty-cell no-live ${colClass}"></div>`;
                         }
                     }
                 }
             }
-            container.innerHTML = html;
+            html += `</div>`; // .disco-grid end
+            wrapper.innerHTML = html;
+        }
+
+        function getLiveType(name) {
+            const n = name.toLowerCase();
+            if (n.includes('pop')) return 'pop';
+            if (n.includes('rock')) return 'rock';
+            if (n.includes('aloha')) return 'aloha';
+            return 'event';
         }
 
         function getBorderClass(type) {
@@ -1057,74 +1071,65 @@
             const listContainer = document.getElementById('modal-cd-list');
             listContainer.innerHTML = '';
 
-            // CD情報の表示（Liveのみの場合はタイトルが空なので表示しないなどの制御が必要だが、
-            // 既存のitems[0].titleがあるか判定して表示する）
-            
-            const validItems = items.filter(i => i.title && i.title !== '');
-            
-            if (validItems.length > 0) {
-                validItems.forEach(data => {
-                    const d = new Date(data.releaseDate);
-                    const fullDateStr = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
-                    const aikoAge = calculateDetailedAge(AIKO_BIRTH, d);
-                    
-                    let tracksHtml = '';
-                    if (data.tracks) {
-                        const tracks = String(data.tracks).split(/[\n]/).map(t => t.trim()).filter(t => t);
-                        if (tracks.length > 0) {
-                            tracksHtml = '<div class="flex flex-col gap-1">';
-                            tracks.forEach(t => {
-                                tracksHtml += `<div class="text-gray-700 leading-normal">${t}</div>`;
-                            });
-                            tracksHtml += '</div>';
-                        } else {
-                            tracksHtml = `<div class="text-gray-700 leading-normal">${data.tracks}</div>`;
-                        }
-                    } else { tracksHtml = '<span class="text-gray-400">情報なし</span>'; }
+            items.forEach(data => {
+                const d = new Date(data.releaseDate);
+                const fullDateStr = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+                const aikoAge = calculateDetailedAge(AIKO_BIRTH, d);
+                
+                let tracksHtml = '';
+                if (data.tracks) {
+                    const tracks = String(data.tracks).split(/[\n]/).map(t => t.trim()).filter(t => t);
+                    if (tracks.length > 0) {
+                        tracksHtml = '<div class="flex flex-col gap-1">';
+                        tracks.forEach(t => {
+                            tracksHtml += `<div class="text-gray-700 leading-normal">${t}</div>`;
+                        });
+                        tracksHtml += '</div>';
+                    } else {
+                        tracksHtml = `<div class="text-gray-700 leading-normal">${data.tracks}</div>`;
+                    }
+                } else { tracksHtml = '<span class="text-gray-400">情報なし</span>'; }
 
-                    const cardHtml = `
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
-                                <span class="text-xs font-bold bg-white px-2 py-1 rounded border border-gray-200">${data.type || 'CD'}</span>
-                                <span class="text-xs font-mono text-gray-400">${fullDateStr}</span>
+                const cardHtml = `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+                            <span class="text-xs font-bold bg-white px-2 py-1 rounded border border-gray-200">${data.type || 'CD'}</span>
+                            <span class="text-xs font-mono text-gray-400">${fullDateStr}</span>
+                        </div>
+                        <div class="p-4">
+                            <h3 class="text-lg font-bold text-gray-800 leading-tight mb-4 text-center">${data.title}</h3>
+                            
+                            <div class="flex gap-3 mb-5">
+                                <div class="flex-1">
+                                    <div class="relative group w-full">
+                                        <img src="${data.img1 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="relative group w-full">
+                                        <img src="${data.img2 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="p-4">
-                                <h3 class="text-lg font-bold text-gray-800 leading-tight mb-4 text-center">${data.title}</h3>
-                                
-                                <div class="flex gap-3 mb-5">
-                                    <div class="flex-1">
-                                        <div class="cd-jacket-container relative group w-full">
-                                            <img src="${data.img1 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                        </div>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="cd-jacket-container relative group w-full">
-                                            <img src="${data.img2 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <div class="bg-[#e0f2f1]/50 rounded-lg p-3 text-xs flex justify-between items-center mb-4">
-                                    <span class="font-bold text-[#1F7A6F] opacity-70">当時のaiko</span>
-                                    <span class="font-bold text-[#2A9D8F] text-right">${aikoAge}</span>
-                                </div>
+                            <div class="bg-[#e0f2f1]/50 rounded-lg p-3 text-xs flex justify-between items-center mb-4">
+                                <span class="font-bold text-[#1F7A6F] opacity-70">当時のaiko</span>
+                                <span class="font-bold text-[#2A9D8F] text-right">${aikoAge}</span>
+                            </div>
 
-                                <div>
-                                    <h4 class="text-xs font-bold text-gray-400 flex items-center gap-1 border-b border-gray-100 pb-1 mb-2">
-                                        <i data-lucide="music" class="w-3 h-3"></i> 収録曲
-                                    </h4>
-                                    <div class="text-sm text-gray-600 leading-relaxed font-medium bg-gray-50 p-3 rounded-lg border border-dashed border-gray-200">
-                                        ${tracksHtml}
-                                    </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-gray-400 flex items-center gap-1 border-b border-gray-100 pb-1 mb-2">
+                                    <i data-lucide="music" class="w-3 h-3"></i> 収録曲
+                                </h4>
+                                <div class="text-sm text-gray-600 leading-relaxed font-medium bg-gray-50 p-3 rounded-lg border border-dashed border-gray-200">
+                                    ${tracksHtml}
                                 </div>
                             </div>
                         </div>
-                    `;
-                    listContainer.insertAdjacentHTML('beforeend', cardHtml);
-                });
-            } else {
-                 listContainer.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">リリース情報はありません</div>';
-            }
+                    </div>
+                `;
+                listContainer.insertAdjacentHTML('beforeend', cardHtml);
+            });
 
             const userAge = calculateAgeAtDate(birthDate, firstDate);
             const userStage = getLifeStage(firstDate, birthDate);
@@ -1169,7 +1174,7 @@
             overlay.classList.add('open');
             document.querySelector('.modal-card-expanded').scrollTop = 0;
             
-            safeTrackEvent('select_content', { content_type: 'map_detail', item_name: items[0].title || 'LiveInfo' });
+            safeTrackEvent('select_content', { content_type: 'map_detail', item_name: items[0].title });
         }
 
         function closeModal() {
