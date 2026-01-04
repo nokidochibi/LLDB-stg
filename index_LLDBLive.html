@@ -781,7 +781,7 @@ const animationFinishedPromise = new Promise(resolve => {
 
 document.addEventListener('DOMContentLoaded', () => {
     // アプリのバージョン定数（ここを更新するだけで全ユーザーに強制リロードがかかります）
-    const CURRENT_VERSION = 'v4.4.1'; 
+    const CURRENT_VERSION = 'v4.4.3'; 
     const VERSION_KEY = 'lldb_installed_version';
     
     // 保存されているバージョンを確認
@@ -974,6 +974,12 @@ function initializeApp(data) {
   renderLastPlayedRanking();
   renderVenueRanking();
   renderVenueLiveCountChart();
+
+  // ★追加: データ到着が遅れて、すでにローディング画面が消えていた場合の保険
+  const loadingDiv = document.getElementById('loading-container');
+  if (loadingDiv && loadingDiv.style.display === 'none') {
+      checkTodayEvents();
+  }
 }
 
 function formatTourName(name) {
