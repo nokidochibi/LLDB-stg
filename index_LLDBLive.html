@@ -781,7 +781,7 @@ const animationFinishedPromise = new Promise(resolve => {
 
 document.addEventListener('DOMContentLoaded', () => {
     // アプリのバージョン定数（ここを更新するだけで全ユーザーに強制リロードがかかります）
-    const CURRENT_VERSION = 'v4.4.4'; 
+    const CURRENT_VERSION = 'v4.4.5'; 
     const VERSION_KEY = 'lldb_installed_version';
     
     // 保存されているバージョンを確認
@@ -2661,13 +2661,14 @@ function checkTodayEvents() {
 }
 
 function processNextAnniversary() {
-    // キューの中身を全て一度に表示するため、ループ処理に変更
+    // キューが空なら何もしない
     if (anniversaryQueue.length === 0) return;
     
-    // 全てのイベントを渡してモーダルを表示
-    showAnniversaryModal(anniversaryQueue);
+    // キューの中身を全て渡してモーダルを表示
+    // 配列のコピーを渡して、元のキューは空にする
+    showAnniversaryModal([...anniversaryQueue]);
     
-    // 表示したらキューを空にする（閉じた後に再度表示されないように）
+    // キューをリセット（閉じた後に再度表示されないように）
     anniversaryQueue = [];
 }
 
@@ -2678,13 +2679,17 @@ function showAnniversaryModal(events) {
     let html = '';
     const nowYear = new Date().getFullYear();
 
-    // 順番を保証（ライブ -> CD）
-    // 既にキューへの追加順序がコード上で制御されている（ライブチェック -> CDチェック）ため、
-    // 配列の順序通りに処理すればOKですが、念のためソートも可。今回は配列順で処理。
+    // 引数が配列でない場合（単一オブジェクトの場合）のガード
+    if (!Array.isArray(events)) {
+        events = [events];
+    }
+
+    // 記念日タイトルの表示（件数が多い場合などはここで調整可）
+    // 今回は個別のカード内にタイトルを含める形にするため、全体タイトルは無し
 
     events.forEach(event => {
-        // 複数のカードを区切るためのマージンなどを追加するラッパー
-        html += '<div class="mb-8 last:mb-0">'; 
+        // 各カードを囲むラッパー（マージン確保）
+        html += '<div class="mb-8 last:mb-0 border-b border-dashed border-gray-200 pb-8 last:border-0 last:pb-0">';
 
         if (event.type === 'live') {
             const rec = event.data;
@@ -2698,11 +2703,6 @@ function showAnniversaryModal(events) {
             else if (tourNameLower.includes('love like rock')) { labelType = 'rock'; labelText = 'ROCK'; }
             else if (tourNameLower.includes('love like aloha')) { labelType = 'aloha'; labelText = 'ALOHA'; }
 
-            // ライブカードのHTML生成
-            // onclickイベントで showLiveDetail を呼ぶ際、JSON.stringifyを使うとエスケープが大変なので、
-            // id検索などで特定できるロジックにするか、既存の検索ロジックを利用します。
-            // ここでは簡易的に、日付とツアー名で検索して表示する方式を採用（既存のおみくじと同じ）
-            
             html += `
                 <h2 class="font-bold text-center text-xl mb-4 text-aiko-pink">🎉 ${yearsAgoText}今日は何の日？</h2>
                 <div class="card-base live-card cursor-pointer shadow-md" onclick="closeModal(); showLiveDetail(allLiveRecords.find(r => r.date === '${rec.date}' && r.tourName === '${rec.tourName.replace(/'/g, "\\'")}' ))">
@@ -2716,24 +2716,30 @@ function showAnniversaryModal(events) {
             `;
         } else if (event.type === 'cd') {
             const item = event.data;
-            const releaseYear = new Date(item.releaseDate).getFullYear();
+            const releaseDateObj = new Date(item.releaseDate);
+            const releaseYear = releaseDateObj.getFullYear();
+            const releaseMonth = releaseDateObj.getMonth() + 1;
+            const releaseDay = releaseDateObj.getDate();
+            
             const yearsAgo = nowYear - releaseYear;
             const yearsAgoText = yearsAgo > 0 ? `${yearsAgo}年前の` : '今日の';
+            
+            // 画像がない場合のプレースホルダー（Google Drive等の場合もあるので適宜調整）
             const imgUrl = item.img1 || item.img2 || 'https://placehold.jp/150x150.png?text=No%20Image';
 
             html += `
                 <h2 class="font-bold text-center text-xl mb-4 text-aiko-pink">🎂 ${yearsAgoText}今日は何の日？</h2>
                 <div class="card-base text-center p-4 shadow-md bg-white">
-                    <p class="text-gray-500 font-medium text-xs mb-2">${releaseYear}年.${new Date(item.releaseDate).getMonth()+1}月.${new Date(item.releaseDate).getDate()}日 リリース</p>
+                    <p class="text-gray-500 font-medium text-xs mb-2">${releaseYear}年${releaseMonth}月${releaseDay}日 リリース</p>
                     <div class="flex justify-center mb-3">
-                        <img src="${imgUrl}" class="rounded-md shadow-sm border border-gray-100" style="max-width:160px; max-height:160px; object-fit:cover;">
+                        <img src="${imgUrl}" class="rounded-md shadow-sm border border-gray-100" style="max-width:140px; max-height:140px; object-fit:cover;" onerror="this.style.display='none'">
                     </div>
                     <p class="font-bold text-gray-800 text-lg leading-tight mb-2">${item.title}</p>
                     <span class="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded border border-gray-200">${item.type}</span>
                     
                     <div class="mt-4 pt-3 border-t border-gray-100 text-left">
                         <p class="text-[10px] text-gray-400 mb-1 font-bold">🎵 収録曲</p>
-                        <p class="text-xs text-gray-600 leading-relaxed font-mono text-[11px]">${item.tracks ? item.tracks.replace(/\//g, '<br>') : ''}</p>
+                        <p class="text-xs text-gray-600 leading-relaxed font-mono text-[11px]">${item.tracks ? item.tracks.replace(/\//g, '<br>') : '収録曲情報なし'}</p>
                     </div>
                 </div>
             `;
