@@ -2699,7 +2699,7 @@ function showAnniversaryModal(events) {
             const rec = event.data;
             const recYear = new Date(rec.date).getFullYear();
             const yearsAgo = nowYear - recYear;
-            const yearsAgoText = yearsAgo > 0 ? `${yearsAgo}年前の` : '今日の';
+            const yearsAgoText = yearsAgo > 0 ? `${yearsAgo}年前の` : '';
             
             const tourNameLower = rec.tourName.toLowerCase();
             let labelType = 'other', labelText = 'Event';
@@ -2739,7 +2739,7 @@ function showAnniversaryModal(events) {
             const rDay = releaseDateObj.getDate();
             
             const yearsAgo = nowYear - rYear;
-            const yearsAgoText = yearsAgo > 0 ? `${yearsAgo}年前の` : '今日の';
+            const yearsAgoText = yearsAgo > 0 ? `${yearsAgo}年前の` : '';
             
             // --- 年齢・日数計算ロジック ---
             // 1. 年齢 (Y歳 Mヶ月 D日)
