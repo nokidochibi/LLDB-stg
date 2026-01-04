@@ -2622,21 +2622,25 @@ function checkTodayEvents() {
     const todayMonth = now.getMonth() + 1;
     const todayDate = now.getDate();
 
+    console.log(`Today (JST): ${todayMonth}/${todayDate}`);
+
     anniversaryQueue = [];
 
-    // 日付比較用ヘルパー関数 (文字列から月日を判定)
-    const isSameDate = (dateStr) => {
-        if (!dateStr) return false;
-        // Dateオブジェクトなら文字列化
-        const str = (dateStr instanceof Date) ? 
-            dateStr.toLocaleDateString("ja-JP", {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\//g, '/') :
-            String(dateStr).replace(/-/g, '/'); // 念のためハイフンをスラッシュに
+    // 日付比較用ヘルパー関数
+    const isSameDate = (val) => {
+        if (!val) return false;
+        
+        // 入力が何であれ一度Dateオブジェクトにする
+        const dateObj = new Date(val);
+        if (isNaN(dateObj.getTime())) return false;
 
-        const parts = str.split('T')[0].split('/'); // "2000/01/04" -> ["2000", "01", "04"]
-        if (parts.length < 3) return false;
+        // その時刻を日本時間(JST)に変換した時の月日を取得する
+        // これにより、UTC "2000-01-03T15:00:00Z" (JST 1/4 00:00) も
+        // UTC "2000-01-04T00:00:00Z" (JST 1/4 09:00) も、どちらも「4日」になる
+        const jstObj = new Date(dateObj.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
+        const m = jstObj.getMonth() + 1;
+        const d = jstObj.getDate();
 
-        const m = parseInt(parts[1], 10);
-        const d = parseInt(parts[2], 10);
         return m === todayMonth && d === todayDate;
     };
 
@@ -2653,6 +2657,8 @@ function checkTodayEvents() {
             anniversaryQueue.push({ type: 'cd', data: item });
         }
     });
+
+    console.log(`Hits: ${anniversaryQueue.length}`); // デバッグログ
 
     // キューがあれば処理開始
     if (anniversaryQueue.length > 0) {
