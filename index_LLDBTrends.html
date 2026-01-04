@@ -656,33 +656,33 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // ★追加: キャッシュキー定数
+    const DATA_CACHE_KEY = 'lldb_trends_table_cache';
+
     async function fetchData() {
+        // 1. キャッシュがあれば即表示
+        try {
+            const cached = localStorage.getItem(DATA_CACHE_KEY);
+            if (cached) {
+                const json = JSON.parse(cached);
+                processAndDisplay(json);
+            }
+        } catch (e) { console.warn("Cache load failed", e); }
+
+        // 2. ネットワークから最新データを取得
         try {
             const res = await fetch(`${GAS_API_URL}?action=getTrendsData`);
             const json = await res.json();
             
             if (json.status === 'error') throw new Error(json.message);
 
-            const adaptedData = {
-                headers: [
-                    { text: 'YouTube<br>動画タイトル', key: 'title', type: 'string' },
-                    { text: '視聴回数', key: 'totalViews', type: 'number' },
-                    { text: '公開日', key: 'publishedDate', type: 'date' },
-                    { text: '平均/日<br><small>(全期間)</small>', key: 'avgDailyViews', type: 'number' },
-                    { text: '平均/日<br><small>(過去7日)</small>', key: 'avgViews7Days', type: 'number' }
-                ],
-                data: json.data.map(item => ({
-                    ...item,
-                    totalViews: parseFloat(item.totalViews) || 0,
-                    avgDailyViews: parseFloat(item.avgDailyViews) || 0,
-                    avgViews7Days: (item.avgViews7Days === "(集計中)" ? item.avgViews7Days : parseFloat(item.avgViews7Days) || 0)
-                })),
-                maxTotalViews: json.maxTotalViews || 0,
-                // APIが lastUpdateTime を返しているか確認し、あればセット
-                lastUpdateTime: json.lastUpdateTime || ''
-            };
+            // 3. キャッシュを更新
+            try {
+                localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(json));
+            } catch (e) { console.warn("Cache save failed", e); }
 
-            displayData(adaptedData);
+            // 4. 最新データで再描画
+            processAndDisplay(json);
 
         } catch (e) {
             document.getElementById('error').textContent = "通信エラーが発生しました: " + e.message;
@@ -695,6 +695,30 @@
                 fatal: true
             });
         }
+    }
+
+    // ★追加: データ整形と表示の共通関数
+    function processAndDisplay(json) {
+        const adaptedData = {
+            headers: [
+                { text: 'YouTube<br>動画タイトル', key: 'title', type: 'string' },
+                { text: '視聴回数', key: 'totalViews', type: 'number' },
+                { text: '公開日', key: 'publishedDate', type: 'date' },
+                { text: '平均/日<br><small>(全期間)</small>', key: 'avgDailyViews', type: 'number' },
+                { text: '平均/日<br><small>(過去7日)</small>', key: 'avgViews7Days', type: 'number' }
+            ],
+            data: json.data.map(item => ({
+                ...item,
+                totalViews: parseFloat(item.totalViews) || 0,
+                avgDailyViews: parseFloat(item.avgDailyViews) || 0,
+                avgViews7Days: (item.avgViews7Days === "(集計中)" ? item.avgViews7Days : parseFloat(item.avgViews7Days) || 0)
+            })),
+            maxTotalViews: json.maxTotalViews || 0,
+            // APIが lastUpdateTime を返しているか確認し、あればセット
+            lastUpdateTime: json.lastUpdateTime || ''
+        };
+
+        displayData(adaptedData);
     }
 
     function displayData(data) {
