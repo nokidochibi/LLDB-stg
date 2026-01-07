@@ -235,18 +235,31 @@
         <div class="h-full overflow-auto pb-32"> <table class="w-full text-left border-collapse">
                 <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm text-xs text-gray-500 uppercase font-semibold">
                     <tr>
-                        <th onclick="openFilterModal('era')" class="p-3 cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors">
-                            <div class="flex items-center gap-1">時期 <i data-lucide="filter" class="w-3 h-3 text-gray-300"></i></div>
-                        </th>
+                        <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm text-xs text-gray-500 uppercase font-semibold">
+                            <tr>
+                                <th onclick="openFilterModal('era')" class="p-3 whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors">
+                                    <div class="flex items-center gap-1">時期 <i id="icon-filter-era" data-lucide="filter" class="w-3 h-3 text-gray-300 transition-colors"></i></div>
+                                </th>
+                                <th onclick="openFilterModal('title')" class="p-3 whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors">
+                                    <div class="flex items-center gap-1">曲名 <i id="icon-filter-title" data-lucide="filter" class="w-3 h-3 text-gray-300 transition-colors"></i></div>
+                                </th>
+                                <th onclick="openFilterModal('arranger')" class="p-3 whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors">
+                                    <div class="flex items-center gap-1">編曲 <i id="icon-filter-arranger" data-lucide="filter" class="w-3 h-3 text-gray-300 transition-colors"></i></div>
+                                </th>
+                                <th onclick="openFilterModal('duration')" class="p-3 text-right whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors">
+                                    <div class="flex items-center justify-end gap-1">時間 <i id="icon-filter-duration" data-lucide="filter" class="w-3 h-3 text-gray-300 transition-colors"></i></div>
+                                </th>
+                            </tr>
+                        </thead>
                         <th onclick="openFilterModal('title')" class="p-3 cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors">
                             <div class="flex items-center gap-1">曲名 <i data-lucide="filter" class="w-3 h-3 text-gray-300"></i></div>
                         </th>
                         <th onclick="openFilterModal('arranger')" class="p-3 whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors">
-    <div class="flex items-center gap-1">編曲 <i data-lucide="filter" class="w-3 h-3 text-gray-300"></i></div>
-</th>
-<th onclick="openFilterModal('duration')" class="p-3 text-right whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors">
-    <div class="flex items-center justify-end gap-1">時間 <i data-lucide="filter" class="w-3 h-3 text-gray-300"></i></div>
-</th>
+                            <div class="flex items-center gap-1">編曲 <i data-lucide="filter" class="w-3 h-3 text-gray-300"></i></div>
+                        </th>
+                        <th onclick="openFilterModal('duration')" class="p-3 text-right whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors">
+                            <div class="flex items-center justify-end gap-1">時間 <i data-lucide="filter" class="w-3 h-3 text-gray-300"></i></div>
+                        </th>
                     </tr>
                 </thead>
                 <tbody id="song-list-body" class="text-sm divide-y divide-gray-100">
@@ -341,6 +354,24 @@
                     <button onclick="toggleAllFilters(true)" class="text-orange-500 font-medium">全選択</button>
                     <button onclick="toggleAllFilters(false)" class="text-gray-500">全解除</button>
                 </div>
+            </div>
+            <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50 text-xs">
+                <span class="font-bold text-gray-500" id="filter-column-name">COLUMN</span>
+                <div class="flex gap-3">
+                    <button onclick="toggleAllFilters(true)" class="text-orange-500 font-medium">全選択</button>
+                    <button onclick="toggleAllFilters(false)" class="text-gray-500">全解除</button>
+                </div>
+            </div>
+            
+            <div class="px-4 py-3 border-b border-gray-100 flex gap-2 justify-center bg-white">
+                <button onclick="applySort('asc')" class="flex-1 py-2 px-3 bg-gray-50 hover:bg-orange-50 text-gray-600 hover:text-orange-600 rounded-lg text-xs font-bold border border-gray-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="arrow-up" class="w-3 h-3"></i> 昇順
+                </button>
+                <button onclick="applySort('desc')" class="flex-1 py-2 px-3 bg-gray-50 hover:bg-orange-50 text-gray-600 hover:text-orange-600 rounded-lg text-xs font-bold border border-gray-200 transition flex items-center justify-center gap-2">
+                    <i data-lucide="arrow-down" class="w-3 h-3"></i> 降順
+                </button>
+            </div>
+            <div id="filter-options-list" class="flex-1 overflow-y-auto p-2 space-y-1">
             </div>
             <div id="filter-options-list" class="flex-1 overflow-y-auto p-2 space-y-1">
                 </div>
@@ -872,47 +903,159 @@
             return `${min}:00~${min}:59`;
         }
 
-        function renderSongList() {
-            const tbody = document.getElementById('song-list-body');
-            tbody.innerHTML = '';
+        // ▼ グローバル変数に追加
+let currentSort = { column: null, order: 'asc' }; // ソート状態
+let targetSongForSearch = ''; // 検索対象の一時保存用
 
-            // Filter Logic
-            filteredSongs = allSongs.filter(song => {
-                if (activeFilters.era.length > 0 && !activeFilters.era.includes(song.era)) return false;
-                if (activeFilters.arranger.length > 0 && !activeFilters.arranger.includes(song.arranger)) return false;
-                if (activeFilters.title.length > 0 && !activeFilters.title.includes(song.title)) return false;
-                if (activeFilters.duration.length > 0) {
-                    const bucket = getDurationBucket(song.duration);
-                    if (!activeFilters.duration.includes(bucket)) return false;
-                }
-                return true;
-            });
+// ... 既存のコード ...
 
-            // Filter Bar Toggle
-            const hasFilter = Object.values(activeFilters).some(arr => arr.length > 0);
-            document.getElementById('filter-bar').classList.toggle('hidden', !hasFilter);
+function renderSongList() {
+    const tbody = document.getElementById('song-list-body');
+    tbody.innerHTML = '';
 
-            // Render
-            if (filteredSongs.length === 0) {
-                 tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-gray-400 text-xs">条件に合う曲が見つかりません</td></tr>';
-                 return;
+    // 1. フィルタリング (既存ロジック)
+    filteredSongs = allSongs.filter(song => {
+        if (activeFilters.era.length > 0 && !activeFilters.era.includes(song.era)) return false;
+        if (activeFilters.arranger.length > 0 && !activeFilters.arranger.includes(song.arranger)) return false;
+        if (activeFilters.title.length > 0 && !activeFilters.title.includes(song.title)) return false;
+        if (activeFilters.duration.length > 0) {
+            const bucket = getDurationBucket(song.duration);
+            if (!activeFilters.duration.includes(bucket)) return false;
+        }
+        return true;
+    });
+
+    // 2. ソート処理 (★追加)
+    if (currentSort.column) {
+        filteredSongs.sort((a, b) => {
+            let valA = a[currentSort.column] || '';
+            let valB = b[currentSort.column] || '';
+            
+            // 時間の場合は '4:30' などを比較可能な数値にする特別処理
+            if (currentSort.column === 'duration') {
+                valA = parseDuration(valA);
+                valB = parseDuration(valB);
             }
 
-            filteredSongs.forEach(song => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-orange-50 transition-colors border-b border-gray-100 group';
-                tr.innerHTML = `
-                    <td class="p-3 text-xs text-gray-500 align-top">
-                        ${song.era}
-                    </td>
-                    <td class="p-3 font-medium text-gray-800 break-words min-w-[120px] align-top">${song.title}</td>
-                    <td class="p-3 text-xs text-gray-600 align-top whitespace-nowrap">${song.arranger}</td>
-                    <td class="p-3 text-right text-xs font-mono text-gray-500 align-top whitespace-nowrap">${song.duration}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-            lucide.createIcons();
+            if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
+            if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    // 3. ヘッダーアイコンの更新 (★追加)
+    updateHeaderIcons();
+    
+    // Filter Bar Toggle
+    const hasFilter = Object.values(activeFilters).some(arr => arr.length > 0);
+    document.getElementById('filter-bar').classList.toggle('hidden', !hasFilter);
+
+    if (filteredSongs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-gray-400 text-xs">条件に合う曲が見つかりません</td></tr>';
+        return;
+    }
+
+    // 4. 描画 (★文字サイズ・フォント統一、タップイベント追加)
+    // 曲名も編曲(text-xs text-gray-600)に合わせて統一します
+    filteredSongs.forEach(song => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-orange-50 transition-colors border-b border-gray-100 group cursor-pointer active:scale-[0.99] transition-transform'; // タップ感を追加
+        
+        // ★クリックで確認ダイアログを開く
+        tr.onclick = () => openConfirmModal(song.title);
+
+        tr.innerHTML = `
+            <td class="p-3 text-xs text-gray-600 align-top whitespace-nowrap">
+                ${song.era}
+            </td>
+            <td class="p-3 text-xs text-gray-600 align-top break-words min-w-[120px] font-medium">
+                ${song.title}
+            </td>
+            <td class="p-3 text-xs text-gray-600 align-top whitespace-nowrap">
+                ${song.arranger}
+            </td>
+            <td class="p-3 text-right text-xs text-gray-600 align-top whitespace-nowrap font-mono">
+                ${song.duration}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    lucide.createIcons();
+}
+
+// ★ ソート用のヘルパー関数: 時間文字列を秒数に変換
+function parseDuration(timeStr) {
+    if (!timeStr || timeStr === '-' || timeStr === '不明') return 0;
+    const parts = timeStr.split(':');
+    return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+}
+
+// ★ ヘッダーアイコンの色を変える関数
+function updateHeaderIcons() {
+    const map = { era: 'icon-filter-era', title: 'icon-filter-title', arranger: 'icon-filter-arranger', duration: 'icon-filter-duration' };
+    
+    Object.keys(map).forEach(key => {
+        const iconEl = document.getElementById(map[key]);
+        if (!iconEl) return;
+        
+        // フィルタがかかっているか？
+        const isActive = activeFilters[key].length > 0;
+        // 現在ソート中か？
+        const isSorted = currentSort.column === key;
+
+        // クラスのリセット
+        iconEl.classList.remove('text-gray-300', 'text-black', 'fill-black', 'text-orange-500');
+
+        if (isActive) {
+            // フィルタ適用時: 黒く塗りつぶす (fill-black text-black)
+            iconEl.classList.add('text-black', 'fill-black');
+        } else if (isSorted) {
+             // ソート適用時: オレンジにする
+            iconEl.classList.add('text-orange-500');
+        } else {
+            // 何もなし
+            iconEl.classList.add('text-gray-300');
         }
+    });
+    lucide.createIcons();
+}
+
+// ★ ソート実行関数
+function applySort(order) {
+    // currentFilterColumn はモーダルを開いたときにセットされているグローバル変数
+    currentSort = { column: currentFilterColumn, order: order };
+    renderSongList();
+    closeFilterModal();
+}
+
+// --- 確認モーダル制御 ---
+function openConfirmModal(title) {
+    targetSongForSearch = title;
+    document.getElementById('confirm-song-title').textContent = title;
+    document.getElementById('confirm-modal').classList.remove('hidden');
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirm-modal').classList.add('hidden');
+    targetSongForSearch = '';
+}
+
+function executeSearchFromList() {
+    if (!targetSongForSearch) return;
+    
+    const title = targetSongForSearch;
+    closeConfirmModal();
+
+    // 楽曲タブへ移動
+    switchTab('title');
+    
+    // 検索バーに入力して送信
+    setTimeout(() => {
+        dom.searchInput.value = title;
+        // 送信イベントを発火させて検索実行
+        dom.searchForm.dispatchEvent(new Event('submit', { cancelable: true }));
+    }, 100); // タブ切り替えのアニメーション考慮
+}
 
         // --- Filter Modal Logic ---
         window.openFilterModal = function(column) {
@@ -1007,5 +1150,23 @@
             }
         }
     </script>
+    <div id="confirm-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeConfirmModal()"></div>
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-[85%] max-w-sm relative transform transition-all scale-100 animate-fade-in">
+        <div class="flex flex-col items-center text-center gap-3">
+            <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                <i data-lucide="search" class="w-6 h-6 text-orange-500"></i>
+            </div>
+            <h3 class="font-bold text-gray-800 text-lg">調べてみる？</h3>
+            <p class="text-sm text-gray-600 leading-relaxed">
+                「<span id="confirm-song-title" class="font-bold text-orange-600"></span>」<br>について詳しく検索しますか？
+            </p>
+            <div class="flex gap-3 w-full mt-2">
+                <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">やめる</button>
+                <button onclick="executeSearchFromList()" class="flex-1 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-md">はい</button>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
