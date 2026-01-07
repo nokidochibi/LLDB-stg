@@ -12,14 +12,11 @@
     <link rel="apple-touch-icon" href="https://unavatar.io/twitter/noki_dochibi">
     <link rel="icon" href="https://unavatar.io/twitter/noki_dochibi">
 
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0D09G3X4F1"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
-      // iframe内での重複計測を防ぐため、自動PV送信はOFFにし、必要なイベントのみ手動で送る設定
       gtag('config', 'G-0D09G3X4F1', { 'send_page_view': false });
     </script>
 
@@ -35,7 +32,7 @@
             --bg-color: #F8F9FA;
             --main-orange: #F4A261;
             --main-pink: #ec4899;
-            --bubble-color: #F4A261; /* JSで動的に変更される */
+            --bubble-color: #F4A261;
             --nav-height: 85px;
         }
 
@@ -77,14 +74,12 @@
         /* 吹き出し (Default) */
         .bubble { position: relative; border-radius: 1.2rem; transition: background-color 0.3s, color 0.3s; }
         
-        /* 右（ユーザー）側のしっぽ：var(--bubble-color)を使用 */
         .bubble-right::before {
             content: ""; position: absolute; top: 10px; right: -8px; width: 0; height: 0;
             border-style: solid; border-width: 6px 0 6px 10px;
             border-color: transparent transparent transparent var(--bubble-color);
         }
         
-        /* 左（Bot）側のしっぽ */
         .bubble-left::before {
             content: ""; position: absolute; top: 10px; left: -8px; width: 0; height: 0;
             border-style: solid; border-width: 6px 10px 6px 0;
@@ -92,7 +87,7 @@
         }
 
         /* =========================================
-           2. Footer & Tabs (Unified 85px Height)
+           2. Footer & Tabs
            ========================================= */
         footer {
             background-color: white;
@@ -124,20 +119,16 @@
             border-bottom: none;
         }
 
-        /* 自動リサイズ用 textarea (LINE風) */
         textarea#search-input {
-            resize: none; /* ユーザーによるリサイズ無効 */
-            overflow: hidden; /* スクロールバー隠す */
-            min-height: 24px; /* 1行分の高さ確保 */
-            max-height: 120px; /* 最大5行程度で止める */
+            resize: none;
+            overflow: hidden;
+            min-height: 24px;
+            max-height: 120px;
             line-height: 1.5;
-            padding-top: 8px;   /* 上下中央寄せ調整 */
+            padding-top: 8px;
             padding-bottom: 8px;
         }
-        /* テキストが増えてmax-heightを超えたらスクロール許可 */
-        textarea#search-input:focus {
-            overflow-y: auto;
-        }
+        textarea#search-input:focus { overflow-y: auto; }
 
         #footer-tab-area {
             display: flex;
@@ -163,39 +154,20 @@
             height: 100%;
         }
 
-        .tab-btn.active {
-            font-weight: bold;
-            color: var(--main-orange);
-        }
-        /* しりとりモード（裏モード）のときはピンク */
-        body.theme-shiritori .tab-btn.active {
-            color: var(--main-pink);
-        }
-        
-        .tab-btn.active svg {
-            stroke-width: 2.5px;
-        }
+        .tab-btn.active { font-weight: bold; color: var(--main-orange); }
+        body.theme-shiritori .tab-btn.active { color: var(--main-pink); }
+        .tab-btn.active svg { stroke-width: 2.5px; }
 
-        /* 3. Request UI */
+        /* Request UI */
         .letter-card {
-            background: white;
-            border-radius: 20px;
-            border: 1px solid #f1f5f9;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            overflow: hidden;
-            margin-bottom: 20px;
+            background: white; border-radius: 20px;
+            border: 1px solid #f1f5f9; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            overflow: hidden; margin-bottom: 20px;
         }
-        .letter-q {
-            background-color: #fffaf5;
-            padding: 16px;
-            border-bottom: 1px dashed #fed7aa;
-        }
-        .letter-a {
-            padding: 16px;
-            background-color: white;
-        }
+        .letter-q { background-color: #fffaf5; padding: 16px; border-bottom: 1px dashed #fed7aa; }
+        .letter-a { padding: 16px; background-color: white; }
 
-        /* ダークモード (Secret) */
+        /* Dark Mode */
         body.dark-mode { background-color: #0f172a; color: #e2e8f0; }
         body.dark-mode footer { background-color: #1e293b; border-color: #334155; }
         body.dark-mode #search-form { background-color: #1e293b; border-bottom-color: #334155; }
@@ -205,47 +177,33 @@
         body.dark-mode .letter-q { background-color: #334155; border-bottom-color: #475569; }
         body.dark-mode .bg-gray-100 { background-color: #334155; }
 
-        /* しりとりモード時のヒントスタイル */
+        /* Shiritori Hints */
         .hint-btn {
             display: inline-flex; align-items: center; gap: 4px;
-            background-color: rgba(236, 72, 153, 0.1); 
-            color: #ec4899;
-            font-size: 11px; font-weight: bold;
-            padding: 6px 12px;
-            border-radius: 9999px;
-            margin-top: 8px;
-            cursor: pointer;
-            border: 1px solid rgba(236, 72, 153, 0.2);
-            transition: all 0.2s;
+            background-color: rgba(236, 72, 153, 0.1); color: #ec4899;
+            font-size: 11px; font-weight: bold; padding: 6px 12px;
+            border-radius: 9999px; margin-top: 8px; cursor: pointer;
+            border: 1px solid rgba(236, 72, 153, 0.2); transition: all 0.2s;
         }
         .hint-btn:active { transform: scale(0.95); background-color: rgba(236, 72, 153, 0.2); }
-        
         .hint-list {
-            display: none;
-            flex-wrap: wrap; gap: 6px;
-            margin-top: 10px;
+            display: none; flex-wrap: wrap; gap: 6px; margin-top: 10px;
             animation: fadeIn 0.3s ease-out;
         }
         .hint-item {
-            background-color: #334155;
-            color: #e2e8f0;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            cursor: pointer;
-            border: 1px solid #475569;
-            transition: background-color 0.2s;
+            background-color: #334155; color: #e2e8f0;
+            padding: 6px 12px; border-radius: 8px; font-size: 12px;
+            cursor: pointer; border: 1px solid #475569; transition: background-color 0.2s;
         }
         .hint-item:hover { background-color: #475569; }
-        .hint-item:active { transform: scale(0.95); }
 
+        /* Modal Transitions */
         .modal-enter { opacity: 0; transform: scale(0.95); }
         .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.2s ease-out, transform 0.2s ease-out; }
     </style>
 </head>
 <body id="app-body" class="theme-lyrics h-screen flex flex-col transition-colors duration-300">
 
-    <!-- 1. 歌詞(フレーズ)チャット -->
     <main id="chat-container-lyrics" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-48"> 
         <div class="flex items-start space-x-2">
             <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()" alt="icon">
@@ -257,7 +215,6 @@
         </div>
     </main>
 
-    <!-- 2. 楽曲DBチャット -->
     <main id="chat-container-title" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-48 hidden"> 
         <div class="flex items-start space-x-2">
             <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()" alt="icon">
@@ -268,16 +225,14 @@
             </div>
         </div>
     </main>
-    <!-- 3. 一覧ビュー (NEW) -->
+
     <main id="container-list" class="flex-1 overflow-hidden relative hidden bg-white">
-        <!-- Filter Status Bar -->
         <div id="filter-bar" class="hidden px-4 py-2 bg-orange-50 border-b border-orange-100 flex items-center justify-between text-xs text-orange-700">
             <span id="active-filter-count">フィルタ適用中</span>
             <button onclick="clearAllFilters()" class="text-orange-600 underline font-medium">全フィルタ解除</button>
         </div>
 
-        <div class="h-full overflow-auto pb-32"> <!-- pb-32 for Footer -->
-            <table class="w-full text-left border-collapse">
+        <div class="h-full overflow-auto pb-32"> <table class="w-full text-left border-collapse">
                 <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm text-xs text-gray-500 uppercase font-semibold">
                     <tr>
                         <th onclick="openFilterModal('era')" class="p-3 cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors">
@@ -295,8 +250,7 @@
                     </tr>
                 </thead>
                 <tbody id="song-list-body" class="text-sm divide-y divide-gray-100">
-                    <!-- JS Injected -->
-                </tbody>
+                    </tbody>
             </table>
             <div id="list-loading" class="text-center py-20 text-gray-400 text-xs">
                 データを読み込み中...
@@ -304,7 +258,6 @@
         </div>
     </main>
 
-    <!-- 4. リクエスト (調査・改善) -->
     <main id="chat-container-request" class="flex-1 overflow-y-auto p-4 no-scrollbar pb-48 hidden">
         <div class="mb-6">
             <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -317,7 +270,6 @@
                 </p>
             </div>
         </div>
-        
         <div id="request-list" class="space-y-4">
             <div class="text-center py-10 text-gray-400 text-xs animate-pulse" id="request-loading">
                 リクエストを読み込み中...
@@ -325,7 +277,6 @@
         </div>
     </main>
 
-    <!-- 5. しりとりチャット (Secret) -->
     <main id="chat-container-shiritori" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-48 hidden"> 
         <div class="flex items-start space-x-2">
             <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()" alt="icon">
@@ -335,17 +286,12 @@
         </div>
     </main>
 
-    <!-- フッター -->
     <footer>
         <form id="search-form">
-            <!-- 入力欄コンテナ: flex items-end で下揃え (複数行対応) -->
             <div class="relative flex items-end w-full bg-gray-100 rounded-[24px] px-4 py-1 focus-within:bg-white focus-within:ring-1 focus-within:ring-orange-200 border border-transparent focus-within:border-orange-300 transition-all shadow-inner">
-                <!-- textarea: rows=1で初期化 -->
                 <textarea id="search-input" rows="1"
                     class="flex-1 bg-transparent border-none focus:outline-none text-[15px] placeholder-gray-400 min-w-0"
                     placeholder="例：あれは" required autocomplete="off"></textarea>
-                
-                <!-- 送信ボタン: mb-2 で位置調整 -->
                 <button type="submit" id="submit-btn"
                     class="send-btn-active ml-2 text-orange-500 p-1.5 rounded-full hover:bg-orange-100 transition-colors flex-shrink-0 mb-1.5">
                     <i data-lucide="send" class="w-5 h-5 fill-current"></i>
@@ -375,11 +321,10 @@
             </button>
         </div>
     </footer>
-    <!-- Filter Modal (NEW) -->
+
     <div id="filter-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeFilterModal()"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] flex flex-col shadow-xl transform transition-transform duration-300 translate-y-full" id="filter-modal-content">
-            <!-- Helper Header -->
             <div class="bg-orange-400 p-4 rounded-t-2xl flex items-center gap-3 text-white">
                 <img class="bot-icon w-10 h-10 rounded-full border-2 border-white bg-white flex-shrink-0" alt="icon">
                 <div>
@@ -390,7 +335,6 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <!-- Toolbar -->
             <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50 text-xs">
                 <span class="font-bold text-gray-500" id="filter-column-name">ARRANGER</span>
                 <div class="flex gap-3">
@@ -398,11 +342,8 @@
                     <button onclick="toggleAllFilters(false)" class="text-gray-500">全解除</button>
                 </div>
             </div>
-            <!-- List -->
             <div id="filter-options-list" class="flex-1 overflow-y-auto p-2 space-y-1">
-                <!-- Checkboxes injected by JS -->
-            </div>
-            <!-- Footer Action -->
+                </div>
             <div class="p-4 border-t border-gray-100 bg-white pb-safe">
                 <button onclick="applyFilter()" class="w-full bg-orange-500 text-white font-bold py-3 rounded-xl shadow hover:bg-orange-600 active:scale-95 transition-transform">
                     OK
@@ -410,7 +351,7 @@
             </div>
         </div>
     </div>
-    <!-- About Modal -->
+
     <div id="readme-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="toggleModal(false)"></div>
         <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white w-[90%] max-w-sm rounded-2xl shadow-xl p-6 transition-all scale-100">
@@ -462,17 +403,18 @@
         let currentMode = 'lyrics'; 
         let lastMode = 'lyrics'; 
         let isDarkMode = false; 
+        
         // List Mode State
         let allSongs = [];
         let filteredSongs = [];
         let activeFilters = { era: [], title: [], arranger: [], duration: [] };
         let currentFilterColumn = '';
+
         const LOADING_MESSAGES = {
             lyrics: ["aikoからのtelepathyを受信中...", "そんなことよりパーティ抜け出さない？"],
             title: ["おっ！その曲なら確かね...", "俺もそれ好きだよ！待ってて..."],
             shiritori: ["俺に勝負を仕掛けるとはいい度胸だ。", "なるほど、そう来たか..."],
             request: ["リクエストを受け付けています📮"],
-            // 既存の項目の最後に追加
             list: ["データを読み込んでいます..."]
         };
 
@@ -483,7 +425,6 @@
                 title: document.getElementById('chat-container-title'),
                 request: document.getElementById('chat-container-request'),
                 shiritori: document.getElementById('chat-container-shiritori'),
-                // 既存コンテナ定義の中に追加
                 list: document.getElementById('container-list')
             },
             searchForm: document.getElementById('search-form'),
@@ -493,7 +434,7 @@
             tabBtns: document.querySelectorAll('.tab-btn'),
             botIcons: document.querySelectorAll('.bot-icon'),
             requestList: document.getElementById('request-list'),
-            footerTabs: document.getElementById('footer-tab-area') // Tab Area
+            footerTabs: document.getElementById('footer-tab-area')
         };
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -503,16 +444,14 @@
             setupAutoResizeTextarea();
         });
 
-        // テキストエリアの自動リサイズ設定
         function setupAutoResizeTextarea() {
             const el = dom.searchInput;
             el.addEventListener('input', () => {
-                el.style.height = 'auto'; // 一旦autoにして縮小に対応
-                el.style.height = (el.scrollHeight) + 'px'; // 内容に合わせて高さを設定
+                el.style.height = 'auto'; 
+                el.style.height = (el.scrollHeight) + 'px';
             });
         }
 
-        // テキストエリアの高さをリセットする関数
         function resetTextareaHeight() {
             const el = dom.searchInput;
             el.style.height = 'auto';
@@ -530,14 +469,12 @@
                 dom.containers[key].classList.toggle('hidden', key !== mode);
             });
 
-            // テーマカラー(Bubble Color)の切り替え
             if (mode === 'shiritori') {
                 document.documentElement.style.setProperty('--bubble-color', '#ec4899');
             } else {
                 document.documentElement.style.setProperty('--bubble-color', '#F4A261');
             }
 
-            // ★ここから変更・追記
             // モードごとのフォーム制御
             if (mode === 'list') {
                 dom.searchForm.classList.add('hidden-form'); // フォーム隠す
@@ -545,24 +482,23 @@
             } else {
                 dom.searchForm.classList.remove('hidden-form'); // フォーム表示
                 if (mode === 'lyrics') {
-                dom.searchInput.placeholder = "例：あれは";
-            } else if (mode === 'title') {
-                dom.searchInput.placeholder = "例：ポニーテール";
-            } else if (mode === 'request') {
-                dom.searchInput.placeholder = "調査や改善のリクエストを書いてね📮";
-                fetchRequests();
-            } else if (mode === 'shiritori') {
-                dom.searchInput.placeholder = "曲名を入力してね";
+                    dom.searchInput.placeholder = "例：あれは";
+                } else if (mode === 'title') {
+                    dom.searchInput.placeholder = "例：ポニーテール";
+                } else if (mode === 'request') {
+                    dom.searchInput.placeholder = "調査や改善のリクエストを書いてね📮";
+                    fetchRequests();
+                } else if (mode === 'shiritori') {
+                    dom.searchInput.placeholder = "曲名を入力してね";
+                }
+                
+                const activeContainer = dom.containers[mode];
+                if (mode === 'request') {
+                    activeContainer.scrollTop = 0;
+                } else {
+                    activeContainer.scrollTop = activeContainer.scrollHeight;
+                }
             }
-            
-            const activeContainer = dom.containers[mode];
-            // 変更点: リクエストタブの場合は最上部、それ以外（チャット）は最下部へ
-            if (mode === 'request') {
-                activeContainer.scrollTop = 0;
-            } else {
-                activeContainer.scrollTop = activeContainer.scrollHeight;
-            }
-          } // Added closing brace for the else block
         };
 
         window.activateSecretMode = function() {
@@ -571,31 +507,22 @@
                 dom.body.classList.remove('dark-mode');
                 dom.body.classList.remove('theme-shiritori');
                 dom.body.classList.add('theme-lyrics');
-                // ★修正: タブを表示
                 dom.footerTabs.style.display = 'flex';
                 switchTab(lastMode);
             } else {
-                // ★追加: シークレットモード計測
-                safeTrackEvent('unlock_achievement', {
-                    achievement_id: 'secret_mode_activated'
-                });
-
+                safeTrackEvent('unlock_achievement', { achievement_id: 'secret_mode_activated' });
                 lastMode = currentMode;
                 isDarkMode = true;
                 dom.body.classList.add('dark-mode');
                 dom.body.classList.remove('theme-lyrics');
                 dom.body.classList.add('theme-shiritori');
-                // ★修正: タブを非表示
                 dom.footerTabs.style.display = 'none';
                 switchTab('shiritori');
             }
         };
 
-        // ★追加: しりとりリスタート
         window.restartShiritori = function() {
-            // Botからのメッセージ
             addMessage("望むところだ！<br>最初の曲名を入力してみよ。", 'bot', true);
-            // 入力欄にフォーカス
             dom.searchInput.focus();
         };
 
@@ -604,17 +531,10 @@
             const query = dom.searchInput.value.trim();
             if (!query) return;
 
-            // GA4 Tracking
-            safeTrackEvent('search', {
-                search_term: query,
-                search_category: currentMode 
-            });
+            safeTrackEvent('search', { search_term: query, search_category: currentMode });
 
-            // リクエストモード時の確認ダイアログ
             if (currentMode === 'request') {
-                if (!confirm("この内容で送信しますか？")) {
-                    return; // キャンセル時は何もしない
-                }
+                if (!confirm("この内容で送信しますか？")) return;
                 handleRequestPost(query);
                 dom.searchInput.value = '';
                 resetTextareaHeight(); 
@@ -641,26 +561,17 @@
             } catch (error) {
                 removeLoading(loadingId);
                 addMessage("通信失敗！もう一度試してみて！", 'bot');
-                // ★追加: エラー計測
-                safeTrackEvent('exception', {
-                    description: error.message,
-                    fatal: false
-                });
+                safeTrackEvent('exception', { description: error.message, fatal: false });
             }
         });
 
-        // しりとり回答送信（ヒントクリック用）
         window.sendShiritoriAnswer = function(answer) {
              const query = answer;
              if (!query) return;
-
              addMessage(query, 'user');
              const loadingId = addLoading();
-             
-             // フォームは空にしておく（念のため）
              dom.searchInput.value = '';
              resetTextareaHeight();
-
              fetch(`${GAS_API_URL}?q=${encodeURIComponent(query)}&mode=shiritori`)
                 .then(res => res.json())
                 .then(data => {
@@ -671,11 +582,7 @@
                 .catch(err => {
                     removeLoading(loadingId);
                     addMessage("通信失敗！もう一度試してみて！", 'bot');
-                    // ★追加: エラー計測
-                    safeTrackEvent('exception', {
-                        description: err.message,
-                        fatal: false
-                    });
+                    safeTrackEvent('exception', { description: err.message, fatal: false });
                 });
         };
 
@@ -694,7 +601,6 @@
             `;
             dom.requestList.insertBefore(card, dom.requestList.firstChild);
             showToast("リクエストを送ったよ！📮");
-            // 追加: 投稿後に最上部へスクロール
             dom.containers.request.scrollTop = 0;
 
             try {
@@ -709,9 +615,7 @@
             try {
                 const res = await fetch(`${GAS_API_URL}?action=getRequests`);
                 const json = await res.json();
-                if (json.status === 'success') {
-                    renderRequests(json.data);
-                }
+                if (json.status === 'success') renderRequests(json.data);
             } catch(e) { 
                 console.error("Fetch failed", e); 
                 safeTrackEvent('exception', { description: "fetchRequests: " + e.message, fatal: false });
@@ -747,8 +651,6 @@
                     </div>
                 </div>
             `).join('');
-            
-            // 追加: リスト描画後に最上部へスクロール
             dom.containers.request.scrollTop = 0;
         }
 
@@ -833,11 +735,9 @@
 
         function handleShiritoriResults(data) {
             let messageContent = data.message;
-            
             if (data.result === 'continue' && data.all_candidates && data.all_candidates.length > 0) {
-                const hintId = `hint-${Date.now()}`;
                 const listId = `list-${Date.now()}`;
-                const hintHtml = `
+                messageContent += `
                     <div class="mt-2">
                         <button class="hint-btn" onclick="document.getElementById('${listId}').style.display='flex'; this.style.display='none';">
                             <span>💡 ヒントを見る</span>
@@ -849,7 +749,6 @@
                         </div>
                     </div>
                 `;
-                messageContent += hintHtml;
             }
 
             if (data.result === 'unknown_song') {
@@ -859,8 +758,6 @@
                 if (data.result === 'user_win' || data.result === 'user_lose') {
                     const isWin = (data.result === 'user_win');
                     safeTrackEvent('level_end', { level_name: 'shiritori', success: isWin });
-
-                    // ★修正: もう一度遊ぶ？の選択肢を追加
                     messageContent += `
                         <div class="mt-4 pt-3 border-t border-gray-600/50">
                             <p class="text-xs text-gray-300 mb-2 font-bold">もう一度遊ぶ？</p>
@@ -871,9 +768,7 @@
                         </div>
                     `;
                     addMessage(messageContent, 'bot', true);
-
                 } else {
-                    // 継続中
                     addMessage(messageContent, 'bot', true);
                 }
             }
@@ -883,10 +778,8 @@
             const container = dom.containers[currentMode];
             const div = document.createElement('div');
             div.className = `flex items-start space-x-2 message-row ${type === 'user' ? 'justify-end' : ''}`;
-            
             const bubbleClass = type === 'user' ? 'bubble bubble-right text-white' : 'bubble bubble-left bg-white text-gray-800';
             
-            // 修正: ユーザーメッセージの色制御（v2.3.1の方式：CSS変数で一元管理）
             let userStyle = '';
             if (type === 'user') {
                 userStyle = 'style="background-color: var(--bubble-color);"';
@@ -931,15 +824,10 @@
                 ta.value = cleanText; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
                 showToast("コピーしたよ！");
             }
-
-            // ★追加: 歌詞コピー計測
-            safeTrackEvent('share', {
-                method: 'clipboard',
-                content_type: 'lyrics_phrase',
-                item_name: text.substring(0, 20) 
-            });
+            safeTrackEvent('share', { method: 'clipboard', content_type: 'lyrics_phrase', item_name: text.substring(0, 20) });
         }
-// --- List Feature (New) ---
+
+        // --- List Feature (New) ---
 
         function loadSongsData() {
             // キャッシュチェック
@@ -1103,12 +991,12 @@
             activeFilters = { era: [], title: [], arranger: [], duration: [] };
             renderSongList();
         };
+
         function showToast(msg) {
             dom.toast.textContent = msg; dom.toast.classList.remove('opacity-0');
             setTimeout(() => dom.toast.classList.add('opacity-0'), 2000);
         }
 
-        // GA4送信用の安全なラッパー関数
         function safeTrackEvent(eventName, params) {
             try {
                 if (typeof gtag === 'function') {
