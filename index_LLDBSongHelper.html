@@ -233,7 +233,7 @@
         </div>
 
         <div class="h-full overflow-auto pb-32"> 
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse table-auto">
                 <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm text-xs text-gray-500 uppercase font-semibold">
                     <tr>
                         <th onclick="openFilterModal('era')" class="p-3 whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors">
@@ -937,9 +937,16 @@
                     let valA = a[currentSort.column] || '';
                     let valB = b[currentSort.column] || '';
                     
+                    // 時間の場合は '4:30' などを比較可能な数値にする特別処理
                     if (currentSort.column === 'duration') {
                         valA = parseDuration(valA);
                         valB = parseDuration(valB);
+                    }
+                    // ★追加: 曲名の特別処理（読み仮名優先）
+                    else if (currentSort.column === 'title') {
+                        // readingがあればそれを、なければtitleを使用
+                        valA = (a.reading || a.title).toString();
+                        valB = (b.reading || b.title).toString();
                     }
 
                     if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
@@ -968,13 +975,13 @@
                 tr.onclick = () => openConfirmModal(song.title);
 
                 tr.innerHTML = `
-                    <td class="p-3 text-xs text-gray-600 align-top whitespace-nowrap">
+                    <td class="p-3 text-xs text-gray-600 align-top whitespace-normal min-w-[4rem]">
                         ${song.era}
                     </td>
-                    <td class="p-3 text-xs text-gray-600 align-top break-words min-w-[120px] font-medium">
+                    <td class="p-3 text-xs text-gray-600 align-top break-all min-w-[6rem] font-medium">
                         ${song.title}
                     </td>
-                    <td class="p-3 text-xs text-gray-600 align-top whitespace-nowrap">
+                    <td class="p-3 text-xs text-gray-600 align-top whitespace-normal min-w-[4rem]">
                         ${song.arranger}
                     </td>
                     <td class="p-3 text-right text-xs text-gray-600 align-top whitespace-nowrap font-mono">
