@@ -1153,38 +1153,3 @@
     </script>
 </body>
 </html>
-```
-
-### バックエンド（GAS）側の修正について
-
-HTML側のソートロジックは修正しましたが、**GAS (`App_SongHelper.gs`) が読み仮名データ（AA列）を送信していない場合、正しくソートされません。**
-
-以下の修正をGAS側のファイルに適用してください。
-
-**`App_SongHelper.gs` の `getAllSongsData` 関数:**
-
-```javascript
-// Before
-const data = sheet.getRange(2, 11, lastRow - 1, 17).getValues(); 
-// (K列=11列目から17列分取得している状態)
-
-// After (列の取得範囲を広げるか、AA列を追加で取得する)
-// AA列は27列目なので、そこまで取得範囲を広げる必要があります。
-// もしくは個別に取得します。
-
-// 例：データ取得範囲を広げる場合
-const data = sheet.getRange(2, 11, lastRow - 1, 17).getValues(); // 既存
-// 別途読み仮名列(AA列)を取得
-const readingData = sheet.getRange(2, 27, lastRow - 1, 1).getValues(); // AA列(27)
-
-data.forEach((row, index) => {
-  // ... (既存の処理) ...
-
-  // ★ここで読み仮名を取得してオブジェクトに追加
-  const reading = readingData[index][0] ? String(readingData[index][0]) : '';
-
-  songList.push({
-    // ... (既存のプロパティ) ...
-    reading: reading, // ★追加
-  });
-});
