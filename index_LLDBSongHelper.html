@@ -877,12 +877,13 @@
             // キャッシュチェック
             const cached = localStorage.getItem('lldb_song_list');
             const version = localStorage.getItem('lldb_song_version');
+            const loadingEl = document.getElementById('list-loading');
             
             if (cached) {
                 try {
                     allSongs = JSON.parse(cached);
                     renderSongList();
-                    document.getElementById('list-loading').classList.add('hidden');
+                    loadingEl.classList.add('hidden');
                 } catch(e) {}
             }
 
@@ -890,19 +891,29 @@
             fetch(`${GAS_API_URL}?action=get_data`) 
                 .then(res => res.json())
                 .then(data => {
-                    if (data.songList) {
+                    if (data && data.songList) {
                         allSongs = data.songList;
                         if (!version || version != data.version) {
                             localStorage.setItem('lldb_song_list', JSON.stringify(allSongs));
                             localStorage.setItem('lldb_song_version', data.version);
                             renderSongList();
                         }
-                        document.getElementById('list-loading').classList.add('hidden');
+                        loadingEl.classList.add('hidden');
+                    } else {
+                        // データ形式が不正、またはエラーの場合
+                        console.error('Data error:', data);
+                        if (!cached) {
+                            loadingEl.innerText = "データの取得に失敗しました。";
+                            loadingEl.classList.remove('hidden');
+                        }
                     }
                 })
                 .catch(err => {
                     console.error('List fetch error', err);
-                    document.getElementById('list-loading').innerText = "読み込みに失敗しました";
+                    if (!cached) {
+                        loadingEl.innerText = "読み込みに失敗しました";
+                        loadingEl.classList.remove('hidden');
+                    }
                 });
         }
 
