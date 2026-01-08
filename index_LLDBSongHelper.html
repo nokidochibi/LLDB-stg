@@ -1090,19 +1090,19 @@
 
             if (column === 'era') {
                 allSongs.forEach(s => options.add(s.era));
-                msg = "どの時期（アルバム）の曲が見たい？";
+                msg = "アルバムに含まれる表題曲のカップリングも含んでるよ";
                 colLabel = "時期 (ALBUM)";
             } else if (column === 'arranger') {
                 allSongs.forEach(s => options.add(s.arranger));
-                msg = "編曲者を選んでね！<br>島田昌典さん？OSTER projectさん？";
+                msg = "編曲者を選んでね！";
                 colLabel = "編曲者 (ARRANGER)";
             } else if (column === 'duration') {
                 allSongs.forEach(s => options.add(getDurationBucket(s.duration)));
-                msg = "曲の長さで絞り込めるよ。<br>5分以上の大作も多いよね。";
+                msg = "曲の長さで絞り込めるよ。";
                 colLabel = "再生時間 (DURATION)";
             } else if (column === 'title') {
                 allSongs.forEach(s => options.add(s.title));
-                msg = "特定の曲だけ表示したいの？";
+                msg = "（ここはみんなあまり使わないかも）";
                 colLabel = "曲名 (TITLE)";
             }
 
