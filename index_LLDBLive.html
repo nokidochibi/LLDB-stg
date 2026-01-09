@@ -779,6 +779,8 @@ const animationFinishedPromise = new Promise(resolve => {
   animationFinishedResolver = resolve;
 });
 
+let hasCheckedTodayEvents = false; // ★追加: 記念日チェック済みフラグ
+
 document.addEventListener('DOMContentLoaded', () => {
     // アプリのバージョン定数（ここを更新するだけで全ユーザーに強制リロードがかかります）
     const CURRENT_VERSION = 'v4.4.7'; 
@@ -2652,6 +2654,10 @@ async function fetchAndHotSwap() {
 
 // ★追加: 今日は何の日ロジック
 function checkTodayEvents() {
+    // ★追加: すでにチェック済みなら何もしない（重複表示防止）
+    if (hasCheckedTodayEvents) return;
+    hasCheckedTodayEvents = true;
+
     // 日本時間の現在時刻を取得
     const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
     const todayMonth = now.getMonth() + 1;
