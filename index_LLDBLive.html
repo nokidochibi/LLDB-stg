@@ -849,7 +849,9 @@ async function performSmartLoading(hasLocalData) {
       if (data.status === 'error') throw new Error(data.message);
 
       // データを保存
-      saveToCache(data);
+      // ★修正: saveToCache関数がないため、直接localStorageに保存する処理に変更
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      
       // 新しいバージョン情報を保存
       localStorage.setItem(VERSION_STORAGE_KEY, JSON.stringify(serverVersions));
       
