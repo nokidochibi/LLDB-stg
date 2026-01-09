@@ -883,8 +883,8 @@ async function loadAllData(isCachedLoaded) {
         renderLiveList(allLiveRecords);
         populateFilters(allLiveRecords);
         
-        // 2. ユーザーを待たせず、ロード画面を即座に解除
-        finishLoading();
+        // 削除: アニメーション完遂を優先するため、ここではロード画面を解除しない
+        // finishLoading(); 
       }
     } catch (e) {
       console.warn("Basic load skipped or failed:", e);
@@ -915,8 +915,8 @@ async function loadAllData(isCachedLoaded) {
     // スクロール位置を復元
     if (appContainer) appContainer.scrollTop = currentScroll;
 
-    // Step 1がスキップされた場合（キャッシュロード時など）のために念押しで呼ぶ
-    finishLoading();
+    // 削除: アニメーション完遂を優先するため、ここではロード画面を解除しない
+    // finishLoading();
 
   } catch (error) {
       // Step 1ですでに画面が表示されている場合は、ユーザー体験を阻害しないよう
