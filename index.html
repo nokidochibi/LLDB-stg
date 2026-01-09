@@ -297,6 +297,13 @@
         // 3. About用: 3桁表示 & vol. 表記 (例: vol.4.2.1)
         const aboutVersion = `vol.${versionNum}`;
 
+        // ★追加: アプリ名（Configシート）と内部IDのマッピング
+        const APP_ID_MAP = {
+          'LLDB Live': 'live',
+          'LLDB Trends': 'trends',
+          'LLDB Song Helper': 'songHelper',
+          'LLDB History': 'history'
+        };
 
         // アプリ定義 (タイトル更新)
         const apps = {
@@ -446,6 +453,57 @@ let isUpdateHistoryLoaded = false; // 読み込み完了フラグ
             window.location.reload(); // ページリロード -> 長いローディング発動
           }, 300);
         }
+
+        // ★追加機能: 裏側でConfigをチェックして更新があればiframeへ通知する
+        async function checkRemoteConfig() {
+            try {
+                console.log("Checking remote config...");
+                // Configシートの情報を取得（軽量）
+                const response = await fetch(`${GAS_API_URL}?action=getAppVersions`);
+                const json = await response.json();
+                
+                // ローカルの保存済みバージョンと比較
+                const localVersions = JSON.parse(localStorage.getItem('lldb_data_versions') || '{}');
+                let hasUpdate = false;
+                
+                // Configシートの各行についてチェック
+                Object.keys(json).forEach(appName => {
+                    const remoteId = json[appName]; // "46022-0" など
+                    const appKey = APP_ID_MAP[appName]; // "live" など
+                    
+                    if (!appKey) return;
+
+                    const localId = localVersions[appKey];
+
+                    // 差分がある場合（または初回）
+                    if (localId !== remoteId) {
+                        console.log(`Update found for ${appName}: ${localId} -> ${remoteId}`);
+                        
+                        // 1. 新しいIDをローカルに保存予約
+                        localVersions[appKey] = remoteId;
+                        hasUpdate = true;
+                        
+                        // 2. 対象のiframeに「更新せよ」と指令を送る
+                        const iframe = document.querySelector(`#app-${appKey} iframe`);
+                        if (iframe && iframe.contentWindow) {
+                            iframe.contentWindow.postMessage({
+                                type: 'forceUpdateData', // 更新指令
+                                newVersion: remoteId
+                            }, '*');
+                        }
+                    }
+                });
+
+                // 最新のバージョン情報を保存
+                if (hasUpdate) {
+                    localStorage.setItem('lldb_data_versions', JSON.stringify(localVersions));
+                }
+
+            } catch (e) {
+                console.error("Config check failed:", e);
+            }
+        }
+
         // --- 追加機能: ヘッダータップでスクロールトップ ---
         document.addEventListener('DOMContentLoaded', () => {
         // ★順序変更: バージョンチェックを最優先に実行
@@ -460,6 +518,9 @@ let isUpdateHistoryLoaded = false; // 読み込み完了フラグ
         /* ▼▼▼ ここ（358行目の直後）に挿入してください ▼▼▼ */
         // 裏側で更新履歴を読み込み開始（並走させる）
         loadUpdateHistory();
+        
+        // ★追加: 裏側でデータ更新チェックを開始（並走させる）
+        checkRemoteConfig();
 
             // バージョン番号の一括反映処理
             document.querySelectorAll('iframe').forEach(iframe => {
