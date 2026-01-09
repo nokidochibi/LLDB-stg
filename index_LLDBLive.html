@@ -2194,7 +2194,7 @@ function showLiveDetail(rec) {
        <div class="card-base shadow-none border border-gray-100 pb-2 bg-white">
          ${setlistHtml}
        </div>`
-    : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3><div class="card-base text-gray-500 text-sm leading-relaxed bg-white">読み込み中。ちょっと待っててね。</div>`;
+    : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3><div class="loading-placeholder">読み込み中。ちょっと待っててね。</div>`;
 
   detailContainer.innerHTML = `
     <div id="detail-header-area" class="pt-2 -mt-2 cursor-pointer pl-[70px]">
