@@ -77,6 +77,11 @@ body.detail-view nav { display: none !important; }
   padding-bottom: calc(var(--nav-height) + 20px + env(safe-area-inset-bottom));
 }
 
+/* ★追加: 詳細画面（detail-view）の時はナビゲーションバーが消えるので、下の余白を狭くする */
+body.detail-view .mobile-frame {
+  padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+}
+
 #confetti-canvas {
   position: fixed;
   top: 0;
