@@ -867,9 +867,15 @@ function saveToCache(data) {
   }
 }
 
-// 修正後: Promise制御を削除し、純粋なデータ取得のみを行う関数にします
-async function loadAllData() {
-  // バックグラウンドデータ取得
+// 修正後: キャッシュがある場合はフェッチをスキップして高速化
+async function loadAllData(useCache = false) {
+  // 1. キャッシュ利用モードなら、通信せずに即終了（データはDOMContentLoaded内で既にセット済）
+  if (useCache) {
+      console.log("Skipping fetch: Loaded from cache.");
+      return; 
+  }
+
+  // 2. キャッシュがない、または強制リロードの場合のみ通信する
   try {
     const response = await fetch(`${API_URL}?action=getAllData`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -2605,15 +2611,44 @@ function safeTrackEvent(eventName, params) {
     console.warn('GA4 Tracking Error:', e);
   }
 }
-// 親画面からの検索指示を受け取って実行する
+// 親画面からのメッセージ（検索指示 or 更新指示）を受け取る
 window.addEventListener('message', (event) => {
+  // ケース1: 検索指示
   if (event.data.type === 'execLiveSearch') {
     if (typeof window.findAndShowLive === 'function') {
       // 既存の検索連携関数を利用（日付は空、ツアー名のみ指定）
       window.findAndShowLive('', event.data.tourName);
     }
   }
+
+  // ケース2: データ更新指示 (Hubからの指令)
+  if (event.data.type === 'forceUpdateData') {
+     console.log("Received update command from Hub. New Version:", event.data.newVersion);
+     // ユーザーの操作を邪魔しないよう、裏で静かに更新する
+     fetchAndHotSwap();
+  }
 });
+
+// ★追加: 裏でデータを取ってきて、画面をパッと書き換える関数
+async function fetchAndHotSwap() {
+  try {
+    const response = await fetch(`${API_URL}?action=getAllData`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+
+    if (data.status !== 'error') {
+      // 1. キャッシュを最新版で上書き
+      saveToCache(data);
+
+      // 2. データを再初期化（画面がパッと最新情報に切り替わる）
+      initializeApp(data);
+      
+      console.log("Data hot-swapped to latest.");
+    }
+  } catch (e) {
+    console.error("Hot swap failed:", e);
+  }
+}
 
 // ★追加: 今日は何の日ロジック
 function checkTodayEvents() {
