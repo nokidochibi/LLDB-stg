@@ -1020,6 +1020,14 @@ function initializeApp(data) {
   renderVenueRanking();
   renderVenueLiveCountChart();
 
+  // ★追加: 詳細画面が開いている場合、新しいデータでリロードする
+  if (currentDisplayingRecord && document.body.classList.contains('detail-view')) {
+      const updatedRec = allLiveRecords.find(r => r.date === currentDisplayingRecord.date && r.tourName === currentDisplayingRecord.tourName);
+      if (updatedRec) {
+          showLiveDetail(updatedRec);
+      }
+  }
+
   // ★追加: データ到着が遅れて、すでにローディング画面が消えていた場合の保険
   const loadingDiv = document.getElementById('loading-container');
   if (loadingDiv && loadingDiv.style.display === 'none') {
