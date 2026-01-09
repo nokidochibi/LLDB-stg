@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -766,119 +765,150 @@ button { font-size: 13px !important; }
 <script>
 // GASのAPIエンドポイント
 const API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec";
-const CACHE_KEY = 'lldb_data_v4_1_update_history_v6'; 
-const AIKO_BIRTH = new Date(1975, 10, 22); 
+const CACHE_KEY = 'lldb_data_v4_1_update_history_v6'; // キャッシュキー
+const VERSION_HASH_KEY = 'lldb_data_version_hash'; // バージョン管理用キー
+const AIKO_BIRTH = new Date(1975, 10, 22); // 1975/11/22
 
-// バージョン保存用のキー
-const VERSION_STORAGE_KEY = 'lldb_smart_versions_v1';
-
-// コンフィグのキー定義（GASのConfigシートA列と完全に一致させる）
-const CONFIG_KEYS = {
-  LIVE: 'LIVE_VERSION',
-  HISTORY: 'HISTORY_VERSION',
-  SONG: 'SONG_HELPER_VERSION' // ★追加しました
-};
-
-// ★修正: グラフのインスタンスを保持する変数を定義
-const chartInstances = {
-  liveCount: null,
-  album: null,
-  venueLiveCount: null,
-  component: null
-};
+let appInitializedResolver;
+const appInitializedPromise = new Promise(resolve => {
+  appInitializedResolver = resolve;
+});
 
 let animationFinishedResolver;
 const animationFinishedPromise = new Promise(resolve => {
   animationFinishedResolver = resolve;
 });
 
-// ▼▼▼ スマート読み込みロジック開始 ▼▼▼
-
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. まずローカルにデータがあるか確認（アニメーション速度決定のため）
-  const hasLocalData = !!localStorage.getItem(CACHE_KEY);
-  
-  // 2. アニメーション開始
-  // データがあれば「高速(smart)」、なければ「通常(normal)」で演出スタート
-  startLoadingAnimation(hasLocalData ? 'smart' : 'normal');
+    // アプリのバージョン定数（ここを更新するだけで全ユーザーに強制リロードがかかります）
+    const CURRENT_VERSION = 'v4.4.7'; 
+    const VERSION_KEY = 'lldb_installed_version';
+    
+    // 保存されているバージョンを確認
+    const savedVersion = localStorage.getItem(VERSION_KEY);
 
-  // 3. その他の初期化
-  try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) {}
-  try { setupRandomTriggers(); } catch(e) {}
+    // バージョンが違う（古い、または初回）場合
+    if (savedVersion !== CURRENT_VERSION) {
+        console.log(`Version Updated: ${savedVersion} -> ${CURRENT_VERSION}`);
+        
+        // 1. 古いキャッシュを一掃する
+        localStorage.clear();
+        
+        // 2. 新しいバージョン情報を保存する
+        localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
+    }
 
-  // 4. スマート読み込み開始
-  performSmartLoading(hasLocalData);
+    // その他の初期化処理
+    try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) {}
+    try { setupRandomTriggers(); } catch(e) {}
 
-  // 5. 完了待機
-  Promise.all([appInitializedPromise, animationFinishedPromise])
-    .then(() => {
-      finishLoading();
-    })
-    .catch(e => {
-      console.error("Loading process failed:", e);
-      finishLoading();
-    });
+    // データ同期処理を開始 (Configシートによるバージョンチェック)
+    initDataSync();
+
+    // 4. アニメーション完了と初期化完了を待って画面を表示
+    Promise.all([appInitializedPromise, animationFinishedPromise])
+      .then(() => {
+        finishLoading();
+      })
+      .catch(e => {
+        console.error("Loading process failed:", e);
+        // 万が一Promiseがrejectされても画面は出す
+        finishLoading();
+      });
 });
 
-/**
- * スマート読み込みのメイン関数
- * サーバーのバージョンを確認し、必要ならデータを再取得する
- */
-async function performSmartLoading(hasLocalData) {
+let allLiveRecords = [], 
+    songStats = {},                
+    songStatsNoMedley = {},        
+    patternStats = {}, 
+    lastPlayedStats = {}, 
+    albumData = [], 
+    songData = {}, 
+    historyData = [], 
+    listData = [],
+    anniversaryQueue = [], 
+    chartInstances = {};
+let selectedVenueInfo = null;
+let currentDisplayingRecord = null;
+
+function saveToCache(data) {
   try {
-    // ① バージョン情報（軽量）のみ取得
-    // ※ cache: 'no-store' でブラウザキャッシュを回避し、必ず最新のConfigを見に行く
-    const vRes = await fetch(`${API_URL}?action=getAppVersions`, { cache: "no-store" });
-    const serverVersions = await vRes.json();
-    
-    // ② ローカルのバージョン情報と比較
-    const localVersions = JSON.parse(localStorage.getItem(VERSION_STORAGE_KEY)) || {};
-    
-    // 判定: LIVE, HISTORY, SONG のいずれかが変わっているか？
-    const isUpdated = (serverVersions[CONFIG_KEYS.LIVE] !== localVersions[CONFIG_KEYS.LIVE]) ||
-                      (serverVersions[CONFIG_KEYS.HISTORY] !== localVersions[CONFIG_KEYS.HISTORY]) ||
-                      (serverVersions[CONFIG_KEYS.SONG] !== localVersions[CONFIG_KEYS.SONG]);
-
-    if (!isUpdated && hasLocalData) {
-      // --- A. 更新なし ＆ データあり ---
-      console.log("SmartLoad: No updates. Using cache.");
-      const cachedData = JSON.parse(localStorage.getItem(CACHE_KEY));
-      initializeApp(cachedData);
-      
-    } else {
-      // --- B. 更新あり OR データなし ---
-      console.log("SmartLoad: Update detected or no data. Fetching new data...");
-      
-      // データ本体を取得
-      const dRes = await fetch(`${API_URL}?action=getAllData`);
-      if (!dRes.ok) throw new Error(`HTTP error! status: ${dRes.status}`);
-      const data = await dRes.json();
-
-      if (data.status === 'error') throw new Error(data.message);
-
-      // データを保存
-      // ★修正: saveToCache関数がないため、直接localStorageに保存する処理に変更
-      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-      
-      // 新しいバージョン情報を保存
-      localStorage.setItem(VERSION_STORAGE_KEY, JSON.stringify(serverVersions));
-      
-      initializeApp(data);
-    }
-
-  } catch (error) {
-    console.error("SmartLoad Error:", error);
-    handleError(error);
-    
-    // 万が一エラーでも、キャッシュがあればそれで動かす（オフライン対策）
-    if (hasLocalData && !allLiveRecords.length) {
-        console.log("Falling back to local cache due to error.");
-        try {
-            const cachedData = JSON.parse(localStorage.getItem(CACHE_KEY));
-            initializeApp(cachedData);
-        } catch(e) { /* ignore */ }
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn("Cache save failed:", e);
+    if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
+       console.log("Clearing old cache...");
+       localStorage.clear(); 
+       try {
+         localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+       } catch (e2) {
+         console.error("Retry failed. App will run without cache.", e2);
+       }
     }
   }
+}
+
+// データ同期のメインロジック (Configシート対応版)
+async function initDataSync() {
+    try {
+        // 1. まずConfigシートから各データのバージョン情報を取得 (軽量)
+        const versionRes = await fetch(`${API_URL}?action=getAppVersions`);
+        if (!versionRes.ok) throw new Error("Version Check Failed");
+        
+        const versions = await versionRes.json();
+        
+        // 取得したバージョン情報を文字列化してハッシュ代わりにする
+        const currentHash = JSON.stringify(versions);
+        const savedHash = localStorage.getItem(VERSION_HASH_KEY);
+        const cachedData = localStorage.getItem(CACHE_KEY);
+
+        // 2. バージョン比較 & キャッシュ存在チェック
+        if (currentHash === savedHash && cachedData) {
+            // --- キャッシュヒット (Burst Speed Mode) ---
+            console.log("Data is up-to-date. Using cache.");
+            
+            // 高速アニメーション開始
+            startLoadingAnimation('smart'); 
+            
+            // 即座にデータを展開して初期化
+            initializeApp(JSON.parse(cachedData));
+            
+        } else {
+            // --- 更新あり or キャッシュなし (Update Mode) ---
+            console.log("Data update detected or no cache. Fetching new data...");
+            
+            // 待機時間を稼ぐため通常アニメーション開始
+            startLoadingAnimation('normal'); 
+            
+            // 全データを取得 (重い処理)
+            const dataRes = await fetch(`${API_URL}?action=getAllData`);
+            if (!dataRes.ok) throw new Error("Data Fetch Failed");
+            
+            const data = await dataRes.json();
+            
+            if (data.status === 'error') throw new Error(data.message);
+            
+            // 新しいデータと新しいハッシュを保存
+            saveToCache(data);
+            localStorage.setItem(VERSION_HASH_KEY, currentHash);
+            
+            // 初期化
+            initializeApp(data);
+        }
+
+    } catch (e) {
+        console.error("Initialization Error:", e);
+        
+        // フォールバック: 通信エラーでもキャッシュがあればそれを使う
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        if (cachedData) {
+            console.warn("Falling back to offline cache.");
+            startLoadingAnimation('smart');
+            initializeApp(JSON.parse(cachedData));
+        } else {
+            handleError(e);
+        }
+    }
 }
 
 // ▼▼▼ 変更箇所: 関数全体を差し替え（見切り発車ロジック追加） ▼▼▼
@@ -900,7 +930,6 @@ function startLoadingAnimation(mode) {
   });
 
   // アニメーション完了予定時間に合わせて画面を開放（見切り発車）
-  // データが未到着でも、HTML側で用意した「歌詞フレーズ」が表示される
   setTimeout(() => {
     finishLoading();
   }, (mode === 'smart' ? 1200 : 5500));
@@ -2134,7 +2163,7 @@ function showLiveDetail(rec) {
       <p class="text-gray-500 text-xs font-semibold mb-1">会場</p><p class="font-bold text-lg text-gray-800">${rec.venue} (${rec.region})</p>
     </div>
     ${setlistSection}
-    <p class="text-center text-gray-400 mt-8 text-xs">※注:今まさにあなたが見ているセトリ 間違いじゃないとは言い切れない🌸</p>`;
+    <p class="text-center text-gray-400 my-8 text-xs">※注:今まさにあなたが見ているセトリ 間違いじゃないとは言い切れない🌸</p>`;
 
   document.getElementById('detail-header-area').onclick = hideDetailView;
   document.getElementById('app').scrollTop = 0;
