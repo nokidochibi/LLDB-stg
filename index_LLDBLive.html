@@ -766,124 +766,108 @@ button { font-size: 13px !important; }
 <script>
 // GASのAPIエンドポイント
 const API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec";
-const CACHE_KEY = 'lldb_data_v4_1_update_history_v6'; // キャッシュキー変更
-const AIKO_BIRTH = new Date(1975, 10, 22); // 1975/11/22
+const CACHE_KEY = 'lldb_data_v4_1_update_history_v6'; 
+const AIKO_BIRTH = new Date(1975, 10, 22); 
 
-let appInitializedResolver;
-const appInitializedPromise = new Promise(resolve => {
-  appInitializedResolver = resolve;
-});
+// バージョン保存用のキー
+const VERSION_STORAGE_KEY = 'lldb_smart_versions_v1';
+
+// コンフィグのキー定義（GASのConfigシートA列と完全に一致させる）
+const CONFIG_KEYS = {
+  LIVE: 'LIVE_VERSION',
+  HISTORY: 'HISTORY_VERSION',
+  SONG: 'SONG_HELPER_VERSION' // ★追加しました
+};
 
 let animationFinishedResolver;
 const animationFinishedPromise = new Promise(resolve => {
   animationFinishedResolver = resolve;
 });
 
+// ▼▼▼ スマート読み込みロジック開始 ▼▼▼
+
 document.addEventListener('DOMContentLoaded', () => {
-    // アプリのバージョン定数（ここを更新するだけで全ユーザーに強制リロードがかかります）
-    const CURRENT_VERSION = 'v4.4.7'; 
-    const VERSION_KEY = 'lldb_installed_version';
-    
-    // 保存されているバージョンを確認
-    const savedVersion = localStorage.getItem(VERSION_KEY);
+  // 1. まずローカルにデータがあるか確認（アニメーション速度決定のため）
+  const hasLocalData = !!localStorage.getItem(CACHE_KEY);
+  
+  // 2. アニメーション開始
+  // データがあれば「高速(smart)」、なければ「通常(normal)」で演出スタート
+  startLoadingAnimation(hasLocalData ? 'smart' : 'normal');
 
-    // バージョンが違う（古い、または初回）場合
-    if (savedVersion !== CURRENT_VERSION) {
-        console.log(`Version Updated: ${savedVersion} -> ${CURRENT_VERSION}`);
-        
-        // 1. 古いキャッシュを一掃する
-        localStorage.clear();
-        
-        // 2. 新しいバージョン情報を保存する
-        localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
-        
-        // ※これでキャッシュが無い状態になるため、この下の処理で
-        // 自動的に「データ取得(長ロード)」へと分岐します。
-    }
-  // まずキャッシュがあるか確認 (try-catchで安全に)
-  let isCachedLoaded = false;
-  try {
-    const cachedData = localStorage.getItem(CACHE_KEY);
-    if (cachedData) {
-      // パースしてみて問題なければキャッシュありと判定
-      JSON.parse(cachedData);
-      isCachedLoaded = true;
-    }
-  } catch (e) {
-    console.warn("Cache check failed:", e);
-  }
-
-  // 1. ローディングアニメーションを最優先で開始
-  // キャッシュの有無に関わらず、アニメーションは必ずスタートさせる
-  startLoadingAnimation(isCachedLoaded ? 'fast' : 'normal');
-
-  // 2. その他の初期化処理 (エラーがあってもアニメーションは止まらないように)
+  // 3. その他の初期化
   try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) {}
   try { setupRandomTriggers(); } catch(e) {}
 
-  // 3. データ読み込み開始 (キャッシュがあればそれを使い、なければfetch)
-  loadAllData(isCachedLoaded);
+  // 4. スマート読み込み開始
+  performSmartLoading(hasLocalData);
 
-  // 4. アニメーション完了と初期化完了を待って画面を表示
+  // 5. 完了待機
   Promise.all([appInitializedPromise, animationFinishedPromise])
     .then(() => {
       finishLoading();
     })
     .catch(e => {
       console.error("Loading process failed:", e);
-      // 万が一Promiseがrejectされても画面は出す
       finishLoading();
     });
 });
 
-let allLiveRecords = [], 
-    songStats = {},                
-    songStatsNoMedley = {},        
-    patternStats = {}, 
-    lastPlayedStats = {}, 
-    albumData = [], 
-    songData = {}, 
-    historyData = [], 
-    listData = [], // ★追加: CDなどのデータを入れる場所
-    anniversaryQueue = [], // ★追加: 記念日を順番待ちさせる場所
-    chartInstances = {};
-let selectedVenueInfo = null;
-let currentDisplayingRecord = null;
-
-function saveToCache(data) {
+/**
+ * スマート読み込みのメイン関数
+ * サーバーのバージョンを確認し、必要ならデータを再取得する
+ */
+async function performSmartLoading(hasLocalData) {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.warn("Cache save failed:", e);
-    if (e.name === 'QuotaExceededError' || e.message.includes('quota')) {
-       console.log("Clearing old cache...");
-       localStorage.clear(); 
-       try {
-         localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-       } catch (e2) {
-         console.error("Retry failed. App will run without cache.", e2);
-       }
+    // ① バージョン情報（軽量）のみ取得
+    // ※ cache: 'no-store' でブラウザキャッシュを回避し、必ず最新のConfigを見に行く
+    const vRes = await fetch(`${API_URL}?action=getAppVersions`, { cache: "no-store" });
+    const serverVersions = await vRes.json();
+    
+    // ② ローカルのバージョン情報と比較
+    const localVersions = JSON.parse(localStorage.getItem(VERSION_STORAGE_KEY)) || {};
+    
+    // 判定: LIVE, HISTORY, SONG のいずれかが変わっているか？
+    const isUpdated = (serverVersions[CONFIG_KEYS.LIVE] !== localVersions[CONFIG_KEYS.LIVE]) ||
+                      (serverVersions[CONFIG_KEYS.HISTORY] !== localVersions[CONFIG_KEYS.HISTORY]) ||
+                      (serverVersions[CONFIG_KEYS.SONG] !== localVersions[CONFIG_KEYS.SONG]);
+
+    if (!isUpdated && hasLocalData) {
+      // --- A. 更新なし ＆ データあり ---
+      console.log("SmartLoad: No updates. Using cache.");
+      const cachedData = JSON.parse(localStorage.getItem(CACHE_KEY));
+      initializeApp(cachedData);
+      
+    } else {
+      // --- B. 更新あり OR データなし ---
+      console.log("SmartLoad: Update detected or no data. Fetching new data...");
+      
+      // データ本体を取得
+      const dRes = await fetch(`${API_URL}?action=getAllData`);
+      if (!dRes.ok) throw new Error(`HTTP error! status: ${dRes.status}`);
+      const data = await dRes.json();
+
+      if (data.status === 'error') throw new Error(data.message);
+
+      // データを保存
+      saveToCache(data);
+      // 新しいバージョン情報を保存
+      localStorage.setItem(VERSION_STORAGE_KEY, JSON.stringify(serverVersions));
+      
+      initializeApp(data);
     }
-  }
-}
-
-// 修正後: Promise制御を削除し、純粋なデータ取得のみを行う関数にします
-async function loadAllData() {
-  // バックグラウンドデータ取得
-  try {
-    const response = await fetch(`${API_URL}?action=getAllData`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-
-    if (data.status === 'error') {
-        throw new Error(data.message);
-    }
-
-    saveToCache(data);
-    initializeApp(data);
 
   } catch (error) {
-      handleError(error); 
+    console.error("SmartLoad Error:", error);
+    handleError(error);
+    
+    // 万が一エラーでも、キャッシュがあればそれで動かす（オフライン対策）
+    if (hasLocalData && !allLiveRecords.length) {
+        console.log("Falling back to local cache due to error.");
+        try {
+            const cachedData = JSON.parse(localStorage.getItem(CACHE_KEY));
+            initializeApp(cachedData);
+        } catch(e) { /* ignore */ }
+    }
   }
 }
 
