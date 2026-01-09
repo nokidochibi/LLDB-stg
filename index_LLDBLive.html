@@ -779,6 +779,14 @@ const CONFIG_KEYS = {
   SONG: 'SONG_HELPER_VERSION' // ★追加しました
 };
 
+// ★修正: グラフのインスタンスを保持する変数を定義
+const chartInstances = {
+  liveCount: null,
+  album: null,
+  venueLiveCount: null,
+  component: null
+};
+
 let animationFinishedResolver;
 const animationFinishedPromise = new Promise(resolve => {
   animationFinishedResolver = resolve;
