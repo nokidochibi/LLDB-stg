@@ -867,9 +867,33 @@ function saveToCache(data) {
   }
 }
 
-// 修正後: Promise制御を削除し、純粋なデータ取得のみを行う関数にします
-async function loadAllData() {
-  // バックグラウンドデータ取得
+// 修正後: 2段階ロード（Basic -> Full）の実装
+async function loadAllData(isCachedLoaded) {
+  
+  // --- Step 1: 軽量データの取得 (キャッシュがない場合のみ実行) ---
+  if (!isCachedLoaded) {
+    try {
+      // 新設した軽量APIを叩く (ツアー名と日程のみ、セトリなし)
+      const basicRes = await fetch(`${API_URL}?action=getLiveBasicData`);
+      const basicJson = await basicRes.json();
+      
+      if (basicJson.status === 'success') {
+        // 1. まず一覧だけを描画してしまう
+        allLiveRecords = basicJson.liveRecords;
+        renderLiveList(allLiveRecords);
+        populateFilters(allLiveRecords);
+        
+        // 2. ユーザーを待たせず、ロード画面を即座に解除
+        finishLoading();
+      }
+    } catch (e) {
+      console.warn("Basic load skipped or failed:", e);
+      // 失敗してもStep 2へ進むのでここでは止めない
+    }
+  }
+
+  // --- Step 2: 完全データの取得 (バックグラウンド実行) ---
+  // 既存の getAllData を呼ぶことで、詳細セトリやCD情報(listData)も確実に取得する
   try {
     const response = await fetch(`${API_URL}?action=getAllData`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -880,13 +904,31 @@ async function loadAllData() {
     }
 
     saveToCache(data);
+
+    // ★重要: データ更新による画面のガタつき（スクロールリセット）を防ぐ処理
+    const appContainer = document.getElementById('app');
+    const currentScroll = appContainer ? appContainer.scrollTop : 0;
+
+    // 全データを適用して再描画
     initializeApp(data);
 
+    // スクロール位置を復元
+    if (appContainer) appContainer.scrollTop = currentScroll;
+
+    // Step 1がスキップされた場合（キャッシュロード時など）のために念押しで呼ぶ
+    finishLoading();
+
   } catch (error) {
-      handleError(error); 
+      // Step 1ですでに画面が表示されている場合は、ユーザー体験を阻害しないよう
+      // 致命的なエラー表示は避けてコンソールのみに出力する
+      const loadingDiv = document.getElementById('loading-container');
+      if (loadingDiv && loadingDiv.style.display !== 'none') {
+          handleError(error); 
+      } else {
+          console.error("Background data update failed:", error);
+      }
   }
 }
-
 // ▼▼▼ 変更箇所: 関数全体を差し替え（見切り発車ロジック追加） ▼▼▼
 function startLoadingAnimation(mode) {
   // 'smart' (キャッシュあり): 1.2秒程度で完了する高速版
