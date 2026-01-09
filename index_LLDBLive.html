@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -765,8 +766,7 @@ button { font-size: 13px !important; }
 <script>
 // GASのAPIエンドポイント
 const API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec";
-const CACHE_KEY = 'lldb_data_v4_1_update_history_v6'; // キャッシュキー
-const VERSION_HASH_KEY = 'lldb_data_version_hash'; // バージョン管理用キー
+const CACHE_KEY = 'lldb_data_v4_1_update_history_v6'; // キャッシュキー変更
 const AIKO_BIRTH = new Date(1975, 10, 22); // 1975/11/22
 
 let appInitializedResolver;
@@ -796,25 +796,44 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 2. 新しいバージョン情報を保存する
         localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
+        
+        // ※これでキャッシュが無い状態になるため、この下の処理で
+        // 自動的に「データ取得(長ロード)」へと分岐します。
     }
+  // まずキャッシュがあるか確認 (try-catchで安全に)
+  let isCachedLoaded = false;
+  try {
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    if (cachedData) {
+      // パースしてみて問題なければキャッシュありと判定
+      JSON.parse(cachedData);
+      isCachedLoaded = true;
+    }
+  } catch (e) {
+    console.warn("Cache check failed:", e);
+  }
 
-    // その他の初期化処理
-    try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) {}
-    try { setupRandomTriggers(); } catch(e) {}
+  // 1. ローディングアニメーションを最優先で開始
+  // キャッシュの有無に関わらず、アニメーションは必ずスタートさせる
+  startLoadingAnimation(isCachedLoaded ? 'fast' : 'normal');
 
-    // データ同期処理を開始 (Configシートによるバージョンチェック)
-    initDataSync();
+  // 2. その他の初期化処理 (エラーがあってもアニメーションは止まらないように)
+  try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) {}
+  try { setupRandomTriggers(); } catch(e) {}
 
-    // 4. アニメーション完了と初期化完了を待って画面を表示
-    Promise.all([appInitializedPromise, animationFinishedPromise])
-      .then(() => {
-        finishLoading();
-      })
-      .catch(e => {
-        console.error("Loading process failed:", e);
-        // 万が一Promiseがrejectされても画面は出す
-        finishLoading();
-      });
+  // 3. データ読み込み開始 (キャッシュがあればそれを使い、なければfetch)
+  loadAllData(isCachedLoaded);
+
+  // 4. アニメーション完了と初期化完了を待って画面を表示
+  Promise.all([appInitializedPromise, animationFinishedPromise])
+    .then(() => {
+      finishLoading();
+    })
+    .catch(e => {
+      console.error("Loading process failed:", e);
+      // 万が一Promiseがrejectされても画面は出す
+      finishLoading();
+    });
 });
 
 let allLiveRecords = [], 
@@ -825,8 +844,8 @@ let allLiveRecords = [],
     albumData = [], 
     songData = {}, 
     historyData = [], 
-    listData = [],
-    anniversaryQueue = [], 
+    listData = [], // ★追加: CDなどのデータを入れる場所
+    anniversaryQueue = [], // ★追加: 記念日を順番待ちさせる場所
     chartInstances = {};
 let selectedVenueInfo = null;
 let currentDisplayingRecord = null;
@@ -848,67 +867,24 @@ function saveToCache(data) {
   }
 }
 
-// データ同期のメインロジック (Configシート対応版)
-async function initDataSync() {
-    try {
-        // 1. まずConfigシートから各データのバージョン情報を取得 (軽量)
-        const versionRes = await fetch(`${API_URL}?action=getAppVersions`);
-        if (!versionRes.ok) throw new Error("Version Check Failed");
-        
-        const versions = await versionRes.json();
-        
-        // 取得したバージョン情報を文字列化してハッシュ代わりにする
-        const currentHash = JSON.stringify(versions);
-        const savedHash = localStorage.getItem(VERSION_HASH_KEY);
-        const cachedData = localStorage.getItem(CACHE_KEY);
+// 修正後: Promise制御を削除し、純粋なデータ取得のみを行う関数にします
+async function loadAllData() {
+  // バックグラウンドデータ取得
+  try {
+    const response = await fetch(`${API_URL}?action=getAllData`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
 
-        // 2. バージョン比較 & キャッシュ存在チェック
-        if (currentHash === savedHash && cachedData) {
-            // --- キャッシュヒット (Burst Speed Mode) ---
-            console.log("Data is up-to-date. Using cache.");
-            
-            // 高速アニメーション開始
-            startLoadingAnimation('smart'); 
-            
-            // 即座にデータを展開して初期化
-            initializeApp(JSON.parse(cachedData));
-            
-        } else {
-            // --- 更新あり or キャッシュなし (Update Mode) ---
-            console.log("Data update detected or no cache. Fetching new data...");
-            
-            // 待機時間を稼ぐため通常アニメーション開始
-            startLoadingAnimation('normal'); 
-            
-            // 全データを取得 (重い処理)
-            const dataRes = await fetch(`${API_URL}?action=getAllData`);
-            if (!dataRes.ok) throw new Error("Data Fetch Failed");
-            
-            const data = await dataRes.json();
-            
-            if (data.status === 'error') throw new Error(data.message);
-            
-            // 新しいデータと新しいハッシュを保存
-            saveToCache(data);
-            localStorage.setItem(VERSION_HASH_KEY, currentHash);
-            
-            // 初期化
-            initializeApp(data);
-        }
-
-    } catch (e) {
-        console.error("Initialization Error:", e);
-        
-        // フォールバック: 通信エラーでもキャッシュがあればそれを使う
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        if (cachedData) {
-            console.warn("Falling back to offline cache.");
-            startLoadingAnimation('smart');
-            initializeApp(JSON.parse(cachedData));
-        } else {
-            handleError(e);
-        }
+    if (data.status === 'error') {
+        throw new Error(data.message);
     }
+
+    saveToCache(data);
+    initializeApp(data);
+
+  } catch (error) {
+      handleError(error); 
+  }
 }
 
 // ▼▼▼ 変更箇所: 関数全体を差し替え（見切り発車ロジック追加） ▼▼▼
@@ -930,6 +906,7 @@ function startLoadingAnimation(mode) {
   });
 
   // アニメーション完了予定時間に合わせて画面を開放（見切り発車）
+  // データが未到着でも、HTML側で用意した「歌詞フレーズ」が表示される
   setTimeout(() => {
     finishLoading();
   }, (mode === 'smart' ? 1200 : 5500));
@@ -2163,7 +2140,7 @@ function showLiveDetail(rec) {
       <p class="text-gray-500 text-xs font-semibold mb-1">会場</p><p class="font-bold text-lg text-gray-800">${rec.venue} (${rec.region})</p>
     </div>
     ${setlistSection}
-    <p class="text-center text-gray-400 my-8 text-xs">※注:今まさにあなたが見ているセトリ 間違いじゃないとは言い切れない🌸</p>`;
+    <p class="text-center text-gray-400 mt-8 text-xs">※注:今まさにあなたが見ているセトリ 間違いじゃないとは言い切れない🌸</p>`;
 
   document.getElementById('detail-header-area').onclick = hideDetailView;
   document.getElementById('app').scrollTop = 0;
