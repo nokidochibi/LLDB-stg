@@ -1025,13 +1025,17 @@ function initializeApp(data) {
   checkOrientation();
   window.addEventListener('resize', checkOrientation);
 
-  renderLiveCountChart();
-  renderAlbumChart();
+// 削除: 非表示のタブのチャートをここで描画するとサイズがおかしくなるため削除
+  // renderLiveCountChart();
+  // renderAlbumChart();
+  
   renderSongRanking(); 
   renderPatternStats();
   renderLastPlayedRanking();
   renderVenueRanking();
-  renderVenueLiveCountChart();
+  
+  // 削除: 同上
+  // renderVenueLiveCountChart();
 
   // ★追加: 詳細画面が開いている場合、新しいデータでリロードする
   if (currentDisplayingRecord && document.body.classList.contains('detail-view')) {
@@ -2386,13 +2390,15 @@ function switchToTab(tabId) {
   lucide.createIcons();
 
   if (tabId === 'song') {
-    if(chartInstances.liveCount) chartInstances.liveCount.resize();
+    // 修正: resizeではなく再描画を行う
+    renderLiveCountChart();
   }
   if (tabId === 'pattern') {
     renderAlbumChart();
   }
-  if (tabId === 'venue' && chartInstances.venueLiveCount) {
-    chartInstances.venueLiveCount.resize();
+  if (tabId === 'venue') {
+    // 修正: resizeではなく再描画を行う
+    renderVenueLiveCountChart();
   }
 }
 
