@@ -2083,7 +2083,7 @@ function showLiveDetail(rec) {
     <div class="attendance-toggle-container">
         <div class="attendance-toggle-label">
             <i data-lucide="${isAttended ? 'check-circle-2' : 'circle'}" class="w-5 h-5 ${isAttended ? 'text-green-600' : 'text-gray-300'}"></i>
-            <span>${isAttended ? '参戦しました！' : '参戦記録をつける'}</span>
+            <span>${isAttended ? '参戦しました！【注意】オフにするとメモが消えるよ' : '参戦記録をつける'}</span>
         </div>
         <div class="relative inline-block align-middle select-none">
             <input type="checkbox" id="detail-attendance-toggle" class="toggle-checkbox" ${isAttended ? 'checked' : ''} onchange="toggleAttendance(this.checked)"/>
