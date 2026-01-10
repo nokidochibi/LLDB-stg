@@ -715,15 +715,21 @@
             UserDataManager.init();
             
             // 子フレームからの更新要求を受け取る
-            window.addEventListener('message', (event) => {
-                if (event.data.type === 'updateUserLiveRecord') {
-                    // { id, attended, memo, link }
-                    UserDataManager.updateAttendedLive(
-                        event.data.id, 
-                        event.data
-                    );
-                }
-            });
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'updateUserLiveRecord') {
+                // { id, attended, memo, link }
+                UserDataManager.updateAttendedLive(
+                    event.data.id, 
+                    event.data
+                );
+            }
+            // ★追加: 誕生日更新の受け取り
+            else if (event.data.type === 'updateUserBirth') {
+                UserDataManager.data.profile.birthday = event.data.birthday;
+                UserDataManager.save();
+                console.log('Birthday updated via History App:', event.data.birthday);
+            }
+        });
         });
 
         // アプリ切り替え
