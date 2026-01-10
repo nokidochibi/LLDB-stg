@@ -936,8 +936,18 @@ function saveToCache(data) {
 async function loadAllData(useCache = false) {
   // 1. キャッシュ利用モードなら、通信せずに即終了（データはDOMContentLoaded内で既にセット済）
   if (useCache) {
-      console.log("Skipping fetch: Loaded from cache.");
-      return; 
+      try {
+          const cachedRaw = localStorage.getItem(CACHE_KEY);
+          if (cachedRaw) {
+              const cachedData = JSON.parse(cachedRaw);
+              console.log("Loaded from cache.");
+              initializeApp(cachedData);
+              return; 
+          }
+      } catch (e) {
+          console.warn("Cache load failed, falling back to fetch", e);
+          // 失敗したらfetchへ継続
+      }
   }
 
   // 2. キャッシュがない、または強制リロードの場合のみ通信する
