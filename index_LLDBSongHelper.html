@@ -951,6 +951,9 @@
         function renderSongList() {
             const tbody = document.getElementById('song-list-body');
             tbody.innerHTML = '';
+            
+            // ★追加: 描画が走る＝データがある状態なので、ローディングは隠す
+            document.getElementById('list-loading').classList.add('hidden');
 
             // 1. フィルタリング
             filteredSongs = allSongs.filter(song => {
