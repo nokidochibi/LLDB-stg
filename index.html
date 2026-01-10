@@ -447,22 +447,22 @@
                 this.broadcastData(); // 各アプリへデータを配信
             },
 
-            // 2. 保存 (Local Storage & Auto Cloud Sync)
-            save: function() {
-            try {
-            const stringified = JSON.stringify(this.data);
-            // 圧縮して保存
-            const compressed = LZString.compressToUTF16(stringified);
-            localStorage.setItem(this.DATA_KEY, compressed);
+           // 2. 保存 (Local Storage & Auto Cloud Sync)
+            save: function(skipSync = false) { // ★引数追加
+                try {
+                    const stringified = JSON.stringify(this.data);
+                    // 圧縮して保存
+                    const compressed = LZString.compressToUTF16(stringified);
+                    localStorage.setItem(this.DATA_KEY, compressed);
             
-            this.broadcastData();
-            console.log('User data saved locally.');
+                    this.broadcastData();
+                    console.log('User data saved locally.');
             
-            // ★追加: ID設定済みなら自動でクラウド同期（サイレント実行）
-            if (this.data.settings.syncId) {
-            this.syncToCloud(true);
-            }
-            } catch (e) {
+                    // ★追加: ID設定済みなら自動でクラウド同期（サイレント実行）
+                    if (!skipSync && this.data.settings.syncId) {
+                        this.syncToCloud(true);
+                    }
+                } catch (e) {
             console.error('Save Error:', e);
             alert('容量不足のため保存できませんでした。');
             }
@@ -559,10 +559,10 @@
                     });
                     const json = await res.json();
                     if (json.status === 'success') {
-                        this.data.settings.lastSync = new Date().toLocaleString();
-                        this.save(); // LastSync更新のため
-                        this.updateUI();
-                        if(!silent) alert('クラウドに保存しました！');
+                    this.data.settings.lastSync = new Date().toLocaleString();
+                    this.save(true); // LastSync更新のため(再同期はしない)
+                    this.updateUI();
+                    if(!silent) alert('クラウドに保存しました！');
                     } else {
                         throw new Error(json.message);
                     }
