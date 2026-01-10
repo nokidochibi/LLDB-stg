@@ -166,7 +166,7 @@
             </div>
             <i data-lucide="chevron-right" class="text-gray-300 w-5 h-5"></i>
         </div>
-           
+            
             <div class="noren-item bg-gray-50/50" onclick="openAboutModal()">
                 <div class="noren-icon bg-gray-400"><i data-lucide="info" class="w-6 h-6"></i></div>
                 <div class="flex-1">
@@ -206,7 +206,7 @@
                 <h2 class="font-bold text-xl text-gray-800">Love Like DataBase</h2>
                 <p id="about-version-display" class="text-xs text-gray-400 font-mono mt-1"></p>
             </div>
-           
+            
             <div class="space-y-4 text-sm text-gray-600 leading-relaxed overflow-y-auto max-h-[30vh]">
                 <p>このアプリは、個人開発者が趣味で作った、非公式のファンアプリです。データの誤りを含んでいる可能性があります。</p>
                 <p>不具合や「ここ間違ってるよ！」というご指摘は、X までお寄せいただけると嬉しいです。</p>
@@ -219,7 +219,7 @@
                     開発者 @noki_dochibi
                 </a>
             </div>
-           
+            
             <div class="history-list">
                 <div class="flex items-center gap-2 mb-3">
                     <i data-lucide="history" class="w-4 h-4 text-gray-400"></i>
@@ -265,39 +265,42 @@
                 </p>
         
                 <div id="sync-setup-area" class="bg-indigo-50 rounded-lg p-4 border border-indigo-100 text-center">
-            <button onclick="UserDataManager.generateSyncId()" class="w-full bg-[#4F46E5] text-white font-bold py-3 rounded-lg text-sm shadow hover:bg-indigo-600 transition flex items-center justify-center gap-2 mb-3">
-                <i data-lucide="key" class="w-4 h-4"></i>
-                LLDB IDを発行する
-            </button>
-            <button onclick="document.getElementById('sync-input-area').classList.toggle('hidden')" class="text-xs text-[#4F46E5] underline hover:text-indigo-700">
-                すでにIDを持っている方はこちら
-            </button>
+                    <button onclick="UserDataManager.generateSyncId()" class="w-full bg-[#4F46E5] text-white font-bold py-3 rounded-lg text-sm shadow hover:bg-indigo-600 transition flex items-center justify-center gap-2 mb-3">
+                        <i data-lucide="key" class="w-4 h-4"></i>
+                        LLDB IDを発行する
+                    </button>
+                    <button onclick="document.getElementById('sync-input-area').classList.toggle('hidden')" class="text-xs text-[#4F46E5] underline hover:text-indigo-700">
+                        すでにIDを持っている方はこちら
+                    </button>
         
-            <div id="sync-input-area" class="hidden mt-3 flex gap-2">
-                <input type="text" id="manual-sync-id" placeholder="IDを入力" class="flex-1 text-xs border border-gray-300 rounded px-2 py-2">
-                <button onclick="UserDataManager.setSyncIdManual()" class="bg-gray-800 text-white text-xs px-3 rounded font-bold">設定</button>
-            </div>
-        </div>
-        
-        <div id="sync-active-area" class="hidden bg-green-50 rounded-lg p-4 border border-green-100">
-    <div class="flex justify-between items-end mb-2">
-        <div onclick="UserDataManager.logout()" class="flex items-center gap-2 text-green-700 font-bold text-sm cursor-pointer hover:underline" title="ログアウト">
-            <i data-lucide="check-circle" class="w-4 h-4"></i> 自動同期中 <span class="text-[10px] font-normal">(解除)</span>
-        </div>
-        <div id="last-sync-time" class="text-[10px] text-gray-400"></div>
-    </div>
-                <div id="last-sync-time" class="text-[10px] text-gray-400"></div>
-            </div>
-            <div class="flex items-center justify-between bg-white rounded border border-green-200 px-3 py-2">
-                <div>
-                    <div class="text-[10px] text-gray-400">あなたのID</div>
-                    <div id="current-sync-id" class="font-mono font-bold text-sm text-gray-700">Loading...</div>
+                    <div id="sync-input-area" class="hidden mt-3 flex gap-2">
+                        <input type="text" id="manual-sync-id" placeholder="IDを入力" class="flex-1 text-xs border border-gray-300 rounded px-2 py-2">
+                        <button onclick="UserDataManager.setSyncIdManual()" class="bg-gray-800 text-white text-xs px-3 rounded font-bold">設定</button>
+                    </div>
                 </div>
-                <button onclick="navigator.clipboard.writeText(document.getElementById('current-sync-id').textContent); alert('コピーしました')" class="text-gray-400 hover:text-green-600">
-                    <i data-lucide="copy" class="w-4 h-4"></i>
-                </button>
-            </div>
-        </div>
+        
+                <div id="sync-active-area" class="hidden bg-green-50 rounded-lg p-4 border border-green-100">
+                    <div class="flex justify-between items-end mb-2">
+                        <div onclick="UserDataManager.logout()" class="flex items-center gap-2 text-green-700 font-bold text-sm cursor-pointer hover:underline" title="ログアウト">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i> 自動同期中 <span class="text-[10px] font-normal">(解除)</span>
+                        </div>
+                        <div id="last-sync-time" class="text-[10px] text-gray-400"></div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between bg-white rounded border border-green-200 px-3 py-2">
+                        <div>
+                            <div class="text-[10px] text-gray-400">あなたのID</div>
+                            <div id="current-sync-id" class="font-mono font-bold text-sm text-gray-700">Loading...</div>
+                        </div>
+                        <button onclick="navigator.clipboard.writeText(document.getElementById('current-sync-id').textContent); alert('コピーしました')" class="text-gray-400 hover:text-green-600">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-2 text-center">
+                         <button onclick="UserDataManager.loadFromCloud()" class="text-[10px] text-green-600/70 underline hover:text-green-800">データを再読み込み</button>
+                    </div>
+                </div>
               </div>
         
               <div class="mb-8">
@@ -334,36 +337,6 @@
             </div>
           </div>
         </div>
-
-                <div class="mb-8">
-                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">ローカル保存 (ファイル)</h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="UserDataManager.backupToFile()" class="bg-gray-100 text-gray-700 py-3 rounded-xl text-sm font-bold hover:bg-gray-200 flex flex-col items-center gap-2">
-                            <i data-lucide="save" class="w-5 h-5"></i>
-                            ファイルに保存
-                        </button>
-                        <button onclick="document.getElementById('file-upload').click()" class="bg-gray-100 text-gray-700 py-3 rounded-xl text-sm font-bold hover:bg-gray-200 flex flex-col items-center gap-2">
-                            <i data-lucide="folder-open" class="w-5 h-5"></i>
-                            ファイルから復元
-                        </button>
-                        <input type="file" id="file-upload" accept=".json" class="hidden" onchange="UserDataManager.restoreFromFile(this)">
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">データ書き出し (Excel用)</h3>
-                    <button onclick="UserDataManager.exportCSV()" class="w-full border border-gray-300 text-gray-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2">
-                        <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
-                        参戦履歴をCSVで出力
-                    </button>
-                    <p class="text-[10px] text-gray-400 mt-2 text-center">
-                        参戦記録とメモをExcelで開ける形式でダウンロードします。<br>
-                        アプリが使えなくなった場合でも、あなたのデータは守られます。
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
 
 
     <div id="app-live" class="app-screen active">
@@ -406,7 +379,7 @@
             'live': { title: `Love Like DataBase ${headerVersion}`, color: 'bg-[#E63946]' }, /* Red */
             'trends': { title: 'LLDB Trends', color: 'bg-[#1D3557]' },       /* Navy */
             'songHelper': { title: 'LLDB Song Helper', color: 'bg-[#F4A261]' }, /* Orange */
-            'history': { title: 'LLDB History', color: 'bg-[#2A9D8F]' }       /* Teal */
+            'history': { title: 'LLDB History', color: 'bg-[#2A9D8F]' }      /* Teal */
         };
 
         // ==========================================================================
@@ -445,6 +418,7 @@
                 }
                 this.updateUI();
                 this.broadcastData(); // 各アプリへデータを配信
+                lucide.createIcons();
             },
 
            // 2. 保存 (Local Storage & Auto Cloud Sync)
@@ -633,7 +607,7 @@
         
         // --------------------------------------------------
         // File Backup / Restore
-            // --------------------------------------------------
+        // --------------------------------------------------
             backupToFile: function() {
                 const blob = new Blob([JSON.stringify(this.data, null, 2)], {type: "application/json"});
                 const url = URL.createObjectURL(blob);
