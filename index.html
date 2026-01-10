@@ -254,16 +254,17 @@
             <div class="p-6 overflow-y-auto max-h-[70vh]">
                 
                 <div class="mb-8">
+                    <div class="mb-8">
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">クラウド同期 (推奨)</h3>
                     <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
                         <p class="text-xs text-indigo-800 mb-3 leading-relaxed">
-                            「あいことば (Sync ID)」を使って、データをサーバーに保存・復元できます。機種変更時も安心です。
+                            「LLDB ID」を使って、データをサーバーに保存・復元できます。機種変更時も安心です。
                         </p>
                         
                         <div id="sync-setup-area">
                             <button onclick="UserDataManager.generateSyncId()" class="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg text-sm shadow hover:bg-indigo-700 transition flex items-center justify-center gap-2">
                                 <i data-lucide="key" class="w-4 h-4"></i>
-                                あいことばを発行する
+                                LLDB IDを発行する
                             </button>
                             <div class="mt-3 text-center">
                                 <button onclick="document.getElementById('sync-input-area').classList.toggle('hidden')" class="text-xs text-indigo-500 underline">すでにIDを持っている方はこちら</button>
@@ -277,7 +278,7 @@
                         <div id="sync-active-area" class="hidden">
                             <div class="flex items-center justify-between bg-white rounded-lg p-3 border border-indigo-100 mb-3">
                                 <div>
-                                    <div class="text-[10px] text-gray-400">あなたのあいことば</div>
+                                    <div class="text-[10px] text-gray-400">あなたのLLDB ID</div>
                                     <div id="current-sync-id" class="font-mono font-bold text-lg text-gray-700 tracking-wider">Loading...</div>
                                 </div>
                                 <button onclick="navigator.clipboard.writeText(document.getElementById('current-sync-id').textContent); alert('コピーしました')" class="text-gray-400 hover:text-indigo-600">
@@ -459,13 +460,245 @@
             // Cloud Sync Logic
             // --------------------------------------------------
             generateSyncId: async function() {
-                if(!confirm('新しい「あいことば」を発行しますか？\n(以前のデータがある場合、上書きされる可能性があります)')) return;
+                if(!confirm('新しい「LLDB ID」を発行しますか？\n(以前のデータがある場合、上書きされる可能性があります)')) return;
                 
                 try {
+                    // GASで確実に受け取れるよう form-urlencoded で送信
+                    const params = new URLSearchParams();
+                    params.append('action', 'generate_sync_id');
+
                     const res = await fetch(GAS_API_URL, {
                         method: 'POST',
-                        body: JSON.stringify({ action: 'generate_sync_id' })
+                        body: params
                     });
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        this.data.settings.syncId = json.syncId;
+                        this.save();
+                        this.updateUI();
+                        // 即座に空データでも保存しておく
+                        this.syncToCloud(true); 
+                        alert(`発行しました！\nLLDB ID: ${json.syncId}\n\nこのIDを必ず控えてください。`);
+                    } else {
+                        throw new Error(json.message || 'Error');
+                    }
+                } catch(e) {
+                    console.error(e);
+                    alert('通信エラー: ID発行に失敗しました');
+                }
+            },
+
+            setSyncIdManual: function() {
+                const input = document.getElementById('manual-sync-id');
+                const val = input.value.trim();
+                if (!val) return;
+                if (!confirm(`LLDB ID「${val}」を設定しますか？\n※現在のローカルデータはこのIDに紐づけられます。`)) return;
+
+                this.data.settings.syncId = val;
+                this.save();
+                this.updateUI();
+                alert('設定しました。「データを復元」ボタンからデータを取り込めます。');
+            },
+
+            syncToCloud: async function(silent = false) {
+                if (!this.data.settings.syncId) return;
+                if (!silent && !confirm('現在のデータをクラウドに保存しますか？')) return;
+
+                try {
+                    // 圧縮された文字列をそのまま送る
+                    const compressed = LZString.compressToUTF16(JSON.stringify(this.data));
+                    
+                    const params = new URLSearchParams();
+                    params.append('action', 'save_user_data');
+                    params.append('syncId', this.data.settings.syncId);
+                    params.append('data', compressed);
+
+                    const res = await fetch(GAS_API_URL, {
+                        method: 'POST',
+                        body: params
+                    });
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        this.data.settings.lastSync = new Date().toLocaleString();
+                        this.save(); // LastSync更新のため
+                        this.updateUI();
+                        if(!silent) alert('クラウドに保存しました！');
+                    } else {
+                        throw new Error(json.message);
+                    }
+                } catch(e) {
+                    if(!silent) alert('保存に失敗しました: ' + e);
+                }
+            },
+
+            loadFromCloud: async function() {
+                if (!this.data.settings.syncId) return;
+                if (!confirm('クラウドからデータを読み込みますか？\n※現在の端末のデータは上書きされます。')) return;
+
+                try {
+                    const params = new URLSearchParams();
+                    params.append('action', 'load_user_data');
+                    params.append('syncId', this.data.settings.syncId);
+
+                    const res = await fetch(GAS_API_URL, {
+                        method: 'POST',
+                        body: params
+                    });
+                    const json = await res.json();
+                    
+                    if (json.status === 'success' && json.data) {
+                        const decompressed = LZString.decompressFromUTF16(json.data);
+                        const loadedData = JSON.parse(decompressed);
+                        
+                        this.data = loadedData;
+                        this.save(); // ローカルに反映
+                        this.updateUI();
+                        this.broadcastData();
+                        alert('復元が完了しました！');
+                    } else {
+                        alert('データが見つかりませんでした。');
+                    }
+                } catch(e) {
+                    alert('読み込みに失敗しました: ' + e);
+                }
+            },
+
+            // --------------------------------------------------
+            // File Backup / Restore
+            // --------------------------------------------------
+            backupToFile: function() {
+                const blob = new Blob([JSON.stringify(this.data, null, 2)], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `lldb_backup_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+
+            restoreFromFile: function(input) {
+                const file = input.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const loaded = JSON.parse(e.target.result);
+                        if (!confirm('ファイルを読み込み、現在のデータを上書きしますか？')) return;
+                        
+                        this.data = loaded;
+                        this.save();
+                        this.updateUI();
+                        this.broadcastData();
+                        alert('復元しました！');
+                    } catch(err) {
+                        alert('不正なファイル形式です');
+                    }
+                };
+                reader.readAsText(file);
+                // Reset input
+                input.value = '';
+            },
+
+            // --------------------------------------------------
+            // CSV Export (Exit Strategy)
+            // --------------------------------------------------
+            exportCSV: async function() {
+                if (Object.keys(this.data.attendedLives).length === 0) {
+                    alert('参戦記録がありません。');
+                    return;
+                }
+
+                if(!confirm('参戦記録をCSVとしてダウンロードしますか？\n(公演タイトル情報を取得するため少し時間がかかります)')) return;
+
+                try {
+                    // 公演名などを解決するために簡易リストを取得
+                    const res = await fetch(`${GAS_API_URL}?action=getLiveBasicData`);
+                    const json = await res.json();
+                    
+                    // ID -> Title Map作成
+                    const liveMap = {};
+                    if(json.data) {
+                        json.data.forEach(t => {
+                            // APIのレスポンス構造に合わせて調整 (liveRecords: json.liveRecords または json.data)
+                            // getLiveBasicDataのレスポンスは {status, liveRecords, version}
+                            const records = json.liveRecords || json.data;
+                            if(records) {
+                                records.forEach(l => {
+                                    // l: {date, tourName, venue...}
+                                    // IDは date を使用している
+                                    liveMap[l.date] = { title: l.tourName, date: l.date, venue: l.venue };
+                                });
+                            }
+                        });
+                    }
+                    
+                    // 修正: getLiveBasicDataのレスポンス構造がフラットな配列の場合の対応
+                    if (json.liveRecords) {
+                        json.liveRecords.forEach(l => {
+                            liveMap[l.date] = { title: l.tourName, date: l.date, venue: l.venue };
+                        });
+                    }
+
+                    // CSV生成
+                    let csvContent = "\uFEFF"; // BOM
+                    csvContent += "日付,ツアー,会場,メモ,リンク\n";
+
+                    const attendedIds = Object.keys(this.data.attendedLives).sort();
+                    
+                    attendedIds.forEach(id => {
+                        const rec = this.data.attendedLives[id];
+                        const info = liveMap[id] || { title: 'Unknown Live', date: id, venue: '-' };
+                        
+                        // CSVエスケープ処理
+                        const escape = (txt) => `"${(txt || '').replace(/"/g, '""')}"`;
+                        
+                        const row = [
+                            escape(info.date),
+                            escape(info.title),
+                            escape(info.venue),
+                            escape(rec.memo),
+                            escape(rec.link)
+                        ];
+                        csvContent += row.join(",") + "\n";
+                    });
+
+                    // ダウンロード
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `lldb_attended_list.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+
+                } catch(e) {
+                    console.error(e);
+                    alert('CSV作成に失敗しました。通信環境を確認してください。');
+                }
+            },
+
+            // UI更新
+            updateUI: function() {
+                const syncId = this.data.settings.syncId;
+                const setupArea = document.getElementById('sync-setup-area');
+                const activeArea = document.getElementById('sync-active-area');
+                const idDisplay = document.getElementById('current-sync-id');
+                const lastSyncDisplay = document.getElementById('last-sync-time');
+
+                if (syncId) {
+                    setupArea.classList.add('hidden');
+                    activeArea.classList.remove('hidden');
+                    idDisplay.textContent = syncId;
+                    lastSyncDisplay.textContent = this.data.settings.lastSync 
+                        ? `最終保存: ${this.data.settings.lastSync}` 
+                        : '未同期';
+                } else {
+                    setupArea.classList.remove('hidden');
+                    activeArea.classList.add('hidden');
+                }
+            }
+        };
                     const json = await res.json();
                     if (json.status === 'success') {
                         this.data.settings.syncId = json.syncId;
