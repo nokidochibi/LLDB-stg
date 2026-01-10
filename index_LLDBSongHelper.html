@@ -401,7 +401,7 @@
                 </div>
                 <div class="text-center pt-6 border-t border-gray-100">
                     <p class="text-[10px] text-gray-400 mb-2">Developed by @noki_dochibi</p>
-                    <p class="text-[10px] text-gray-300 mt-4 font-mono tracking-wider">v2.3.1</p>
+                    <p class="text-[10px] text-gray-300 mt-4 font-mono tracking-wider">v2.3.2</p>
                 </div>
             </div>
         </div>
@@ -431,7 +431,7 @@
     </div>
 
     <script>
-        const APP_VERSION = 'v2.3.1';
+        const APP_VERSION = 'v2.3.2';
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec"; 
         const ICON_URL = `https://unavatar.io/twitter/noki_dochibi?v=${APP_VERSION}`;
 
@@ -446,6 +446,7 @@
         let currentFilterColumn = '';
         let currentSort = { column: null, order: 'asc' }; // ソート状態
         let targetSongForSearch = ''; // 検索対象の一時保存用
+        let isLoadingList = false; // ★追加: 読み込み重複防止フラグ
 
         const LOADING_MESSAGES = {
             lyrics: ["aikoからのtelepathyを受信中...", "そんなことよりパーティ抜け出さない？"],
@@ -515,7 +516,18 @@
             // モードごとのフォーム制御
             if (mode === 'list') {
                 dom.searchForm.classList.add('hidden-form'); // フォーム隠す
-                if (allSongs.length === 0) loadSongsData(); // 初回データロード
+                if (allSongs.length === 0) {
+                     loadSongsData(); // 初回データロード
+                } else {
+                    // ★追加: データがあるのにDOMが空の場合の対策（デグレ防止）
+                    const tbody = document.getElementById('song-list-body');
+                    if (tbody && tbody.children.length === 0) {
+                        renderSongList();
+                    }
+                }
+                // ★追加: 念のためアイコン再描画
+                setTimeout(() => lucide.createIcons(), 50);
+
             } else {
                 dom.searchForm.classList.remove('hidden-form'); // フォーム表示
                 if (mode === 'lyrics') {
@@ -867,58 +879,64 @@
         // --- List Feature (New) ---
 
         function loadSongsData() {
-    // キャッシュチェック
-    const cached = localStorage.getItem('lldb_song_list');
-    const version = localStorage.getItem('lldb_song_version');
-    const loadingEl = document.getElementById('list-loading');
-    let hasRenderedCache = false; // ★追加: キャッシュで表示できたかフラグ
+            if (isLoadingList) return; // ★追加: 重複防止
+            isLoadingList = true;
 
-    if (cached) {
-        try {
-            allSongs = JSON.parse(cached);
-            if (allSongs.length > 0) {
-                renderSongList();
-                loadingEl.classList.add('hidden');
-                hasRenderedCache = true;
+            // キャッシュチェック
+            const cached = localStorage.getItem('lldb_song_list');
+            const version = localStorage.getItem('lldb_song_version');
+            const loadingEl = document.getElementById('list-loading');
+            let hasRenderedCache = false;
+
+            if (cached) {
+                try {
+                    allSongs = JSON.parse(cached);
+                    if (allSongs.length > 0) {
+                        renderSongList();
+                        loadingEl.classList.add('hidden');
+                        hasRenderedCache = true;
+                    }
+                } catch(e) {}
             }
-        } catch(e) {}
-    }
 
-    // バックエンドからデータ取得
-    fetch(`${GAS_API_URL}?action=get_data`)
-        .then(res => res.json())
-        .then(data => {
-            if (data && data.songList) {
-                allSongs = data.songList;
+            // バックエンドからデータ取得
+            // ★追加: キャッシュ回避のためのタイムスタンプ付与
+            fetch(`${GAS_API_URL}?action=get_data&t=${Date.now()}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.songList) {
+                        allSongs = data.songList;
 
-                // バージョン更新 または キャッシュ表示していなければ描画＆保存
-                if (!version || version != data.version || !hasRenderedCache) {
-                    // ★修正: ここで必ず描画する
-                    renderSongList();
+                        // バージョン更新 または キャッシュ表示していなければ描画＆保存
+                        if (!version || version != data.version || !hasRenderedCache) {
+                            renderSongList();
 
-                    try {
-                        localStorage.setItem('lldb_song_list', JSON.stringify(allSongs));
-                        localStorage.setItem('lldb_song_version', data.version);
-                    } catch (e) { console.error("Cache save error", e); }
-                }
-                loadingEl.classList.add('hidden');
-            } else {
-                // データ形式が不正、またはエラーの場合
-                console.error('Data error:', data);
-                if (!hasRenderedCache) {
-                    loadingEl.innerText = "データの取得に失敗しました。";
-                    loadingEl.classList.remove('hidden');
-                }
-            }
-        })
-        .catch(err => {
-            console.error('List fetch error', err);
-            if (!hasRenderedCache) {
-                loadingEl.innerText = "読み込みに失敗しました";
-                loadingEl.classList.remove('hidden');
-            }
-        });
-}
+                            try {
+                                localStorage.setItem('lldb_song_list', JSON.stringify(allSongs));
+                                localStorage.setItem('lldb_song_version', data.version);
+                            } catch (e) { console.error("Cache save error", e); }
+                        }
+                        loadingEl.classList.add('hidden');
+                    } else {
+                        // データ形式が不正、またはエラーの場合
+                        console.error('Data error:', data);
+                        if (!hasRenderedCache) {
+                            loadingEl.innerText = "データの取得に失敗しました。";
+                            loadingEl.classList.remove('hidden');
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('List fetch error', err);
+                    if (!hasRenderedCache) {
+                        loadingEl.innerText = "読み込みに失敗しました";
+                        loadingEl.classList.remove('hidden');
+                    }
+                })
+                .finally(() => {
+                    isLoadingList = false; // ★追加: フラグ解除
+                });
+        }
 
         function getDurationBucket(timeStr) {
             if (!timeStr || timeStr === '-' || timeStr === '不明') return 'Unknown';
@@ -957,7 +975,7 @@
                         valA = parseDuration(valA);
                         valB = parseDuration(valB);
                     }
-                    // ★追加: 曲名の特別処理（読み仮名優先）
+                    // 曲名の特別処理（読み仮名優先）
                     else if (currentSort.column === 'title') {
                         valA = (a.reading || a.title).toString();
                         valB = (b.reading || b.title).toString();
