@@ -911,9 +911,10 @@ let allLiveRecords = [],
     historyData = [], 
     listData = [], // ★追加: CDなどのデータを入れる場所
     anniversaryQueue = [], // ★追加: 記念日を順番待ちさせる場所
-    chartInstances = {};
+let chartInstances = {};
 let selectedVenueInfo = null;
 let currentDisplayingRecord = null;
+let lastScrollPosition = 0; // ★追加: スクロール位置記憶用
 
 function saveToCache(data) {
   try {
@@ -2044,6 +2045,9 @@ function renderLiveList(records) {
 function showLiveDetail(rec) {
   safeTrackEvent('select_content', { content_type: 'live_detail', item_id: rec.date, item_name: rec.tourName });
 
+  // ★追加: 現在のスクロール位置を保存
+  lastScrollPosition = document.getElementById('app').scrollTop;
+
   document.body.classList.add('detail-view');
   currentDisplayingRecord = rec;
 
@@ -2265,13 +2269,19 @@ function hideDetailView() {
     chartInstances.component = null;
   }
 
-  // ★追加: リスト画面の再描画（バッジの状態を反映させるため）
+  // リスト画面の再描画（バッジの状態を反映させるため）
   applyFilters();
 
   // タブ表示の復元
   const currentTab = document.querySelector('.tab-item.active').dataset.tab;
   document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
   document.getElementById(`tab-${currentTab}`).style.display = 'block';
+
+  // 保存しておいたスクロール位置を復元
+  // (リストが再描画された後に位置を戻す)
+  if (currentTab === 'search') {
+      document.getElementById('app').scrollTop = lastScrollPosition;
+  }
 
   currentDisplayingRecord = null;
 }
