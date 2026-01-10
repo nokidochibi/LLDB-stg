@@ -265,39 +265,37 @@
                 </p>
         
                 <div id="sync-setup-area" class="bg-indigo-50 rounded-lg p-4 border border-indigo-100 text-center">
-                  <button onclick="UserDataManager.generateSyncId()" class="w-full bg-[#4F46E5] text-white font-bold py-3 rounded-lg text-sm shadow hover:bg-indigo-600 transition flex items-center justify-center gap-2 mb-3">
-                    <i data-lucide="key" class="w-4 h-4"></i>
-                    LLDB IDを発行する
-                  </button>
-                  <button onclick="document.getElementById('sync-input-area').classList.toggle('hidden')" class="text-xs text-[#4F46E5] underline hover:text-indigo-700">
-                    すでにIDを持っている方はこちら
-                  </button>
-                  
-                  <div id="sync-input-area" class="hidden mt-3 flex gap-2">
-                    <input type="text" id="manual-sync-id" placeholder="IDを入力" class="flex-1 text-xs border border-gray-300 rounded px-2 py-2">
-                    <button onclick="UserDataManager.setSyncIdManual()" class="bg-gray-800 text-white text-xs px-3 rounded font-bold">設定</button>
-                  </div>
-                </div>
+            <button onclick="UserDataManager.generateSyncId()" class="w-full bg-[#4F46E5] text-white font-bold py-3 rounded-lg text-sm shadow hover:bg-indigo-600 transition flex items-center justify-center gap-2 mb-3">
+                <i data-lucide="key" class="w-4 h-4"></i>
+                LLDB IDを発行する
+            </button>
+            <button onclick="document.getElementById('sync-input-area').classList.toggle('hidden')" class="text-xs text-[#4F46E5] underline hover:text-indigo-700">
+                すでにIDを持っている方はこちら
+            </button>
         
-                <div id="sync-active-area" class="hidden bg-green-50 rounded-lg p-4 border border-green-100">
-                  <div class="flex items-center gap-2 mb-2 text-green-700 font-bold text-sm">
+            <div id="sync-input-area" class="hidden mt-3 flex gap-2">
+                <input type="text" id="manual-sync-id" placeholder="IDを入力" class="flex-1 text-xs border border-gray-300 rounded px-2 py-2">
+                <button onclick="UserDataManager.setSyncIdManual()" class="bg-gray-800 text-white text-xs px-3 rounded font-bold">設定</button>
+            </div>
+        </div>
+        
+        <div id="sync-active-area" class="hidden bg-green-50 rounded-lg p-4 border border-green-100">
+            <div class="flex justify-between items-end mb-2">
+                <div class="flex items-center gap-2 text-green-700 font-bold text-sm">
                     <i data-lucide="check-circle" class="w-4 h-4"></i> 自動同期中
-                  </div>
-                  <div class="flex items-center justify-between bg-white rounded border border-green-200 px-3 py-2">
-                    <div>
-                      <div class="text-[10px] text-gray-400">あなたのID</div>
-                      <div id="current-sync-id" class="font-mono font-bold text-sm text-gray-700">Loading...</div>
-                    </div>
-                    <button onclick="navigator.clipboard.writeText(document.getElementById('current-sync-id').textContent); alert('コピーしました')" class="text-gray-400 hover:text-green-600">
-                      <i data-lucide="copy" class="w-4 h-4"></i>
-                    </button>
-                  </div>
-                  <div id="last-sync-time" class="text-[10px] text-right text-gray-400 mt-1"></div>
-                  
-                  <div class="mt-3 text-center">
-                     <button onclick="UserDataManager.loadFromCloud()" class="text-xs text-green-600 underline">クラウドからデータを強制復元する</button>
-                  </div>
                 </div>
+                <div id="last-sync-time" class="text-[10px] text-gray-400"></div>
+            </div>
+            <div class="flex items-center justify-between bg-white rounded border border-green-200 px-3 py-2">
+                <div>
+                    <div class="text-[10px] text-gray-400">あなたのID</div>
+                    <div id="current-sync-id" class="font-mono font-bold text-sm text-gray-700">Loading...</div>
+                </div>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('current-sync-id').textContent); alert('コピーしました')" class="text-gray-400 hover:text-green-600">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
               </div>
         
               <div class="mb-8">
@@ -528,16 +526,20 @@
                 }
             },
 
-            setSyncIdManual: function() {
+            setSyncIdManual: async function() { // asyncを追加
                 const input = document.getElementById('manual-sync-id');
                 const val = input.value.trim();
                 if (!val) return;
-                if (!confirm(`LLDB ID「${val}」を設定しますか？\n※現在のローカルデータはこのIDに紐づけられます。`)) return;
-
+                if (!confirm(`LLDB ID「${val}」を設定しますか？\n※クラウド上のデータをこの端末に復元します。`)) return;
+            
                 this.data.settings.syncId = val;
-                this.save();
-                this.updateUI();
-                alert('設定しました。「データを復元」ボタンからデータを取り込めます。');
+                this.save(true); // 一旦保存(同期はしない)
+                
+                // 直ちに復元を実行
+                const success = await this.loadFromCloud(true); // true=silent mode (new)
+                if (success) {
+                    alert('設定しました。');
+                }
             },
 
             syncToCloud: async function(silent = false) {
@@ -571,35 +573,38 @@
                 }
             },
 
-            loadFromCloud: async function() {
-                if (!this.data.settings.syncId) return;
-                if (!confirm('クラウドからデータを読み込みますか？\n※現在の端末のデータは上書きされます。')) return;
-
+            loadFromCloud: async function(silent = false) {
+                if (!this.data.settings.syncId) return false;
+                if (!silent && !confirm('クラウドからデータを読み込みますか？\n※現在の端末のデータは上書きされます。')) return false;
+            
                 try {
                     const params = new URLSearchParams();
                     params.append('action', 'load_user_data');
                     params.append('syncId', this.data.settings.syncId);
-
+            
                     const res = await fetch(GAS_API_URL, {
                         method: 'POST',
                         body: params
                     });
                     const json = await res.json();
-                    
+            
                     if (json.status === 'success' && json.data) {
                         const decompressed = LZString.decompressFromUTF16(json.data);
                         const loadedData = JSON.parse(decompressed);
-                        
+            
                         this.data = loadedData;
-                        this.save(); // ローカルに反映
+                        this.save(true); // ローカルに反映(再同期はしない)
                         this.updateUI();
                         this.broadcastData();
-                        alert('復元が完了しました！');
+                        if(!silent) alert('復元が完了しました！');
+                        return true;
                     } else {
-                        alert('データが見つかりませんでした。');
+                        alert('データが見つかりませんでした。IDを確認してください。');
+                        return false;
                     }
                 } catch(e) {
                     alert('読み込みに失敗しました: ' + e);
+                    return false;
                 }
             },
 
