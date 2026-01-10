@@ -2622,9 +2622,15 @@ function handleError(error) {
       fatal: true
   });
   document.getElementById('live-list-container').innerHTML = `<p class="text-center text-red-500 py-8 text-sm">データ読み込み中にエラーが発生しました。<br>(${error.message})</p>`;
-}
+  }
 
-function showModal(song, type) {
+  // ★追加: 未定義エラー回避のための関数
+  function checkTodayEvents() {
+    // 機能の実装待ちのため、現在は何もしません
+    console.log("checkTodayEvents called");
+  }
+
+  function showModal(song, type) {
   const matchedRecords = [];
   allLiveRecords.forEach(rec => {
     const cleanSetlist = rec.setlist.filter(s => !s.startsWith('__MEDLEY_')).map(s => s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim());
