@@ -616,7 +616,15 @@
             const m = document.getElementById('month').value;
             const d = document.getElementById('day').value;
             birthDate = new Date(y, m - 1, d);
-            localStorage.setItem('lldb_user_birth', `${y}-${m}-${d}`);
+            
+            const birthStr = `${y}-${m}-${d}`;
+            localStorage.setItem('lldb_user_birth', birthStr);
+
+            // ★追加: 親ウィンドウへ誕生日情報を送信して保存させる
+            window.parent.postMessage({
+                type: 'updateUserBirth',
+                birthday: birthStr
+            }, '*');
 
             safeTrackEvent('generate_lead', { item_category: 'history_timeline' });
 
@@ -633,7 +641,7 @@
             }
 
             renderTimeline();
-            renderGrid(allData.listData, allData.historyData); // HistoryDataも渡す
+            renderGrid(allData.listData, allData.historyData);
             renderTodayStats(); 
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('content-area').classList.remove('hidden');
