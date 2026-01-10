@@ -252,16 +252,16 @@
         
             <div class="p-6 overflow-y-auto max-h-[75vh] text-gray-600">
               
-              <p class="text-xs mb-5 font-bold text-gray-500">
+              <p class="text-sm mb-5 font-bold text-gray-500">
                 参戦メモや誕生日を保存できます。
               </p>
         
               <h3 class="text-sm font-bold text-gray-700 mb-3">▼データ保存方法（どちらか選んでね）</h3>
         
               <div class="mb-6">
-                <p class="text-xs text-gray-600 mb-2 leading-relaxed">
-                  ①クラウド同期：自動で同期されます。<br>
-                  <span class="text-gray-400 text-[10px]">※情報は暗号化され、クラウド上に保存されます。<br>(暗号化の例→è¾mì»‘Èå…ç”·åF&amp;å€¼è¾©å®ç¨¿)</span>
+                <p class="text-sm text-gray-600 mb-2 leading-relaxed">
+                  ①クラウド保存：自動で同期されます。<br>
+                  <span class="text-gray-400 text-[15px]">　※情報は暗号化され、クラウド上に保存されます。<br>　(暗号化の例→è¾mì»‘Èå…ç”·åF&amp;å€¼è¾©å®ç¨¿)</span>
                 </p>
         
                 <div id="sync-setup-area" class="bg-indigo-50 rounded-lg p-4 border border-indigo-100 text-center">
@@ -299,9 +299,9 @@
               </div>
         
               <div class="mb-8">
-                <p class="text-xs text-gray-600 mb-2 leading-relaxed">
+                <p class="text-sm text-gray-600 mb-2 leading-relaxed">
                   ②ローカル保存：手動でスマホに保存してください。<br>
-                  <span class="text-gray-400 text-[10px]">※データはあなたのスマホにしか保存されません</span>
+                  <span class="text-gray-400 text-[15px]">　※データはあなたのスマホにしか保存されません</span>
                 </p>
                 <div class="grid grid-cols-2 gap-3">
                   <button onclick="UserDataManager.backupToFile()" class="bg-gray-100 text-gray-600 py-3 rounded-xl text-xs font-bold hover:bg-gray-200 flex flex-col items-center gap-1 border border-gray-200">
@@ -317,13 +317,13 @@
               </div>
         
               <div>
-                <h3 class="text-xs font-bold text-gray-700 mb-2">▼データ書き出し（パソコンなどで記録を見たいとき用）</h3>
-                <p class="text-[10px] text-gray-400 mb-2">※必要がなければやる必要はありません。</p>
+                <h3 class="text-sm font-bold text-gray-700 mb-3">▼データ書き出し（パソコンなどで記録を見たいとき用）</h3>
+                <p class="text-[15px] text-gray-400 mb-2">　※必要がなければやる必要はありません。</p>
                 <button onclick="UserDataManager.exportCSV()" class="w-full border border-gray-300 text-gray-600 py-3 rounded-xl text-sm font-bold hover:bg-gray-50 flex items-center justify-center gap-2">
                   <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
                   参戦履歴をCSVで出力
                 </button>
-                <p class="text-[10px] text-gray-300 mt-2 text-center leading-tight">
+                <p class="text-[15px] text-gray-300 mt-2 text-center leading-tight">
                   参戦記録とメモをExcelで開ける形式でダウンロードします。<br>
                   アプリが使えなくなった場合でも、あなたのデータは守られます。
                 </p>
