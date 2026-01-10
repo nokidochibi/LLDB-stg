@@ -867,58 +867,65 @@
         // --- List Feature (New) ---
 
         function loadSongsData() {
-            // キャッシュチェック
-            const cached = localStorage.getItem('lldb_song_list');
-            const version = localStorage.getItem('lldb_song_version');
-            const loadingEl = document.getElementById('list-loading');
-            let hasRenderedCache = false; // ★追加: キャッシュで表示できたかフラグ
-            
-            if (cached) {
-                try {
-                    allSongs = JSON.parse(cached);
-                    if (allSongs.length > 0) {
-                        renderSongList();
-                        loadingEl.classList.add('hidden');
-                        hasRenderedCache = true;
-                    }
-                } catch(e) {}
-            }
+    console.log("[Debug] loadSongsData started");
+    const cached = localStorage.getItem('lldb_song_list');
+    const version = localStorage.getItem('lldb_song_version');
+    const loadingEl = document.getElementById('list-loading');
+    let hasRenderedCache = false;
 
-            // バックエンドからデータ取得
-            fetch(`${GAS_API_URL}?action=get_data`) 
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.songList) {
-                        allSongs = data.songList;
-                        
-                        // バージョン更新またはキャッシュ表示していなければ描画＆保存
-                        if (!version || version != data.version || !hasRenderedCache) {
-                             // ★修正: ここで必ず描画する
-                            renderSongList();
-                            
-                            try {
-                                localStorage.setItem('lldb_song_list', JSON.stringify(allSongs));
-                                localStorage.setItem('lldb_song_version', data.version);
-                            } catch (e) { console.error("Cache save error", e); }
-                        }
-                        loadingEl.classList.add('hidden');
-                    } else {
-                        // データ形式が不正、またはエラーの場合
-                        console.error('Data error:', data);
-                        if (!hasRenderedCache) {
-                            loadingEl.innerText = "データの取得に失敗しました。";
-                            loadingEl.classList.remove('hidden');
-                        }
-                    }
-                })
-                .catch(err => {
-                    console.error('List fetch error', err);
-                    if (!hasRenderedCache) {
-                        loadingEl.innerText = "読み込みに失敗しました";
-                        loadingEl.classList.remove('hidden');
-                    }
-                });
-        }
+    if (cached) {
+        try {
+            console.log("[Debug] Cache found");
+            allSongs = JSON.parse(cached);
+            if (allSongs.length > 0) {
+                renderSongList();
+                loadingEl.classList.add('hidden');
+                hasRenderedCache = true;
+                console.log("[Debug] Rendered from cache");
+            }
+        } catch(e) { console.error("[Debug] Cache parse error", e); }
+    }
+
+    console.log("[Debug] Start fetch");
+    fetch(`${GAS_API_URL}?action=get_data`)
+        .then(res => {
+            console.log("[Debug] Fetch response:", res.status);
+            if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            console.log("[Debug] Data received:", data ? "yes" : "no");
+            if (data && data.songList) {
+                allSongs = data.songList;
+                console.log("[Debug] Songs count:", allSongs.length);
+
+                if (!version || version != data.version || !hasRenderedCache) {
+                    console.log("[Debug] Rendering new data");
+                    renderSongList();
+                    try {
+                        localStorage.setItem('lldb_song_list', JSON.stringify(allSongs));
+                        localStorage.setItem('lldb_song_version', data.version);
+                    } catch (e) { console.error("Cache save error", e); }
+                }
+                loadingEl.classList.add('hidden');
+            } else {
+                console.error('Data error:', data);
+                if (!hasRenderedCache) {
+                    // ★画面にエラー内容を表示
+                    loadingEl.innerText = "データ形式エラー: " + JSON.stringify(data).substring(0, 50);
+                    loadingEl.classList.remove('hidden');
+                }
+            }
+        })
+        .catch(err => {
+            console.error('List fetch error', err);
+            if (!hasRenderedCache) {
+                // ★画面に詳細なエラー内容を表示
+                loadingEl.innerText = "読み込みエラー: " + err.message;
+                loadingEl.classList.remove('hidden');
+            }
+        });
+}
 
         function getDurationBucket(timeStr) {
             if (!timeStr || timeStr === '-' || timeStr === '不明') return 'Unknown';
