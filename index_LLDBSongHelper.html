@@ -867,7 +867,7 @@
         // --- List Feature (New) ---
 
         function loadSongsData() {
-    console.log("[Debug] loadSongsData started");
+    // キャッシュチェック
     const cached = localStorage.getItem('lldb_song_list');
     const version = localStorage.getItem('lldb_song_version');
     const loadingEl = document.getElementById('list-loading');
@@ -875,32 +875,24 @@
 
     if (cached) {
         try {
-            console.log("[Debug] Cache found");
             allSongs = JSON.parse(cached);
             if (allSongs.length > 0) {
                 renderSongList();
                 loadingEl.classList.add('hidden');
                 hasRenderedCache = true;
-                console.log("[Debug] Rendered from cache");
             }
-        } catch(e) { console.error("[Debug] Cache parse error", e); }
+        } catch(e) {}
     }
 
-    console.log("[Debug] Start fetch");
+    // バックエンドからデータ取得
     fetch(`${GAS_API_URL}?action=get_data`)
-        .then(res => {
-            console.log("[Debug] Fetch response:", res.status);
-            if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
-            console.log("[Debug] Data received:", data ? "yes" : "no");
             if (data && data.songList) {
                 allSongs = data.songList;
-                console.log("[Debug] Songs count:", allSongs.length);
-
+                
+                // バージョンが変わった、またはキャッシュ表示できていない場合は必ず描画＆保存
                 if (!version || version != data.version || !hasRenderedCache) {
-                    console.log("[Debug] Rendering new data");
                     renderSongList();
                     try {
                         localStorage.setItem('lldb_song_list', JSON.stringify(allSongs));
@@ -911,8 +903,7 @@
             } else {
                 console.error('Data error:', data);
                 if (!hasRenderedCache) {
-                    // ★画面にエラー内容を表示
-                    loadingEl.innerText = "データ形式エラー: " + JSON.stringify(data).substring(0, 50);
+                    loadingEl.innerText = "データの取得に失敗しました。";
                     loadingEl.classList.remove('hidden');
                 }
             }
@@ -920,8 +911,7 @@
         .catch(err => {
             console.error('List fetch error', err);
             if (!hasRenderedCache) {
-                // ★画面に詳細なエラー内容を表示
-                loadingEl.innerText = "読み込みエラー: " + err.message;
+                loadingEl.innerText = "読み込みに失敗しました";
                 loadingEl.classList.remove('hidden');
             }
         });
