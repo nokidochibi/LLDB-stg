@@ -592,32 +592,37 @@ button { font-size: 13px !important; }
   <div id="tab-search" class="tab-content" style="display:block">
     <p class="text-gray-400 mb-1 text-xs text-right font-mono">Data updated: <span id="last-update-date">-</span></p>
     <div class="card-base bg-white border-0">
-      <div class="flex gap-2 mb-2 items-center">
-        <div class="relative flex-1">
-            <input type="text" id="search-input" placeholder="フリーワードで検索" class="w-full px-3 py-2 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-red-200 focus:border-red-400 transition">
+  <div class="flex gap-2 mb-2 items-center justify-between">
+    <div class="relative flex-1">
+        <input type="text" id="search-input" placeholder="フリーワードで検索" class="w-full px-3 py-2 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-red-200 focus:border-red-400 transition">
+    </div>
+    <div class="flex flex-col items-end justify-center shrink-0">
+        <div class="flex items-center gap-1 mb-1">
+            <span class="text-[10px] font-bold text-gray-500">参戦したライブのみ</span>
+            <i data-lucide="info" class="w-3 h-3 text-gray-400 cursor-pointer" onclick="openMyLLDBInfo()"></i>
         </div>
-        <button id="clear-all-btn" class="action-btn clear-btn">クリア</button>
-      </div>
-
-      <div class="flex flex-col gap-2 mb-2">
-        <select id="tour-select" class="w-full text-gray-700 bg-gray-50 border-gray-200"><option value="">すべてのライブ</option><option value="pop">Love Like Pop</option><option value="rock">Love Like Rock</option><option value="aloha">Love Like Aloha</option><option value="other">その他のEvent</option></select>
-        <div class="flex gap-2">
-          <select id="year-select" class="flex-1 text-gray-700 bg-gray-50 border-gray-200"><option value="">すべての年</option></select>
-          <select id="region-select" class="flex-1 text-gray-700 bg-gray-50 border-gray-200"><option value="">すべての都道府県</option></select>
-        </div>
-      </div>
-
-      <div>
-        <input type="text" id="song-filter-input" placeholder="曲名で絞り込み（楽曲タブから選択）" class="w-full bg-gray-100 text-gray-500 border-dashed" readonly>
-      </div>
-      <div class="filter-toggle-row">
-        <span class="filter-toggle-label">参戦したライブのみ</span>
         <div class="relative inline-block align-middle select-none">
             <input type="checkbox" id="attended-filter-toggle" class="toggle-checkbox" />
-            <label for="attended-filter-toggle" class="toggle-label"></label>
+            <label for="attended-filter-toggle" class="toggle-label" style="transform: scale(0.8); transform-origin: right center;"></label>
         </div>
-      </div>
     </div>
+  </div>
+
+  <div class="flex flex-col gap-2 mb-2">
+    <select id="tour-select" class="w-full text-gray-700 bg-gray-50 border-gray-200"><option value="">すべてのライブ</option><option value="pop">Love Like Pop</option><option value="rock">Love Like Rock</option><option value="aloha">Love Like Aloha</option><option value="other">その他のEvent</option></select>
+    <div class="flex gap-2">
+      <select id="year-select" class="flex-1 text-gray-700 bg-gray-50 border-gray-200"><option value="">すべての年</option></select>
+      <select id="region-select" class="flex-1 text-gray-700 bg-gray-50 border-gray-200"><option value="">すべての都道府県</option></select>
+    </div>
+  </div>
+
+  <div class="flex gap-2 items-center">
+    <div class="flex-1">
+        <input type="text" id="song-filter-input" placeholder="曲名で絞り込み（楽曲タブから選択）" class="w-full bg-gray-100 text-gray-500 border-dashed" readonly>
+    </div>
+    <button id="clear-all-btn" class="action-btn clear-btn">クリア</button>
+  </div>
+</div>
 
     <div id="omikuji-trigger-area" class="my-4 py-1 tap-trigger select-none cursor-pointer text-gray-600 hover:text-gray-800 transition-colors bg-white/50 rounded-xl p-3 border border-dashed border-gray-200 text-center">
       <h3 class="font-bold text-base flex items-center justify-center gap-2">
@@ -779,14 +784,65 @@ button { font-size: 13px !important; }
   <div class="modal-content">
     <span class="modal-close" onclick="closeMemoModal()">&times;</span>
     <h3 class="font-bold text-lg mb-4 text-gray-700">📝 参戦メモ</h3>
-    <div class="mb-4">
-      <label class="block text-xs font-bold text-gray-500 mb-1">ひとことメモ</label>
-      <textarea id="memo-textarea" class="w-full p-3 border border-gray-300 rounded-lg text-sm h-32 focus:ring-2 focus:ring-aiko-red focus:border-transparent" placeholder="感想や座席、誰と行ったかなど..."></textarea>
-    </div>
     <div class="mb-6">
-      <label class="block text-xs font-bold text-gray-500 mb-1">リンク (Note, X, Instagram等)</label>
-      <input type="url" id="memo-link-input" class="w-full p-3 border border-gray-300 rounded-lg text-sm" placeholder="https://...">
+      <label class="block text-xs font-bold text-gray-500 mb-1">ひとことメモ</label>
+      <textarea id="memo-textarea" class="w-full p-3 border border-gray-300 rounded-lg text-sm h-40 focus:ring-2 focus:ring-aiko-red focus:border-transparent" placeholder="座席、誰と行ったか、noteやXなどのリンクなど..."></textarea>
     </div>
+    ```
+
+---
+
+### 5. メモ保存処理の修正 (JS)
+リンク入力欄の値を保存・復元する処理を削除します。
+
+**場所:** `openMemoModal()`, `saveMemo()`, `deleteMemo()`
+
+#### After (修正版コード)
+```javascript
+// --- My LLDB Functions ---
+
+// インフォメーションアイコン用
+function openMyLLDBInfo() {
+    // My LLDBのモーダルを表示するためのメッセージ送信
+    window.parent.postMessage({ type: 'openMyLLDBModal' }, '*');
+}
+
+function openMemoModal() {
+    if (!currentDisplayingRecord) return;
+    const dateId = currentDisplayingRecord.date;
+    const data = (userUserData.attendedLives && userUserData.attendedLives[dateId]) || {};
+    
+    document.getElementById('memo-textarea').value = data.memo || '';
+    // リンク欄へのセット処理は削除
+    
+    document.getElementById('memo-modal').style.display = 'flex';
+}
+
+function saveMemo() {
+    if (!currentDisplayingRecord) return;
+    const dateId = currentDisplayingRecord.date;
+    
+    const memoVal = document.getElementById('memo-textarea').value;
+    
+    // 親へ送信 (linkプロパティは空文字を送る)
+    window.parent.postMessage({
+        type: 'updateUserLiveRecord',
+        id: dateId,
+        attended: true,
+        memo: memoVal,
+        link: '' 
+    }, '*');
+    
+    closeMemoModal();
+    // 少し待ってから再描画（メッセージ到達ラグ考慮）
+    setTimeout(() => showLiveDetail(currentDisplayingRecord), 100);
+}
+
+function deleteMemo() {
+    if(!confirm('メモを削除しますか？')) return;
+    document.getElementById('memo-textarea').value = '';
+    saveMemo();
+}
     <div class="flex gap-2">
       <button onclick="saveMemo()" class="flex-1 bg-[#E63946] text-white py-3 rounded-xl font-bold shadow">保存する</button>
       <button onclick="deleteMemo()" class="flex-none bg-gray-200 text-gray-600 py-3 px-4 rounded-xl font-bold">削除</button>
@@ -2016,9 +2072,9 @@ function renderLiveList(records) {
     card.className = 'card-base live-card cursor-pointer hover:shadow-md transition bg-white';
     card.innerHTML = `
       <div class="live-card-label ${labelType}">${labelText}</div>
-      <div class="flex justify-between items-start">
+      <div class="flex items-center gap-2 mt-1">
           <p class="text-gray-500 font-medium text-xs">${rec.date} (${rec.dayOfWeek})</p>
-          ${isAttended ? '<span class="attended-badge"><i data-lucide="check" class="w-3 h-3"></i> 参戦</span>' : ''}
+          ${isAttended ? '<span class="attended-badge" style="margin-left:0;"><i data-lucide="check" class="w-3 h-3"></i> 参戦</span>' : ''}
       </div>
       <p class="font-bold mt-1 text-gray-800 text-lg leading-tight">${rec.tourName}</p>
       <p class="text-gray-600 text-sm mt-1">${rec.venue} (${rec.region})</p>
@@ -2055,17 +2111,23 @@ function showLiveDetail(rec) {
   const userData = userUserData.attendedLives[rec.date] || null;
   const isAttended = !!userData;
   const memo = userData ? userData.memo : '';
-  const link = userData ? userData.link : '';
+  // link変数はもう使わないので削除、または無視
+
+  // URL自動リンク化用関数
+  const linkify = (text) => {
+      if(!text) return '';
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      return text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-500 underline break-all">$1</a>');
+  };
 
   // メモ表示用HTML
   let memoHtml = '';
   if (isAttended) {
-      if (memo || link) {
+      if (memo) {
           memoHtml = `
             <div class="user-memo-area has-content">
                 <div class="memo-edit-btn" onclick="openMemoModal()"><i data-lucide="edit-3" class="w-3 h-3 inline"></i> 編集</div>
-                <div class="memo-content">${memo || '<span class="text-gray-300">メモなし</span>'}</div>
-                ${link ? `<a href="${link}" target="_blank" class="memo-link"><i data-lucide="link" class="w-3 h-3 inline"></i> ${link}</a>` : ''}
+                <div class="memo-content">${linkify(memo)}</div>
             </div>`;
       } else {
           memoHtml = `
@@ -2078,12 +2140,17 @@ function showLiveDetail(rec) {
       }
   }
 
-  // ★追加: 参戦トグルHTML
+  // ★追加: 参戦トグルのテキスト（改行対応）
+  const toggleText = isAttended 
+      ? '参戦しました！<br><span class="text-[10px] font-normal text-gray-400">【注意】オフにするとメモが消えるよ。</span>' 
+      : '参戦記録をつける';
+
+  // 参戦トグルHTML
   const attendanceHtml = `
     <div class="attendance-toggle-container">
         <div class="attendance-toggle-label">
             <i data-lucide="${isAttended ? 'check-circle-2' : 'circle'}" class="w-5 h-5 ${isAttended ? 'text-green-600' : 'text-gray-300'}"></i>
-            <span>${isAttended ? '参戦しました！【注意】オフにするとメモが消えるよ' : '参戦記録をつける'}</span>
+            <span class="leading-tight">${toggleText}</span>
         </div>
         <div class="relative inline-block align-middle select-none">
             <input type="checkbox" id="detail-attendance-toggle" class="toggle-checkbox" ${isAttended ? 'checked' : ''} onchange="toggleAttendance(this.checked)"/>
