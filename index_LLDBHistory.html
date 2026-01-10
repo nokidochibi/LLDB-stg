@@ -3,1171 +3,1162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="LLDB Song Helper">
-    <meta name="application-name" content="LLDB Song Helper">
-    
-    <link rel="apple-touch-icon" href="https://unavatar.io/twitter/noki_dochibi">
-    <link rel="icon" href="https://unavatar.io/twitter/noki_dochibi">
+    <title>LLDB History</title>
 
+    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0D09G3X4F1"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
+
+      // iframe内での重複計測を防ぐため、自動PV送信はOFFにし、必要なイベントのみ手動で送る設定
       gtag('config', 'G-0D09G3X4F1', { 'send_page_view': false });
     </script>
 
-    <title>LLDB Song Helper</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         /* =========================================
-           1. Base & Theme Colors
+           Base & Theme Colors (Teal Theme)
            ========================================= */
         :root {
             --bg-color: #F8F9FA;
-            --main-orange: #F4A261;
-            --main-pink: #ec4899;
-            --bubble-color: #F4A261;
-            --nav-height: 85px;
+            --accent-color: #2A9D8F;
+            --accent-light: #e0f2f1;
+            --accent-dark: #1F7A6F;
+            --text-main: #334155;
+            --nav-height: 85px;        
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            
+            /* Grid Settings */
+            --cell-gap: 2px;
+            --border-album: #FF69B4; /* aiko Pink */
+            --border-single: #F97316; /* Orange-500 */
+            --border-other: #94A3B8; /* Slate-400 */
         }
 
-        body { 
-            font-family: 'Noto Sans JP', sans-serif; 
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
             background-color: var(--bg-color);
-            transition: background-color 0.3s ease, color 0.3s ease; 
-            overflow: hidden;
+            color: var(--text-main);
+            /* ナビゲーションバーの高さ分を確保 */
+            padding-bottom: calc(var(--nav-height) + 20px + env(safe-area-inset-bottom));
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none; /* バウンス抑制 */
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .send-btn-active:active { transform: scale(0.9); }
-        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-        
-        .pulse-text { animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: .5; }
-        }
 
-        .message-row { scroll-margin-top: 6rem; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-
-        .highlight-text {
-            color: #ea580c;
-            font-weight: bold;
-            background-color: #fff7ed;
-            padding: 0 2px;
-            border-radius: 2px;
-        }
-
-        /* 吹き出し (Default) */
-        .bubble { position: relative; border-radius: 1.2rem; transition: background-color 0.3s, color 0.3s; }
-        
-        .bubble-right::before {
-            content: ""; position: absolute; top: 10px; right: -8px; width: 0; height: 0;
-            border-style: solid; border-width: 6px 0 6px 10px;
-            border-color: transparent transparent transparent var(--bubble-color);
-        }
-        
-        .bubble-left::before {
-            content: ""; position: absolute; top: 10px; left: -8px; width: 0; height: 0;
-            border-style: solid; border-width: 6px 10px 6px 0;
-            border-color: transparent #ffffff transparent transparent;
-        }
-
-        /* =========================================
-           2. Footer & Tabs
-           ========================================= */
-        footer {
+        .card-base {
             background-color: white;
-            border-top: 1px solid #e5e7eb;
-            position: fixed; 
-            bottom: 0; 
-            width: 100%; 
-            z-index: 30;
-            box-shadow: 0 -4px 6px -1px rgba(0,0,0,0.02);
-            display: flex;
-            flex-direction: column;
-            padding-bottom: 0;
-            transition: transform 0.3s ease;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(0,0,0,0.03);
         }
 
-        /* 入力フォームエリア */
-        #search-form {
-            padding: 10px 14px;
-            background-color: rgba(255,255,255,0.98);
-            border-bottom: 1px solid #f3f4f6;
-            transition: height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
-            overflow: hidden;
-        }
-        /* 一覧タブ表示時はフォームを隠すクラス */
-        #search-form.hidden-form {
-            height: 0;
-            padding: 0;
-            opacity: 0;
-            border-bottom: none;
-        }
-
-        textarea#search-input {
-            resize: none;
-            overflow: hidden;
-            min-height: 24px;
-            max-height: 120px;
-            line-height: 1.5;
-            padding-top: 8px;
-            padding-bottom: 8px;
-        }
-        textarea#search-input:focus { overflow-y: auto; }
-
-        #footer-tab-area {
-            display: flex;
+        /* セレクトボックス */
+        select {
+            font-size: 15px !important;
+            padding: 12px 14px !important;
+            border-radius: 12px !important;
+            border: 1px solid #cbd5e1 !important;
+            background-color: #fff !important;
             width: 100%;
+            color: var(--text-main);
+            font-weight: bold;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+
+        /* 年表テーブル */
+        .history-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .history-table th {
+            position: sticky;
+            top: 0;
+            background-color: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: var(--text-main);
+            border-bottom: 2px solid var(--accent-light);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 12px 2px;
+            z-index: 20;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .history-table th:first-child { border-top-left-radius: 12px; }
+        .history-table th:last-child { border-top-right-radius: 12px; }
+
+        .history-table td {
+            padding: 10px 4px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+            font-size: 11px;
+            height: 44px;
+            word-wrap: break-word;
             background-color: white;
+        }
+        .history-table tr:last-child td:first-child { border-bottom-left-radius: 12px; }
+        .history-table tr:last-child td:last-child { border-bottom-right-radius: 12px; }
+        .history-table tr:nth-child(even) td { background-color: #fcfcfc; } 
+        
+        .lifestage-text { font-size: 10px; color: #64748b; font-weight: bold; text-align: center; display: block; }
+        .lifestage-highlight { background-color: var(--accent-light); border-radius: 4px; padding: 2px 4px; color: var(--accent-color); }
+
+        .event-chip { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-bottom: 3px; line-height: 1.3; border: 1px solid transparent; max-width: 100%; }
+        .chip-live { background-color: #fef2f2; color: #ef4444; border-color: #fecaca; }
+        .chip-single { background-color: #f0f9ff; color: #0284c7; border-color: #bae6fd; }
+        .chip-album { background-color: #fefce8; color: #854d0e; border-color: #fef08a; }
+
+        /* ナビゲーション */
+        nav {
+            position: fixed !important;
+            bottom: 0; left: 0; right: 0;
+            display: flex !important;
+            border-top: 1px solid #e5e7eb;
+            z-index: 50; width: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             height: calc(var(--nav-height) + env(safe-area-inset-bottom));
             padding-bottom: env(safe-area-inset-bottom);
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.02);
+        }
+        nav > div { display: flex; width: 100%; height: 100%; }
+
+        .tab-item {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            padding-top: 12px; gap: 4px;
+            color: #94a3b8; cursor: pointer; transition: all 0.2s;
+            background-color: transparent; height: 100%;
+        }
+        .tab-item.active { color: var(--accent-color); }
+        .tab-item.active svg { stroke-width: 2.5px; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* 今日の自分用スタイル */
+        .cd-jacket {
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            background-color: #f1f5f9;
+            width: 100%;
+            pointer-events: none;
+            -webkit-touch-callout: none;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .cd-jacket-container {
+            display: flex; align-items: center; justify-content: center;
+            background-color: #f1f5f9; border-radius: 8px; overflow: hidden;
+            aspect-ratio: 1/1;
         }
 
-        .tab-btn {
+        /* ---------------------------------------------------------
+           ★NEW: マップ（グリッド）機能用のスタイル追加
+           --------------------------------------------------------- */
+        
+        #view-map {
+            overflow: visible; 
+        }
+
+        /* 横向き対応: 全画面幅にする */
+        @media (orientation: landscape) {
+            .max-w-lg { max-width: none !important; }
+            .mx-auto { margin-left: 0; margin-right: 0; }
+            .disco-grid { width: 100vw; } /* 画面幅いっぱい */
+            #input-area { max-width: 512px; margin: 16px auto; } /* 入力欄は中央寄せ維持 */
+        }
+
+        .disco-grid {
+            display: grid;
+            grid-template-columns: 36px repeat(12, 1fr);
+            gap: var(--cell-gap);
+            width: 100%;
+            padding: 0 4px;
+        }
+
+        .header-row {
+            position: sticky; top: 0; z-index: 60;
+            background-color: rgba(248, 249, 250, 0.98);
+            backdrop-filter: blur(4px);
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 4px; padding-top: 2px;
+            margin-bottom: 4px;
+            display: grid;
+            grid-template-columns: 36px repeat(12, 1fr);
+            gap: var(--cell-gap);
+        }
+
+        /* レスポンシブ文字サイズ */
+        .header-cell { 
+            text-align: center; 
+            font-size: clamp(11px, 2.5vw, 16px); /* ★修正: 文字サイズを大きく */
+            font-weight: 900; color: #64748b; /* 色を少し濃く */
+            height: 32px; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 2px;
+        }
+        
+        /* 縦軸固定 */
+        .header-cell:first-child {
+            position: sticky; left: 0; z-index: 60;
+            background-color: rgba(248, 249, 250, 0.98);
+        }
+        .year-cell {
+            position: sticky; left: 0; z-index: 30;
+            background-color: #fff;
+            font-size: clamp(10px, 2.2vw, 14px);
+            font-weight: 900; color: #cbd5e1;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            line-height: 1;
+            writing-mode: horizontal-tb; 
+            transform: none;
+            border-right: 1px solid transparent;
+        }
+
+        .birth-cake { font-size: clamp(10px, 2.2vw, 14px); margin-bottom: -2px; display: block; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+
+        .year-label { display: block; }
+        .age-label { 
+            font-size: clamp(8px, 1.8vw, 11px);
+            color: var(--accent-color); margin-top: 1px; 
+            font-weight: bold; opacity: 0.8; white-space: nowrap; transform: scale(0.9);
+        }
+
+        .jacket-cell {
+            aspect-ratio: 1 / 1; background-color: #e2e8f0; border-radius: 3px;
+            position: relative; overflow: hidden; transition: transform 0.1s;
+        }
+        .jacket-cell:active { transform: scale(0.9); }
+        
+        .jacket-img-base {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+            box-sizing: border-box;
+        }
+
+        /* LIVEセル用スタイル */
+        .live-cell {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            border-radius: 3px; overflow: hidden;
+            position: relative; z-index: 2; /* 絵文字の上に表示 */
+        }
+        .live-item {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 12px;
-            gap: 4px;
-            color: #94a3b8;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center;
+            font-size: clamp(6px, 1.4vw, 11px);
+            line-height: 1.1;
+            font-weight: 900;
+            word-break: break-all;
+            padding: 1px;
+            overflow: hidden;
+            /* 背景色削除（親の季節色＋絵文字を見せるため） */
             background-color: transparent;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            height: 100%;
+            text-shadow: 0 1px 1px rgba(255,255,255,0.8); /* 可読性向上 */
+        }
+        
+        /* 文字色のみ指定 */
+        .text-pop { color: #ef4444; } /* Red */
+        .text-rock { color: #0284c7; } /* Blue (濃いめ) */
+        .text-aloha { color: #d97706; } /* Yellow (濃いめ/Orange) */
+        .text-event { color: #475569; } /* Slate */
+
+        /* 枠線スタイル */
+        .border-album { border: 2px solid var(--border-album); }
+        .border-single { border: 2px solid var(--border-single); }
+        .border-other { border: 2px solid var(--border-other); }
+
+        /* 重ね合わせスタイル */
+        .stacked-1 {
+            position: absolute; top: 2px; left: 2px;
+            width: 60%; height: 60%; z-index: 1;
+            border-radius: 2px;
+        }
+        .stacked-2 {
+            position: absolute; bottom: 2px; right: 2px;
+            width: 60%; height: 60%; z-index: 2;
+            border-radius: 2px;
+            box-shadow: -1px -1px 2px rgba(0,0,0,0.2);
         }
 
-        .tab-btn.active { font-weight: bold; color: var(--main-orange); }
-        body.theme-shiritori .tab-btn.active { color: var(--main-pink); }
-        .tab-btn.active svg { stroke-width: 2.5px; }
+        /* 季節の背景色 */
+        .season-winter { background-color: #eff6ff; }
+        .season-spring { background-color: #fff1f2; }
+        .season-summer { background-color: #ecfeff; }
+        .season-autumn { background-color: #fff7ed; }
 
-        /* Request UI */
-        .letter-card {
-            background: white; border-radius: 20px;
-            border: 1px solid #f1f5f9; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            overflow: hidden; margin-bottom: 20px;
+        /* 絵文字透かし（共通クラス） */
+        .bg-emoji::after, .empty-cell::after {
+            font-size: clamp(14px, 3vw, 24px); 
+            opacity: 0.15; pointer-events: none; filter: grayscale(30%);
+            content: '';
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            z-index: 0;
         }
-        .letter-q { background-color: #fffaf5; padding: 16px; border-bottom: 1px dashed #fed7aa; }
-        .letter-a { padding: 16px; background-color: white; }
+        .bg-emoji.season-winter::after, .empty-cell.season-winter::after { content: '❄️'; }
+        .bg-emoji.season-spring::after, .empty-cell.season-spring::after { content: '🌸'; }
+        .bg-emoji.season-summer::after, .empty-cell.season-summer::after { content: '🌻'; }
+        .bg-emoji.season-autumn::after, .empty-cell.season-autumn::after { content: '🍁'; }
+        
+        .empty-cell {
+            border-radius: 2px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+            position: relative;
+        }
 
-        /* Dark Mode */
-        body.dark-mode { background-color: #0f172a; color: #e2e8f0; }
-        body.dark-mode footer { background-color: #1e293b; border-color: #334155; }
-        body.dark-mode #search-form { background-color: #1e293b; border-bottom-color: #334155; }
-        body.dark-mode .bubble-left { background-color: #334155; color: #f1f5f9; }
-        body.dark-mode .bubble-left::before { border-color: transparent #334155 transparent transparent; }
-        body.dark-mode .letter-card { background-color: #1e293b; border-color: #334155; }
-        body.dark-mode .letter-q { background-color: #334155; border-bottom-color: #475569; }
-        body.dark-mode .bg-gray-100 { background-color: #334155; }
+        .future-cell { border: 1px dashed rgba(0,0,0,0.1); }
+        .birth-month-header { color: var(--accent-color); font-weight: 900; }
 
-        /* Shiritori Hints */
-        .hint-btn {
-            display: inline-flex; align-items: center; gap: 4px;
-            background-color: rgba(236, 72, 153, 0.1); color: #ec4899;
-            font-size: 11px; font-weight: bold; padding: 6px 12px;
-            border-radius: 9999px; margin-top: 8px; cursor: pointer;
-            border: 1px solid rgba(236, 72, 153, 0.2); transition: all 0.2s;
+        /* モーダル拡張 */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
+            display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+            opacity: 0; transition: opacity 0.2s; padding: 16px;
         }
-        .hint-btn:active { transform: scale(0.95); background-color: rgba(236, 72, 153, 0.2); }
-        .hint-list {
-            display: none; flex-wrap: wrap; gap: 6px; margin-top: 10px;
-            animation: fadeIn 0.3s ease-out;
+        .modal-overlay.open { display: flex; opacity: 1; }
+        .modal-card-expanded {
+            background: white; width: 100%; max-width: 360px; border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            transform: scale(0.95); transition: transform 0.2s;
+            max-height: 85vh; overflow-y: auto; overflow-x: hidden;
         }
-        .hint-item {
-            background-color: #334155; color: #e2e8f0;
-            padding: 6px 12px; border-radius: 8px; font-size: 12px;
-            cursor: pointer; border: 1px solid #475569; transition: background-color 0.2s;
-        }
-        .hint-item:hover { background-color: #475569; }
-
-        /* Modal Transitions */
-        .modal-enter { opacity: 0; transform: scale(0.95); }
-        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.2s ease-out, transform 0.2s ease-out; }
+        .modal-overlay.open .modal-card-expanded { transform: scale(1); }
     </style>
 </head>
-<body id="app-body" class="theme-lyrics h-screen flex flex-col transition-colors duration-300">
+<body>
 
-    <main id="chat-container-lyrics" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-48"> 
-        <div class="flex items-start space-x-2">
-            <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()" alt="icon">
-            <div class="bubble bubble-left bg-white p-3 shadow-sm max-w-[80%]">
-                <p class="text-sm leading-relaxed">
-                    調べたいフレーズを入力してね。<br>aikoの曲から探してくるよ！
-                </p>
-            </div>
-        </div>
-    </main>
-
-    <main id="chat-container-title" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-48 hidden"> 
-        <div class="flex items-start space-x-2">
-            <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()" alt="icon">
-            <div class="bubble bubble-left bg-white p-3 shadow-sm max-w-[80%]">
-                <p class="text-sm leading-relaxed">
-                    曲名やアルバム名を入力してね。<br>リリース情報や収録曲順を教えるよ💿
-                </p>
-            </div>
-        </div>
-    </main>
-
-    <main id="container-list" class="flex-1 overflow-hidden relative hidden bg-white">
-        <div id="filter-bar" class="hidden px-4 py-2 bg-orange-50 border-b border-orange-100 flex items-center justify-between text-xs text-orange-700">
-            <span id="active-filter-count">フィルタ適用中</span>
-            <button onclick="clearAllFilters()" class="text-orange-600 underline font-medium">全フィルタ解除</button>
-        </div>
-
-        <div class="h-full overflow-auto pb-32"> 
-            <!-- table-fixed に変更し、各カラムの幅を厳密に指定 -->
-            <table class="w-full text-left border-collapse table-fixed">
-                <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm text-xs text-gray-500 uppercase font-semibold">
-                    <tr>
-                        <th class="w-[7%] p-1 text-center text-gray-400 align-middle">
-                            #
-                        </th>
-                        <th onclick="openFilterModal('era')" class="w-[30%] p-1 whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors align-middle">
-                            <div class="flex items-center gap-1">時期 <i id="icon-filter-era" data-lucide="filter" class="w-3 h-3 text-gray-300 transition-colors flex-shrink-0"></i></div>
-                        </th>
-                        <th onclick="openFilterModal('title')" class="w-[33%] p-1 whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors align-middle">
-                            <div class="flex items-center gap-1">曲名 <i id="icon-filter-title" data-lucide="filter" class="w-3 h-3 text-gray-300 transition-colors flex-shrink-0"></i></div>
-                        </th>
-                        <th onclick="openFilterModal('arranger')" class="w-[19%] p-1 whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors align-middle">
-                            <div class="flex items-center gap-1">編曲 <i id="icon-filter-arranger" data-lucide="filter" class="w-3 h-3 text-gray-300 transition-colors flex-shrink-0"></i></div>
-                        </th>
-                        <th onclick="openFilterModal('duration')" class="w-[11%] p-1 text-right whitespace-nowrap cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors align-middle">
-                            <div class="flex items-center justify-end gap-1">時間 <i id="icon-filter-duration" data-lucide="filter" class="w-3 h-3 text-gray-300 transition-colors flex-shrink-0"></i></div>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody id="song-list-body" class="text-sm divide-y divide-gray-100">
-                </tbody>
-            </table>
-            <div id="list-loading" class="text-center py-20 text-gray-400 text-xs">
-                データを読み込み中...
-            </div>
-        </div>
-    </main>
-
-    <main id="chat-container-request" class="flex-1 overflow-y-auto p-4 no-scrollbar pb-48 hidden">
-        <div class="mb-6">
-            <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <span class="text-2xl">📋</span> リクエスト
-            </h2>
-            <div class="bg-orange-50 border border-orange-100 rounded-xl p-3 mt-3 flex items-start gap-2">
-                <i data-lucide="shield-check" class="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0"></i>
-                <p class="text-[11px] text-orange-700 leading-relaxed">
-                    Song Helperが調査依頼や改善要望、質問などに答えるよ。楽しく使っていただくために、リクエストを掲載しない場合もあるよ🌸
-                </p>
-            </div>
-        </div>
-        <div id="request-list" class="space-y-4">
-            <div class="text-center py-10 text-gray-400 text-xs animate-pulse" id="request-loading">
-                リクエストを読み込み中...
-            </div>
-        </div>
-    </main>
-
-    <main id="chat-container-shiritori" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-48 hidden"> 
-        <div class="flex items-start space-x-2">
-            <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()" alt="icon">
-            <div class="bubble bubble-left bg-white p-3 shadow-sm max-w-[80%]">
-                <p class="text-sm leading-relaxed">さぁ、しりとりの時間だ。<br>最初の曲名を入力してみよ。</p>
-            </div>
-        </div>
-    </main>
-
-    <footer>
-        <form id="search-form">
-            <div class="relative flex items-end w-full bg-gray-100 rounded-[24px] px-4 py-1 focus-within:bg-white focus-within:ring-1 focus-within:ring-orange-200 border border-transparent focus-within:border-orange-300 transition-all shadow-inner">
-                <textarea id="search-input" rows="1"
-                    class="flex-1 bg-transparent border-none focus:outline-none text-[15px] placeholder-gray-400 min-w-0"
-                    placeholder="例：あれは" required autocomplete="off"></textarea>
-                <button type="submit" id="submit-btn"
-                    class="send-btn-active ml-2 text-orange-500 p-1.5 rounded-full hover:bg-orange-100 transition-colors flex-shrink-0 mb-1.5">
-                    <i data-lucide="send" class="w-5 h-5 fill-current"></i>
-                </button>
-            </div>
-        </form>
-
-        <div id="footer-tab-area">
-            <button id="tab-lyrics" data-tab="lyrics" onclick="switchTab('lyrics')" class="tab-btn active">
-                <i data-lucide="music" class="w-6 h-6"></i>
-                <span class="text-[10px] font-bold">フレーズ</span>
-            </button>
-            <div class="w-[1px] bg-gray-50 my-3"></div>
-            <button id="tab-title" data-tab="title" onclick="switchTab('title')" class="tab-btn">
-                <i data-lucide="disc" class="w-6 h-6"></i>
-                <span class="text-[10px] font-bold">楽曲</span>
-            </button>
-            <div class="w-[1px] bg-gray-50 my-3"></div>
-            <button id="tab-list" data-tab="list" onclick="switchTab('list')" class="tab-btn">
-                <i data-lucide="list-music" class="w-6 h-6"></i>
-                <span class="text-[10px] font-bold">一覧</span>
-            </button>
-            <div class="w-[1px] bg-gray-50 my-3"></div>
-            <button id="tab-request" data-tab="request" onclick="switchTab('request')" class="tab-btn">
-                <i data-lucide="clipboard-list" class="w-6 h-6"></i>
-                <span class="text-[10px] font-bold">リクエスト</span>
-            </button>
-        </div>
-    </footer>
-
-    <!-- Filter Modal -->
-    <div id="filter-modal" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeFilterModal()"></div>
-        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] flex flex-col shadow-xl transform transition-transform duration-300 translate-y-full" id="filter-modal-content">
-            <!-- Header -->
-            <div class="bg-orange-400 p-4 rounded-t-2xl flex items-center gap-3 text-white">
-                <img class="bot-icon w-10 h-10 rounded-full border-2 border-white bg-white flex-shrink-0" alt="icon">
-                <div>
-                    <p id="filter-helper-msg" class="font-bold text-sm">編曲者を選んでね！</p>
-                    <p class="text-xs opacity-90">複数選択できるよ</p>
+    <main class="w-full max-w-lg mx-auto">
+        
+        <!-- 入力エリア -->
+        <div id="input-area" class="card-base m-4 bg-white">
+            <div class="flex items-end gap-3">
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-gray-400 mb-1.5 ml-1">生年月日を選択してね</label>
+                    <div class="flex gap-2">
+                        <select id="year" class="flex-[3]"></select>
+                        <select id="month" class="flex-[2]"></select>
+                        <select id="day" class="flex-[2]"></select>
+                    </div>
                 </div>
-                <button onclick="closeFilterModal()" class="ml-auto p-1 hover:bg-white/20 rounded-full">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+                <button onclick="generateHistory()" class="bg-[#2A9D8F] hover:bg-[#1F7A6F] text-white font-bold p-3.5 rounded-xl shadow-md transition-transform active:scale-95 flex-shrink-0">
+                    <i data-lucide="check" class="w-6 h-6"></i>
                 </button>
+            </div>
+        </div>
+
+        <div id="content-area" class="hidden fade-in px-2">
+            
+            <!-- 年表タブ (変更なし) -->
+            <div id="view-history" class="hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 12%;">年月</th>
+                                <th style="width: 8%;">年齢</th>
+                                <th style="width: 15%;">ライフ<br>ステージ</th>
+                                <th style="width: 35%;">LIVE</th>
+                                <th style="width: 30%;">CD</th>
+                            </tr>
+                        </thead>
+                        <tbody id="timeline-body"></tbody>
+                    </table>
+                </div>
+                <div class="h-8"></div>
+            </div>
+
+            <!-- マップ（グリッド）タブ -->
+            <div id="view-map" class="hidden">
+                <!-- Grid Container -->
+                <div id="grid-container" class="disco-grid bg-white rounded-2xl shadow-sm border border-gray-100 pb-4 pt-1 select-none">
+                    <!-- JSで生成 -->
+                </div>
+                <!-- ヒント -->
+                <div class="text-center mt-4 mb-8">
+                    <p class="text-[10px] text-gray-400 font-bold bg-white/50 inline-block px-3 py-1 rounded-full border border-gray-100">
+                        ※横向きにすると拡大されて見やすくなるよ
+                    </p>
+                </div>
             </div>
             
-            <!-- Tools Bar -->
-            <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50 text-xs">
-                <span class="font-bold text-gray-500" id="filter-column-name">COLUMN</span>
-                <div class="flex gap-3">
-                    <button onclick="toggleAllFilters(true)" class="text-orange-500 font-medium">全選択</button>
-                    <button onclick="toggleAllFilters(false)" class="text-gray-500">全解除</button>
-                </div>
-            </div>
-
-            <!-- Sort Buttons -->
-            <div class="px-4 py-3 border-b border-gray-100 flex gap-2 justify-center bg-white">
-                <button onclick="applySort('asc')" class="flex-1 py-2 px-3 bg-gray-50 hover:bg-orange-50 text-gray-600 hover:text-orange-600 rounded-lg text-xs font-bold border border-gray-200 transition flex items-center justify-center gap-2">
-                    <i data-lucide="arrow-up" class="w-3 h-3"></i> 昇順
-                </button>
-                <button onclick="applySort('desc')" class="flex-1 py-2 px-3 bg-gray-50 hover:bg-orange-50 text-gray-600 hover:text-orange-600 rounded-lg text-xs font-bold border border-gray-200 transition flex items-center justify-center gap-2">
-                    <i data-lucide="arrow-down" class="w-3 h-3"></i> 降順
-                </button>
-            </div>
-            
-            <!-- List Content -->
-            <div id="filter-options-list" class="flex-1 overflow-y-auto p-2 space-y-1">
-            </div>
-
-            <!-- OK Button -->
-            <div class="p-4 border-t border-gray-100 bg-white pb-safe">
-                <button onclick="applyFilter()" class="w-full bg-orange-500 text-white font-bold py-3 rounded-xl shadow hover:bg-orange-600 active:scale-95 transition-transform">
-                    OK
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Readme Modal -->
-    <div id="readme-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="toggleModal(false)"></div>
-        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white w-[90%] max-w-sm rounded-2xl shadow-xl p-6 transition-all scale-100">
-            <div class="flex justify-between items-start mb-4 border-b border-gray-50 pb-3">
-                <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <span class="bg-orange-100 text-orange-500 p-1.5 rounded-lg">🌷</span>
-                    About App
-                </h2>
-                <button onclick="toggleModal(false)" class="text-gray-400 hover:text-gray-600 p-1 bg-gray-50 rounded-full">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <div class="space-y-6 text-sm text-gray-600 leading-relaxed overflow-y-auto max-h-[60vh] px-1 pb-2 no-scrollbar">
-                <div class="text-center mb-2">
-                    <p class="text-[10px] font-bold text-orange-400 tracking-widest mb-1">WELCOME</p>
-                    <p class="text-gray-700 font-medium">お花ちゃんのための<br>ポケット辞書です🌷</p>
-                </div>
-                <div class="space-y-4">
-                    <div class="bg-orange-50/50 p-4 rounded-xl border border-orange-100">
-                        <h3 class="font-bold text-orange-600 flex items-center gap-2 mb-2"><i data-lucide="music" class="w-4 h-4"></i> フレーズから探す</h3>
-                        <p class="text-xs leading-5">調べたいフレーズを入力すると、その歌詞が含まれる曲を探します。</p>
-                    </div>
-                    <div class="bg-orange-50/50 p-4 rounded-xl border border-orange-100">
-                        <h3 class="font-bold text-orange-600 flex items-center gap-2 mb-2"><i data-lucide="disc" class="w-4 h-4"></i> 楽曲データを見る</h3>
-                        <p class="text-xs leading-5">曲名やアルバム名から、詳細な情報を教えます。</p>
-                    </div>
-                    <div class="bg-orange-50/50 p-4 rounded-xl border border-orange-100">
-                        <h3 class="font-bold text-orange-600 flex items-center gap-2 mb-2"><i data-lucide="list-music" class="w-4 h-4"></i> 一覧リスト (New)</h3>
-                        <p class="text-xs leading-5">全曲リストを表示。時期や編曲者などで絞り込みができます。</p>
+            <!-- 今日の自分タブ -->
+            <div id="view-today" class="hidden p-2">
+                
+                <!-- 1. 今日のあなたの日数 -->
+                <div class="bg-white rounded-2xl shadow-sm p-6 mb-6 border border-gray-100 text-center relative overflow-hidden">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">今日のあなた</h3>
+                    <div class="flex items-baseline justify-center gap-1">
+                        <span id="user-days" class="text-2xl sm:text-3xl font-black text-[#2A9D8F] tracking-tight">0</span>
                     </div>
                 </div>
-                <div class="text-center pt-6 border-t border-gray-100">
-                    <p class="text-[10px] text-gray-400 mb-2">Developed by @noki_dochibi</p>
-                    <p class="text-[10px] text-gray-300 mt-4 font-mono tracking-wider">v2.3.1</p>
+
+                <!-- 2. つなぎのテキスト -->
+                <div class="text-center mb-6">
+                    <div class="inline-block bg-gray-100 text-gray-600 text-xs font-bold px-4 py-2 rounded-full shadow-inner border border-gray-200">
+                        そのころ aikoがリリースしたCDは...
+                    </div>
+                    <div class="h-4 w-0.5 bg-gray-200 mx-auto mt-1"></div>
+                </div>
+
+                <!-- 3. CD情報カード -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden relative">
+                    <!-- ヘッダー部分 -->
+                    <div class="bg-[#2A9D8F] p-4 text-white text-center">
+                         <div class="inline-block bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold mb-1 backdrop-blur-sm border border-white/30">
+                             <span id="match-cd-type">TYPE</span>
+                         </div>
+                         <h2 id="match-cd-title" class="text-lg font-bold leading-tight">Title Loading...</h2>
+                    </div>
+
+                    <div class="p-5">
+                        <!-- ジャケット画像 (初回・通常 並列 / 帯なし) -->
+                        <div class="flex gap-4 mb-6">
+                            <div class="flex-1">
+                                <div class="cd-jacket-container relative group w-full">
+                                    <img id="match-img-first" src="" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="cd-jacket-container relative group w-full">
+                                    <img id="match-img-regular" src="" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 収録曲 -->
+                        <div class="mb-6">
+                            <h4 class="text-xs font-bold text-gray-400 border-b border-gray-100 pb-1 mb-2 flex items-center gap-1">
+                                <i data-lucide="music" class="w-3 h-3"></i> 収録曲
+                            </h4>
+                            <div id="match-tracks" class="text-sm text-gray-600 leading-relaxed font-medium bg-gray-50 p-4 rounded-xl border border-dashed border-gray-200">
+                                <!-- Tracks will be inserted here -->
+                            </div>
+                        </div>
+
+                        <!-- リリース日・aiko年齢 -->
+                        <div class="bg-[#e0f2f1] rounded-xl p-4 flex flex-col gap-2 text-xs">
+                            <div class="flex justify-between items-center border-b border-[#2A9D8F]/10 pb-2">
+                                <div class="text-[#1F7A6F] font-bold opacity-70">リリース日</div>
+                                <div id="match-release-date" class="font-bold text-gray-700">----/--/--</div>
+                            </div>
+                            <div class="flex justify-between items-center pt-1">
+                                <div class="text-[#1F7A6F] font-bold opacity-70">当時のaiko</div>
+                                <div id="match-aiko-days" class="font-bold text-[#2A9D8F] text-right">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="h-8"></div>
+            </div>
+        </div>
+
+        <div id="loading" class="hidden text-center py-20">
+            <div class="animate-spin text-[#2A9D8F] mb-3 mx-auto w-10 h-10"><i data-lucide="loader-2" class="w-10 h-10"></i></div>
+            <p class="text-sm text-gray-400 animate-pulse">
+                データを読み込んでいます...<br>
+                それまで気長に待つとしようか
+            </p>
+        </div>
+    </main>
+
+    <nav>
+        <div>
+            <div onclick="switchTab('history')" class="tab-item active" data-tab="history">
+                <i data-lucide="scroll" class="w-6 h-6"></i>
+                <span class="text-[10px] font-bold">年表</span>
+            </div>
+            <div onclick="switchTab('map')" class="tab-item" data-tab="map">
+                <i data-lucide="grid" class="w-6 h-6"></i>
+                <span class="text-[10px] font-bold">マップ</span>
+            </div>
+            <div onclick="switchTab('today')" class="tab-item" data-tab="today">
+                <i data-lucide="user" class="w-6 h-6"></i>
+                <span class="text-[10px] font-bold">今日の自分</span>
+            </div>
+        </div>
+    </nav>
+    <!-- グリッド詳細モーダル -->
+    <div id="detail-modal" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-card-expanded" onclick="event.stopPropagation()">
+            <!-- ヘッダー (年月) -->
+            <div class="bg-[#2A9D8F] p-4 text-white text-center sticky top-0 z-10 shadow-sm">
+                 <h2 id="modal-header-date" class="text-xl font-black leading-tight tracking-widest font-mono">YYYY.MM</h2>
+            </div>
+
+            <div class="p-5">
+                <!-- CD情報リストコンテナ -->
+                <div id="modal-cd-list" class="space-y-12">
+                    <!-- JSで動的生成 -->
+                </div>
+
+                <!-- 共通情報（自分・ライブ） -->
+                <div id="modal-common-info" class="space-y-4 pt-8 mt-8 border-t-2 border-dashed border-gray-100">
+                     <!-- あなたの情報 -->
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold text-gray-400 flex items-center gap-1 border-b border-gray-100 pb-1">
+                            <i data-lucide="user" class="w-3 h-3"></i> 当時のあなた
+                        </h4>
+                        <div class="bg-gray-50 rounded-xl p-3 text-xs flex justify-between items-center border border-gray-100">
+                            <div class="font-bold text-gray-500">年齢: <span id="modal-user-age" class="text-gray-800 text-sm ml-1"></span></div>
+                            <div class="font-bold text-[#2A9D8F] bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100" id="modal-user-stage"></div>
+                        </div>
+                    </div>
+
+                    <!-- ライブ情報 -->
+                    <div id="modal-live-section" class="space-y-2 hidden">
+                        <h4 class="text-xs font-bold text-gray-400 flex items-center gap-1 border-b border-gray-100 pb-1">
+                            <i data-lucide="mic-2" class="w-3 h-3 text-red-400"></i> この月のLIVE
+                        </h4>
+                        <div id="modal-live-list" class="space-y-2"></div>
+                    </div>
+                </div>
+                
+                <div class="pt-6">
+                     <button onclick="closeModal()" class="w-full py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 rounded-xl border border-gray-200">閉じる</button>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Confirm Modal -->
-    <div id="confirm-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeConfirmModal()"></div>
-        <div class="bg-white rounded-2xl shadow-xl p-6 w-[85%] max-w-sm relative transform transition-all scale-100 animate-fade-in">
-            <div class="flex flex-col items-center text-center gap-3">
-                <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-                    <i data-lucide="search" class="w-6 h-6 text-orange-500"></i>
-                </div>
-                <h3 class="font-bold text-gray-800 text-lg">調べてみる？</h3>
-                <p class="text-sm text-gray-600 leading-relaxed">
-                    「<span id="confirm-song-title" class="font-bold text-orange-600"></span>」<br>について詳しく検索しますか？
-                </p>
-                <div class="flex gap-3 w-full mt-2">
-                    <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">やめる</button>
-                    <button onclick="executeSearchFromList()" class="flex-1 py-2.5 rounded-xl bg-orange-500 text-white font-bold text-sm shadow-md">はい</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast -->
-    <div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 bg-gray-800/80 backdrop-blur text-white text-xs py-2 px-4 rounded-full opacity-0 transition-opacity duration-300 pointer-events-none z-50 shadow-lg">
-        コピーしました！
     </div>
 
     <script>
-        const APP_VERSION = 'v2.3.1';
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec"; 
-        const ICON_URL = `https://unavatar.io/twitter/noki_dochibi?v=${APP_VERSION}`;
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec";
+        const AIKO_BIRTH = new Date(1975, 10, 22); // 1975/11/22
+        const CACHE_KEY = 'lldb_data_history_v7_1_fix';
 
-        let currentMode = 'lyrics'; 
-        let lastMode = 'lyrics'; 
-        let isDarkMode = false; 
-        
-        // List Mode State
-        let allSongs = [];
-        let filteredSongs = [];
-        let activeFilters = { era: [], title: [], arranger: [], duration: [] };
-        let currentFilterColumn = '';
-        let currentSort = { column: null, order: 'asc' }; // ソート状態
-        let targetSongForSearch = ''; // 検索対象の一時保存用
+        let allData = null;
+        let birthDate = null;
+        let loadingPromise = null;
 
-        const LOADING_MESSAGES = {
-            lyrics: ["aikoからのtelepathyを受信中...", "そんなことよりパーティ抜け出さない？"],
-            title: ["おっ！その曲なら確かね...", "俺もそれ好きだよ！待ってて..."],
-            shiritori: ["俺に勝負を仕掛けるとはいい度胸だ。", "なるほど、そう来たか..."],
-            request: ["リクエストを受け付けています📮"],
-            list: ["データを読み込んでいます..."]
-        };
-
-        const dom = {
-            body: document.getElementById('app-body'),
-            containers: {
-                lyrics: document.getElementById('chat-container-lyrics'),
-                title: document.getElementById('chat-container-title'),
-                request: document.getElementById('chat-container-request'),
-                shiritori: document.getElementById('chat-container-shiritori'),
-                list: document.getElementById('container-list')
-            },
-            searchForm: document.getElementById('search-form'),
-            searchInput: document.getElementById('search-input'),
-            toast: document.getElementById('toast'),
-            modal: document.getElementById('readme-modal'),
-            tabBtns: document.querySelectorAll('.tab-btn'),
-            botIcons: document.querySelectorAll('.bot-icon'),
-            requestList: document.getElementById('request-list'),
-            footerTabs: document.getElementById('footer-tab-area')
-        };
-
-        window.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            dom.botIcons.forEach(img => img.src = ICON_URL);
-            fetchRequests(); 
-            setupAutoResizeTextarea();
-        });
-
-        function setupAutoResizeTextarea() {
-            const el = dom.searchInput;
-            el.addEventListener('input', () => {
-                el.style.height = 'auto'; 
-                el.style.height = (el.scrollHeight) + 'px';
-            });
-        }
-
-        function resetTextareaHeight() {
-            const el = dom.searchInput;
-            el.style.height = 'auto';
-        }
-
-        window.switchTab = function(mode) {
-            if (currentMode === mode) return;
-            currentMode = mode;
+            populateDates();
+            startDataLoading();
             
-            dom.tabBtns.forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.tab === mode);
-            });
-
-            Object.keys(dom.containers).forEach(key => {
-                dom.containers[key].classList.toggle('hidden', key !== mode);
-            });
-
-            if (mode === 'shiritori') {
-                document.documentElement.style.setProperty('--bubble-color', '#ec4899');
-            } else {
-                document.documentElement.style.setProperty('--bubble-color', '#F4A261');
-            }
-
-            // モードごとのフォーム制御
-            if (mode === 'list') {
-                dom.searchForm.classList.add('hidden-form'); // フォーム隠す
-                if (allSongs.length === 0) loadSongsData(); // 初回データロード
-            } else {
-                dom.searchForm.classList.remove('hidden-form'); // フォーム表示
-                if (mode === 'lyrics') {
-                    dom.searchInput.placeholder = "例：あれは";
-                } else if (mode === 'title') {
-                    dom.searchInput.placeholder = "例：ポニーテール";
-                } else if (mode === 'request') {
-                    dom.searchInput.placeholder = "調査や改善のリクエストを書いてね📮";
-                    fetchRequests();
-                } else if (mode === 'shiritori') {
-                    dom.searchInput.placeholder = "曲名を入力してね";
-                }
-                
-                const activeContainer = dom.containers[mode];
-                if (mode === 'request') {
-                    activeContainer.scrollTop = 0;
-                } else {
-                    activeContainer.scrollTop = activeContainer.scrollHeight;
-                }
-            }
-        };
-
-        window.activateSecretMode = function() {
-            if (currentMode === 'shiritori') {
-                isDarkMode = false;
-                dom.body.classList.remove('dark-mode');
-                dom.body.classList.remove('theme-shiritori');
-                dom.body.classList.add('theme-lyrics');
-                dom.footerTabs.style.display = 'flex';
-                switchTab(lastMode);
-            } else {
-                safeTrackEvent('unlock_achievement', { achievement_id: 'secret_mode_activated' });
-                lastMode = currentMode;
-                isDarkMode = true;
-                dom.body.classList.add('dark-mode');
-                dom.body.classList.remove('theme-lyrics');
-                dom.body.classList.add('theme-shiritori');
-                dom.footerTabs.style.display = 'none';
-                switchTab('shiritori');
-            }
-        };
-
-        window.restartShiritori = function() {
-            addMessage("望むところだ！<br>最初の曲名を入力してみよ。", 'bot', true);
-            dom.searchInput.focus();
-        };
-
-        dom.searchForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const query = dom.searchInput.value.trim();
-            if (!query) return;
-
-            safeTrackEvent('search', { search_term: query, search_category: currentMode });
-
-            if (currentMode === 'request') {
-                if (!confirm("この内容で送信しますか？")) return;
-                handleRequestPost(query);
-                dom.searchInput.value = '';
-                resetTextareaHeight(); 
-                return;
-            }
-
-            addMessage(query, 'user');
-            dom.searchInput.value = '';
-            resetTextareaHeight(); 
-            const loadingId = addLoading();
-
-            try {
-                const response = await fetch(`${GAS_API_URL}?q=${encodeURIComponent(query)}&mode=${currentMode}`);
-                const data = await response.json();
-                removeLoading(loadingId);
-
-                if (data.status === 'success') {
-                    if (currentMode === 'lyrics') handleLyricsResults(data);
-                    else if (currentMode === 'title') handleTitleResults(data);
-                    else handleShiritoriResults(data);
-                } else {
-                    addMessage("ごめんね、うまく探せなかったみたい...", 'bot');
-                }
-            } catch (error) {
-                removeLoading(loadingId);
-                addMessage("通信失敗！もう一度試してみて！", 'bot');
-                safeTrackEvent('exception', { description: error.message, fatal: false });
+            const savedBirth = localStorage.getItem('lldb_user_birth');
+            if (savedBirth) {
+                const [y, m, d] = savedBirth.split('-');
+                document.getElementById('year').value = y;
+                document.getElementById('month').value = parseInt(m);
+                document.getElementById('day').value = parseInt(d);
             }
         });
 
-        window.sendShiritoriAnswer = function(answer) {
-             const query = answer;
-             if (!query) return;
-             addMessage(query, 'user');
-             const loadingId = addLoading();
-             dom.searchInput.value = '';
-             resetTextareaHeight();
-             fetch(`${GAS_API_URL}?q=${encodeURIComponent(query)}&mode=shiritori`)
-                .then(res => res.json())
-                .then(data => {
-                    removeLoading(loadingId);
-                    if (data.status === 'success') handleShiritoriResults(data);
-                    else addMessage("ごめんね、うまく探せなかったみたい...", 'bot');
-                })
-                .catch(err => {
-                    removeLoading(loadingId);
-                    addMessage("通信失敗！もう一度試してみて！", 'bot');
-                    safeTrackEvent('exception', { description: err.message, fatal: false });
-                });
-        };
+        function startDataLoading() {
+            loadingPromise = new Promise(async (resolve) => {
+                if (allData) { resolve(allData); return; }
+                try {
+                    const cache = localStorage.getItem(CACHE_KEY);
+                    if (cache) {
+                        allData = JSON.parse(cache);
+                        resolve(allData);
+                        return;
+                    }
+                } catch (e) { console.error("Cache Error", e); }
 
-        async function handleRequestPost(query) {
-            const card = document.createElement('div');
-            card.className = "letter-card animate-fade-in border-dashed bg-orange-50/20";
-            card.innerHTML = `
-                <div class="letter-q bg-transparent border-none">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">確認中</span>
-                        <span class="text-[10px] text-gray-400">ただいま</span>
-                    </div>
-                    <p class="text-sm text-gray-700 leading-relaxed font-bold">${query.replace(/\n/g, '<br>')}</p>
-                    <p class="text-[10px] text-gray-400 mt-2 italic">※リクエストを送信しました。内容を確認した後に全体へ公開されます🌸</p>
-                </div>
-            `;
-            dom.requestList.insertBefore(card, dom.requestList.firstChild);
-            showToast("リクエストを送ったよ！📮");
-            dom.containers.request.scrollTop = 0;
-
-            try {
-                await fetch(`${GAS_API_URL}?action=postRequest&q=${encodeURIComponent(query)}`);
-            } catch(e) { 
-                console.error("Post failed", e); 
-                safeTrackEvent('exception', { description: "postRequest: " + e.message, fatal: false });
-            }
-        }
-
-        async function fetchRequests() {
-            try {
-                const res = await fetch(`${GAS_API_URL}?action=getRequests`);
-                const json = await res.json();
-                if (json.status === 'success') renderRequests(json.data);
-            } catch(e) { 
-                console.error("Fetch failed", e); 
-                safeTrackEvent('exception', { description: "fetchRequests: " + e.message, fatal: false });
-            }
-        }
-
-        function renderRequests(data) {
-            if (data.length === 0) {
-                dom.requestList.innerHTML = '<p class="text-center py-10 text-gray-400 text-xs">まだリクエストはありません。</p>';
-                return;
-            }
-            dom.requestList.innerHTML = data.map(item => `
-                <div class="letter-card animate-fade-in">
-                    <div class="letter-q">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">掲載中</span>
-                            <span class="text-[10px] text-gray-400">${item.date}</span>
-                        </div>
-                        <p class="text-sm text-gray-700 leading-relaxed font-bold">${item.question.replace(/\n/g, '<br>')}</p>
-                    </div>
-                    <div class="letter-a">
-                        <div class="flex items-start gap-3">
-                            <img src="${ICON_URL}" class="w-8 h-8 rounded-full border border-gray-100">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-1">
-                                    <span class="text-[10px] font-bold text-gray-800">Song Helper</span>
-                                </div>
-                                <p class="text-sm text-gray-600 leading-relaxed">
-                                    ${item.answer ? item.answer.replace(/\n/g, '<br>') : '<span class="text-gray-300 italic">回答をお待ちください...🌸</span>'}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-            dom.containers.request.scrollTop = 0;
-        }
-
-        function handleLyricsResults(data) {
-            if (!data.results || data.results.length === 0) {
-                addMessage(`「${data.query}」は見つからなかったよ。歌詞カードと同じ表記にしてみて！`, 'bot');
-                return;
-            }
-            let html = '<div class="flex flex-col animate-fade-in">';
-            if (data.fuzzy_type) {
-                html += `<div class="bg-orange-100/50 border border-orange-200 rounded-lg p-2.5 mb-3 text-xs text-orange-700">
-                    「<span class="font-bold">${data.query}</span>」は見つからなかったけど、<br>
-                    「<span class="font-bold text-orange-600">${data.actual_query}</span>」で見つかったよ！ (${data.fuzzy_type})
-                </div>`;
-            }
-            const highlightWord = data.fuzzy_type ? data.actual_query : data.query;
-            data.results.forEach((item, index) => {
-                const borderClass = index < data.results.length - 1 ? 'border-b border-dashed border-gray-100' : '';
-                const highlighted = item.phrase.replace(new RegExp(`(${highlightWord})`, 'gi'), '<span class="highlight-text">$1</span>');
-                html += `<div onclick="copyToClipboard('${item.display_text.replace(/'/g, "\\'")}')" class="${borderClass} py-3 cursor-pointer hover:bg-orange-50/30 transition select-none">
-                    <p class="text-sm text-gray-700 leading-relaxed">${highlighted} <span class="text-xs text-gray-400 ml-1">（${item.title}）</span></p>
-                </div>`;
+                try {
+                    const res = await fetch(`${GAS_API_URL}?action=getHistoryData`);
+                    const json = await res.json();
+                    allData = json;
+                    try { localStorage.setItem(CACHE_KEY, JSON.stringify(json)); } catch(e){}
+                    resolve(allData);
+                } catch (e) {
+                    console.error(e);
+                    resolve(null);
+                }
             });
-            const uniqueSongs = new Set(data.results.map(item => item.title)).size;
-            html += `<div class="mt-3 pt-2 border-t border-dashed border-orange-200">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-[10px] text-gray-400 font-bold">${uniqueSongs}曲 / 計${data.results.length}箇所</p>
-                    <button onclick="copyToClipboard('${data.results.map(r=>r.display_text).join('\\n').replace(/'/g,"\\'")}')" class="text-[10px] text-orange-500 bg-orange-50 px-2 py-1 rounded-full border border-orange-100">まとめてコピー</button>
-                </div>
-                <div class="flex justify-center">
-                    <button onclick="this.closest('.message-row').scrollIntoView({behavior:'smooth', block:'start'})" class="text-[10px] text-orange-300 hover:text-orange-500 flex items-center gap-1 transition px-2 py-1 rounded-full hover:bg-white"><i data-lucide="arrow-up" class="w-3 h-3"></i> この回答のトップへ移動</button>
-                </div>
-            </div></div>`;
-            addMessage(html, 'bot', true);
+        }
+
+        function populateDates() {
+            const yEl = document.getElementById('year'), mEl = document.getElementById('month'), dEl = document.getElementById('day');
+            const currentYear = new Date().getFullYear();
+            for (let i = currentYear; i >= 1950; i--) yEl.add(new Option(i, i, false, i === 1998));
+            for (let i = 1; i <= 12; i++) mEl.add(new Option(i, i, false, i === 7));
+            for (let i = 1; i <= 31; i++) dEl.add(new Option(i, i, false, i === 17));
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.tab === tabName);
+            });
+            document.getElementById('view-history').classList.toggle('hidden', tabName !== 'history');
+            document.getElementById('view-map').classList.toggle('hidden', tabName !== 'map');
+            document.getElementById('view-today').classList.toggle('hidden', tabName !== 'today');
+            
+            if (tabName === 'today') {
+                if (allData && birthDate) renderTodayStats();
+                safeTrackEvent('screen_view', { screen_name: 'History_TodayMe' });
+            } 
+            else if (tabName === 'map') {
+                if (allData && birthDate) renderGrid(allData.listData, allData.historyData);
+                safeTrackEvent('screen_view', { screen_name: 'History_Map' });
+            }
             lucide.createIcons();
         }
 
-        function handleTitleResults(data) {
-             if ((!data.songs || data.songs.length === 0) && (!data.albums || data.albums.length === 0)) {
-                addMessage(`「${data.query}」は見つからなかったよ。正式名称で教えてね！`, 'bot');
-                return;
+        async function generateHistory() {
+            const y = document.getElementById('year').value;
+            const m = document.getElementById('month').value;
+            const d = document.getElementById('day').value;
+            birthDate = new Date(y, m - 1, d);
+            
+            const birthStr = `${y}-${m}-${d}`;
+            localStorage.setItem('lldb_user_birth', birthStr);
+
+            // ★追加: 親ウィンドウへ誕生日情報を送信して保存させる
+            window.parent.postMessage({
+                type: 'updateUserBirth',
+                birthday: birthStr
+            }, '*');
+
+            safeTrackEvent('generate_lead', { item_category: 'history_timeline' });
+
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('content-area').classList.add('hidden');
+
+            if (!allData) {
+                await loadingPromise;
+                if (!allData) {
+                    alert('データの読み込みに失敗しました。');
+                    document.getElementById('loading').classList.add('hidden');
+                    return;
+                }
             }
-            let html = '<div class="flex flex-col gap-4 animate-fade-in">';
-            if (data.songs && data.songs.length > 0) {
-                if (data.albums && data.albums.length > 0) html += '<div class="text-xs font-bold text-orange-500 border-b border-orange-100 pb-1">🎵 曲の検索結果</div>';
-                data.songs.forEach((song, idx) => {
-                    const hasDivider = idx > 0 ? 'border-t border-orange-100 pt-4' : '';
-                    const ageText = song.age_at_release ? `リリース時のaikoは<span class="font-bold text-orange-600">${song.age_at_release}歳</span>だよ。` : '';
-                    const songLink = song.link_url ? `<a href="${song.link_url}" target="_blank" class="text-orange-600 underline font-bold hover:text-orange-400">${song.title}</a>` : `<span class="font-bold text-gray-800">${song.title}</span>`;
-                    
-                    html += `<div class="${hasDivider}">
-                        <div class="mb-2 text-base">${songLink} <span class="text-xs text-gray-400">(${song.reading || ''})</span></div>
-                        <div class="text-sm text-gray-700 space-y-2 leading-relaxed bg-orange-50/50 p-3 rounded-lg border border-orange-100">
-                            ${song.single_info ? `<p>💿 ${song.single_info}</p>` : ''}
-                            ${song.album_info ? `<p>💿 ${song.album_info}</p>` : '<p class="text-gray-300 italic">💿 アルバム未収録</p>'}
-                            <div class="pt-2 border-t border-orange-100 text-xs text-gray-600">
-                                <p>🎼 編曲：${song.arranger || '不明'}</p>
-                                <p>⏱ 再生時間：${song.duration || '不明'}</p>
-                                <p>🥁 BPM：${song.bpm || '確認中'}</p>
-                            </div>
-                            <p class="pt-1 text-xs text-orange-700 font-medium">${ageText}</p>
-                        </div>
-                    </div>`;
-                });
-            }
-            if (data.albums && data.albums.length > 0) {
-                if (data.songs && data.songs.length > 0) html += '<div class="text-xs font-bold text-orange-500 border-b border-orange-100 pb-1">💿 収録ディスク情報</div>';
-                data.albums.forEach((disk) => {
-                    const songList = disk.songs.map((s, i) => `<li class="py-1 border-b border-orange-50 last:border-0 flex gap-2"><span class="text-orange-400 w-6 text-right font-mono text-xs pt-0.5">${s.order}.</span><span>${s.title}</span></li>`).join('');
-                    html += `<div class="bg-orange-50/50 rounded-xl p-4 border border-orange-100">
-                        <h3 class="font-bold text-orange-700 mb-1">💿 ${disk.disk_name}</h3>
-                        <p class="text-xs text-gray-500 mb-3">${disk.release_date} 発売</p>
-                        <ul class="text-sm text-gray-700 list-none">${songList}</ul>
-                    </div>`;
-                });
-            }
-            html += '</div>';
-            html += `<div class="flex justify-center mt-3 pt-2"><button onclick="this.closest('.message-row').scrollIntoView({behavior:'smooth', block:'start'})" class="text-[10px] text-orange-300 hover:text-orange-500 flex items-center gap-1 transition px-2 py-1 rounded-full hover:bg-white"><i data-lucide="arrow-up" class="w-3 h-3"></i> この回答のトップへ移動</button></div>`;
-            addMessage(html, 'bot', true);
-            lucide.createIcons();
+
+            renderTimeline();
+            renderGrid(allData.listData, allData.historyData);
+            renderTodayStats(); 
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('content-area').classList.remove('hidden');
+            
+            const currentTabEl = document.querySelector('.tab-item.active');
+            const targetTab = currentTabEl ? currentTabEl.dataset.tab : 'history';
+            switchTab(targetTab);
         }
 
-        function handleShiritoriResults(data) {
-            let messageContent = data.message;
-            if (data.result === 'continue' && data.all_candidates && data.all_candidates.length > 0) {
-                const listId = `list-${Date.now()}`;
-                messageContent += `
-                    <div class="mt-2">
-                        <button class="hint-btn" onclick="document.getElementById('${listId}').style.display='flex'; this.style.display='none';">
-                            <span>💡 ヒントを見る</span>
-                        </button>
-                        <div id="${listId}" class="hint-list">
-                            ${data.all_candidates.map(song => 
-                                `<div class="hint-item" onclick="sendShiritoriAnswer('${song.replace(/'/g, "\\'")}')">${song}</div>`
-                            ).join('')}
-                        </div>
-                    </div>
+        function requestSearchInLive(tourName) {
+          window.parent.postMessage({
+            type: 'requestLiveSearch',
+            tourName: tourName
+          }, '*');
+        }
+
+        function calculateDetailedAge(birthDate, targetDate) {
+            let b = new Date(birthDate);
+            let t = new Date(targetDate);
+            b.setHours(0,0,0,0);
+            t.setHours(0,0,0,0);
+
+            let years = t.getFullYear() - b.getFullYear();
+            let months = t.getMonth() - b.getMonth();
+            let days = t.getDate() - b.getDate();
+
+            if (days < 0) {
+                months--;
+                const prevMonthLastDay = new Date(t.getFullYear(), t.getMonth(), 0).getDate();
+                days += prevMonthLastDay;
+            }
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            
+            const msPerDay = 1000 * 60 * 60 * 24;
+            const totalDays = Math.floor((t - b) / msPerDay);
+
+            return `${years}歳${months}カ月${days}日<br><span class="text-sm font-normal text-gray-400">（${totalDays.toLocaleString()}日）</span>`;
+        }
+
+        function getLifeStage(targetDate, birth) {
+            const getSchoolCohort = (d) => {
+                const y = d.getFullYear();
+                const m = d.getMonth() + 1;
+                return (m <= 3 || (m === 4 && d.getDate() === 1)) ? y - 1 : y;
+            };
+            const getFiscalYear = (d) => {
+                const y = d.getFullYear();
+                const m = d.getMonth() + 1;
+                return (m <= 3) ? y - 1 : y;
+            }
+            const birthYearCohort = getSchoolCohort(birth);
+            const targetYearFiscal = getFiscalYear(targetDate);
+            const grade = targetYearFiscal - birthYearCohort;
+            
+            if (grade < 7) return '未就学';
+            if (grade === 7) return '小学1年';
+            if (grade === 8) return '小学2年';
+            if (grade === 9) return '小学3年';
+            if (grade === 10) return '小学4年';
+            if (grade === 11) return '小学5年';
+            if (grade === 12) return '小学6年';
+            if (grade === 13) return '中学1年';
+            if (grade === 14) return '中学2年';
+            if (grade === 15) return '中学3年';
+            if (grade === 16) return '高校1年';
+            if (grade === 17) return '高校2年';
+            if (grade === 18) return '高校3年';
+            if (grade === 19) return '大学1年';
+            if (grade === 20) return '大学2年';
+            if (grade === 21) return '大学3年';
+            if (grade === 22) return '大学4年';
+            if (grade > 22) return '立派な大人';
+            return '';
+        }
+
+        function renderTimeline() {
+            const tbody = document.getElementById('timeline-body');
+            tbody.innerHTML = '';
+            const startYear = birthDate.getFullYear();
+            const startMonth = birthDate.getMonth();
+            const now = new Date();
+            const endYear = now.getFullYear();
+            const endMonth = now.getMonth();
+            const eventsMap = {}; 
+            
+            if (allData.historyData && Array.isArray(allData.historyData)) {
+                allData.historyData.forEach(row => {
+                    if (!row.date) return;
+                    const d = new Date(row.date);
+                    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+                    if (!eventsMap[key]) eventsMap[key] = { lives: new Set(), singles: [], albums: [] };
+                    if (row.live) eventsMap[key].lives.add(row.live);
+                    if (row.single) eventsMap[key].singles.push(row.single);
+                    if (row.album) eventsMap[key].albums.push(row.album);
+                });
+            }
+
+            let current = new Date(startYear, startMonth, 1);
+            const end = new Date(endYear, endMonth, 1);
+            let prevYear = -1;
+
+            while (current <= end) {
+                const y = current.getFullYear();
+                const m = current.getMonth() + 1;
+                const key = `${y}-${m}`;
+                let age = y - birthDate.getFullYear();
+                if (m < (birthDate.getMonth() + 1)) age--;
+                const stageText = getLifeStage(current, birthDate);
+                const isHighlight = (m === 4 && (stageText.includes('1年') || stageText === '立派な大人'));
+                const stageHtml = `<span class="lifestage-text ${isHighlight ? 'lifestage-highlight' : ''}">${stageText}</span>`;
+                let liveHtml = '';
+                let cdHtml = '';
+                
+                if (eventsMap[key]) {
+                    eventsMap[key].lives.forEach(liveName => { 
+                          const safeName = liveName.replace(/'/g, "\\'");
+                          liveHtml += `<div class="event-chip chip-live cursor-pointer active:scale-95 transition-transform" onclick="requestSearchInLive('${safeName}')">${liveName}</div>`; 
+                        });
+                    eventsMap[key].singles.forEach(s => { cdHtml += `<div class="event-chip chip-single">S: ${s}</div>`; });
+                    eventsMap[key].albums.forEach(a => { cdHtml += `<div class="event-chip chip-album">Al: ${a}</div>`; });
+                }
+
+                const yearDisplay = (y !== prevYear) ? `<span class="text-xs font-bold block text-gray-500">${y}</span>` : '';
+                prevYear = y;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="text-center text-gray-400 font-mono border-r border-gray-100">
+                        ${yearDisplay}
+                        <span class="text-[10px] text-gray-300">${m}月</span>
+                    </td>
+                    <td class="text-center font-bold text-[#2A9D8F] border-r border-gray-100">${age >= 0 ? age : ''}</td>
+                    <td class="text-center border-r border-gray-100">${stageHtml}</td>
+                    <td class="pl-1">${liveHtml}</td>
+                    <td class="pl-1">${cdHtml}</td>
                 `;
+                tbody.appendChild(tr);
+                current.setMonth(current.getMonth() + 1);
+            }
+        }
+
+        function renderTodayStats() {
+            if (!birthDate || !allData.listData) return;
+
+            const today = new Date();
+            const ageString = calculateDetailedAge(birthDate, today);
+            
+            document.getElementById('user-days').innerHTML = ageString;
+
+            let bestMatch = null;
+            let minDiff = Infinity;
+            
+            const msPerDay = 1000 * 60 * 60 * 24;
+            const userBirthClean = new Date(birthDate); userBirthClean.setHours(0,0,0,0);
+            const todayClean = new Date(today); todayClean.setHours(0,0,0,0);
+            const userDays = Math.floor((todayClean - userBirthClean) / msPerDay);
+
+            allData.listData.forEach(cd => {
+                if (!cd.releaseDate) return;
+                const releaseDate = new Date(cd.releaseDate);
+                releaseDate.setHours(0,0,0,0);
+                
+                const aikoDaysAtRelease = Math.floor((releaseDate - AIKO_BIRTH) / msPerDay);
+                
+                const diff = Math.abs(userDays - aikoDaysAtRelease);
+                
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    bestMatch = {
+                        ...cd,
+                        releaseDateObj: releaseDate,
+                        formattedRelease: `${releaseDate.getFullYear()}/${releaseDate.getMonth() + 1}/${releaseDate.getDate()}`
+                    };
+                }
+            });
+
+            if (bestMatch) {
+                document.getElementById('match-cd-title').innerText = bestMatch.title || 'Unknown Title';
+                document.getElementById('match-cd-type').innerText = bestMatch.type || 'CD';
+                
+                const img1 = document.getElementById('match-img-first');
+                const img2 = document.getElementById('match-img-regular');
+                img1.src = bestMatch.img1 || '';
+                img2.src = bestMatch.img2 || '';
+
+                let tracksHtml = '';
+                if (bestMatch.tracks) {
+                    const tracks = String(bestMatch.tracks).split(/[\n]/).map(t => t.trim()).filter(t => t);
+                    if (tracks.length > 0) {
+                        tracksHtml = '<div class="flex flex-col gap-1">';
+                        tracks.forEach(t => {
+                            tracksHtml += `<div class="text-gray-700 leading-normal">${t}</div>`;
+                        });
+                        tracksHtml += '</div>';
+                    } else {
+                        tracksHtml = `<div class="text-gray-700 leading-normal">${bestMatch.tracks}</div>`;
+                    }
+                } else {
+                    tracksHtml = '<span class="text-gray-400">情報なし</span>';
+                }
+                document.getElementById('match-tracks').innerHTML = tracksHtml;
+
+                document.getElementById('match-release-date').innerText = bestMatch.formattedRelease;
+                
+                const aikoAgeString = calculateDetailedAge(AIKO_BIRTH, bestMatch.releaseDateObj);
+                document.getElementById('match-aiko-days').innerHTML = aikoAgeString;
+            }
+        }
+
+        // 略称変換ヘルパー
+        function getLiveAbbr(liveName) {
+            if (!liveName) return '';
+            // 正規表現でLLP, LLR, LLAを抽出
+            if (liveName.includes('Love Like Pop')) {
+                const match = liveName.match(/Love Like Pop\s*(\S+)/);
+                return match ? `LLP${match[1]}` : 'LLP';
+            }
+            if (liveName.includes('Love Like Rock')) {
+                 const match = liveName.match(/Love Like Rock\s*(\S+)/);
+                 // "Limited" などの扱いも考慮しつつ、数字があればLLR+数字にする
+                 return match ? `LLR${match[1]}` : 'LLR';
+            }
+            if (liveName.includes('Love Like Aloha')) {
+                 const match = liveName.match(/Love Like Aloha\s*(\S+)/);
+                 return match ? `LLA${match[1]}` : 'LLA';
+            }
+            // それ以外はそのまま表示（長い場合はCSSで折り返される）
+            return liveName;
+        }
+
+        // ライブタイプの文字色クラス決定
+        function getLiveColorClass(liveName) {
+            if (!liveName) return 'text-event';
+            if (liveName.includes('Pop')) return 'text-pop';
+            if (liveName.includes('Rock')) return 'text-rock';
+            if (liveName.includes('Aloha')) return 'text-aloha';
+            return 'text-event';
+        }
+
+        function renderGrid(listData, historyData) {
+            const container = document.getElementById('grid-container');
+            if(!listData) return;
+
+            // 1. CDデータをマップ化
+            const releaseMap = {};
+            listData.forEach(item => {
+                if(!item.releaseDate) return;
+                const d = new Date(item.releaseDate);
+                const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+                if (!releaseMap[key]) releaseMap[key] = [];
+                releaseMap[key].push(item);
+            });
+            Object.keys(releaseMap).forEach(key => {
+                releaseMap[key].sort((a, b) => new Date(a.releaseDate) - new Date(b.releaseDate));
+            });
+
+            // 2. Liveデータをマップ化（重複除外）
+            const liveMap = {};
+            if(historyData) {
+                historyData.forEach(item => {
+                    if(!item.date || !item.live) return;
+                    const d = new Date(item.date);
+                    const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+                    if (!liveMap[key]) liveMap[key] = new Set();
+                    liveMap[key].add(item.live);
+                });
             }
 
-            if (data.result === 'unknown_song') {
-                addMessage(data.message, 'bot');
-                safeTrackEvent('level_end', { level_name: 'shiritori', success: false, method: 'unknown_song' });
-            } else {
-                if (data.result === 'user_win' || data.result === 'user_lose') {
-                    const isWin = (data.result === 'user_win');
-                    safeTrackEvent('level_end', { level_name: 'shiritori', success: isWin });
-                    messageContent += `
-                        <div class="mt-4 pt-3 border-t border-gray-600/50">
-                            <p class="text-xs text-gray-300 mb-2 font-bold">もう一度遊ぶ？</p>
-                            <div class="flex gap-2">
-                                <button onclick="restartShiritori()" class="flex-1 bg-pink-500 hover:bg-pink-600 text-white text-xs py-2 px-3 rounded-lg transition font-bold shadow-sm">もう一度勝負！</button>
-                                <button onclick="activateSecretMode()" class="flex-1 bg-slate-600 hover:bg-slate-500 text-white text-xs py-2 px-3 rounded-lg transition font-bold shadow-sm">また今度👋</button>
+            const startYear = 1998;
+            const currentYear = new Date().getFullYear();
+            const endYear = currentYear; 
+            const birthMonth = birthDate.getMonth() + 1;
+
+            let html = '';
+            
+            // ヘッダー行
+            html += `<div class="header-row col-span-full">`;
+            html += `<div class="header-cell" style="background-color:rgba(248, 249, 250, 0.95)"></div>`; 
+            for (let m = 1; m <= 12; m++) {
+                const isBirthMonth = (m === birthMonth);
+                const cakeHtml = isBirthMonth ? '<span class="birth-cake">🎂</span>' : '';
+                html += `<div class="header-cell ${isBirthMonth ? 'birth-month-header' : ''}">${cakeHtml}${m}</div>`;
+            }
+            html += `</div>`;
+
+            for (let y = startYear; y <= endYear; y++) {
+                let ageLabel = '';
+                const birthYear = birthDate.getFullYear();
+                if (y >= birthYear) {
+                    const age = y - birthYear;
+                    ageLabel = `<span class="age-label">${age}歳</span>`;
+                }
+
+                html += `<div class="year-cell"><span class="year-label">${y}</span>${ageLabel}</div>`;
+
+                for (let m = 1; m <= 12; m++) {
+                    const key = `${y}-${m}`;
+                    const cdItems = releaseMap[key];
+                    const liveItems = liveMap[key] ? Array.from(liveMap[key]) : [];
+                    const isFuture = new Date(y, m-1) > new Date();
+                    
+                    let colClass = '';
+                    if (m === 12 || m === 1 || m === 2) colClass = 'season-winter';
+                    else if (m >= 3 && m <= 5) colClass = 'season-spring';
+                    else if (m >= 6 && m <= 8) colClass = 'season-summer';
+                    else if (m >= 9 && m <= 11) colClass = 'season-autumn';
+
+                    // 優先順位: CD > Live > 空白
+                    if (cdItems && cdItems.length > 0) {
+                        // --- CDがある場合 ---
+                        const dataJson = JSON.stringify(cdItems).replace(/"/g, '&quot;');
+                        
+                        let contentHtml = '';
+                        if (cdItems.length === 1) {
+                            const item = cdItems[0];
+                            const imgUrl = item.img2 || item.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
+                            const borderClass = getBorderClass(item.type);
+                            contentHtml = `<img src="${imgUrl}" loading="lazy" class="jacket-img-base ${borderClass}">`;
+                        } else {
+                            const first = cdItems[0];
+                            const last = cdItems[cdItems.length - 1];
+                            const img1 = first.img2 || first.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
+                            const img2 = last.img2 || last.img1 || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=No+Image';
+                            const border1 = getBorderClass(first.type);
+                            const border2 = getBorderClass(last.type);
+                            
+                            contentHtml = `
+                                <img src="${img1}" class="jacket-img-base stacked-1 ${border1}">
+                                <img src="${img2}" class="jacket-img-base stacked-2 ${border2}">
+                            `;
+                        }
+
+                        html += `
+                            <div class="jacket-cell cursor-pointer shadow-sm" onclick="openModal(this)" data-items="${dataJson}">
+                                ${contentHtml}
+                            </div>
+                        `;
+                    } else if (liveItems.length > 0) {
+                        // --- Liveがある場合 (背景＋絵文字＋文字) ---
+                        const dummyItems = [{ releaseDate: `${y}/${m}/1`, title: '', tracks: '', type: '' }];
+                        const dataJson = JSON.stringify(dummyItems).replace(/"/g, '&quot;');
+                        
+                        let liveInnerHtml = '';
+                        liveItems.forEach(liveName => {
+                            const abbr = getLiveAbbr(liveName);
+                            const colorClass = getLiveColorClass(abbr);
+                            liveInnerHtml += `<div class="live-item ${colorClass}">${abbr}</div>`;
+                        });
+
+                        // ★修正: .bg-emoji を追加し、.season-xxx を適用
+                        html += `
+                            <div class="jacket-cell cursor-pointer shadow-sm ${colClass} bg-emoji" onclick="openModal(this)" data-items="${dataJson}">
+                                <div class="live-cell">
+                                    ${liveInnerHtml}
+                                </div>
+                            </div>
+                        `;
+
+                    } else {
+                        // --- 空白 ---
+                        if (isFuture) {
+                            html += `<div class="empty-cell ${colClass} future-cell"></div>`;
+                        } else {
+                            html += `<div class="empty-cell ${colClass}"></div>`;
+                        }
+                    }
+                }
+            }
+            container.innerHTML = html;
+        }
+
+        function getBorderClass(type) {
+            if (!type) return 'border-other';
+            const t = type.toLowerCase();
+            if (t.includes('album') || t.includes('アルバム')) return 'border-album';
+            if (t.includes('single') || t.includes('シングル')) return 'border-single';
+            return 'border-other';
+        }
+
+        function openModal(el) {
+            const items = JSON.parse(el.dataset.items);
+            if (!items || items.length === 0) return;
+
+            const firstDate = new Date(items[0].releaseDate);
+            const dateStr = `${firstDate.getFullYear()}.${firstDate.getMonth() + 1}`;
+            document.getElementById('modal-header-date').textContent = dateStr;
+
+            const listContainer = document.getElementById('modal-cd-list');
+            listContainer.innerHTML = '';
+
+            // CD情報の表示
+            const validItems = items.filter(i => i.title && i.title !== '');
+            
+            if (validItems.length > 0) {
+                validItems.forEach(data => {
+                    const d = new Date(data.releaseDate);
+                    const fullDateStr = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
+                    const aikoAge = calculateDetailedAge(AIKO_BIRTH, d);
+                    
+                    let tracksHtml = '';
+                    if (data.tracks) {
+                        const tracks = String(data.tracks).split(/[\n]/).map(t => t.trim()).filter(t => t);
+                        if (tracks.length > 0) {
+                            tracksHtml = '<div class="flex flex-col gap-1">';
+                            tracks.forEach(t => {
+                                tracksHtml += `<div class="text-gray-700 leading-normal">${t}</div>`;
+                            });
+                            tracksHtml += '</div>';
+                        } else {
+                            tracksHtml = `<div class="text-gray-700 leading-normal">${data.tracks}</div>`;
+                        }
+                    } else { tracksHtml = '<span class="text-gray-400">情報なし</span>'; }
+
+                    const cardHtml = `
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+                                <span class="text-xs font-bold bg-white px-2 py-1 rounded border border-gray-200">${data.type || 'CD'}</span>
+                                <span class="text-xs font-mono text-gray-400">${fullDateStr}</span>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="text-lg font-bold text-gray-800 leading-tight mb-4 text-center">${data.title}</h3>
+                                
+                                <div class="flex gap-3 mb-5">
+                                    <div class="flex-1">
+                                        <div class="cd-jacket-container relative group w-full">
+                                            <img src="${data.img1 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                                        </div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="cd-jacket-container relative group w-full">
+                                            <img src="${data.img2 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-[#e0f2f1]/50 rounded-lg p-3 text-xs flex justify-between items-center mb-4">
+                                    <span class="font-bold text-[#1F7A6F] opacity-70">当時のaiko</span>
+                                    <span class="font-bold text-[#2A9D8F] text-right">${aikoAge}</span>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-xs font-bold text-gray-400 flex items-center gap-1 border-b border-gray-100 pb-1 mb-2">
+                                        <i data-lucide="music" class="w-3 h-3"></i> 収録曲
+                                    </h4>
+                                    <div class="text-sm text-gray-600 leading-relaxed font-medium bg-gray-50 p-3 rounded-lg border border-dashed border-gray-200">
+                                        ${tracksHtml}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     `;
-                    addMessage(messageContent, 'bot', true);
-                } else {
-                    addMessage(messageContent, 'bot', true);
-                }
-            }
-        }
-
-        function addMessage(content, type, isHtml = false) {
-            const container = dom.containers[currentMode];
-            const div = document.createElement('div');
-            div.className = `flex items-start space-x-2 message-row ${type === 'user' ? 'justify-end' : ''}`;
-            const bubbleClass = type === 'user' ? 'bubble bubble-right text-white' : 'bubble bubble-left bg-white text-gray-800';
-            
-            let userStyle = '';
-            if (type === 'user') {
-                userStyle = 'style="background-color: var(--bubble-color);"';
-            }
-
-            const iconHtml = type === 'bot' ? `<img src="${ICON_URL}" class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white flex-shrink-0 shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()">` : '';
-            div.innerHTML = type === 'bot' 
-                ? `${iconHtml}<div class="${bubbleClass} px-4 py-3 shadow-sm max-w-[85%] text-sm leading-relaxed">${content}</div>` 
-                : `<div class="${bubbleClass} px-4 py-3 shadow-sm max-w-[85%] text-sm leading-relaxed" ${userStyle}>${content}</div>`;
-            
-            container.appendChild(div);
-            scrollToBottom();
-        }
-
-        function addLoading() {
-            const id = 'loading-' + Date.now();
-            const container = dom.containers[currentMode];
-            const div = document.createElement('div');
-            div.id = id;
-            div.className = "flex items-start space-x-2";
-            const msg = LOADING_MESSAGES[currentMode][Math.floor(Math.random() * LOADING_MESSAGES[currentMode].length)];
-            div.innerHTML = `<img src="${ICON_URL}" class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white flex-shrink-0 shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()"><div class="bubble bubble-left bg-white px-4 py-3 shadow-sm"><p class="text-sm text-gray-500 pulse-text">${msg}</p></div>`;
-            container.appendChild(div);
-            scrollToBottom();
-            return id;
-        }
-
-        function removeLoading(id) { const el = document.getElementById(id); if (el) el.remove(); }
-        function scrollToBottom() { const c = dom.containers[currentMode]; c.scrollTop = c.scrollHeight; }
-        
-        window.toggleModal = function(show) {
-            if (show) dom.modal.classList.remove('hidden');
-            else dom.modal.classList.add('hidden');
-            lucide.createIcons();
-        };
-
-        function copyToClipboard(text) {
-            const cleanText = text.replace(/<br>/g, '\n');
-            if (navigator.clipboard) navigator.clipboard.writeText(cleanText).then(() => showToast("コピーしたよ！"));
-            else {
-                const ta = document.createElement('textarea');
-                ta.value = cleanText; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-                showToast("コピーしたよ！");
-            }
-            safeTrackEvent('share', { method: 'clipboard', content_type: 'lyrics_phrase', item_name: text.substring(0, 20) });
-        }
-
-        // --- List Feature (New) ---
-
-        function loadSongsData() {
-    // キャッシュチェック
-    const cached = localStorage.getItem('lldb_song_list');
-    const version = localStorage.getItem('lldb_song_version');
-    const loadingEl = document.getElementById('list-loading');
-    let hasRenderedCache = false; // ★追加: キャッシュで表示できたかフラグ
-
-    if (cached) {
-        try {
-            allSongs = JSON.parse(cached);
-            if (allSongs.length > 0) {
-                renderSongList();
-                loadingEl.classList.add('hidden');
-                hasRenderedCache = true;
-            }
-        } catch(e) {}
-    }
-
-    // バックエンドからデータ取得
-    fetch(`${GAS_API_URL}?action=get_data`)
-        .then(res => res.json())
-        .then(data => {
-            if (data && data.songList) {
-                allSongs = data.songList;
-
-                // バージョン更新 または キャッシュ表示していなければ描画＆保存
-                if (!version || version != data.version || !hasRenderedCache) {
-                    // ★修正: ここで必ず描画する
-                    renderSongList();
-
-                    try {
-                        localStorage.setItem('lldb_song_list', JSON.stringify(allSongs));
-                        localStorage.setItem('lldb_song_version', data.version);
-                    } catch (e) { console.error("Cache save error", e); }
-                }
-                loadingEl.classList.add('hidden');
+                    listContainer.insertAdjacentHTML('beforeend', cardHtml);
+                });
             } else {
-                // データ形式が不正、またはエラーの場合
-                console.error('Data error:', data);
-                if (!hasRenderedCache) {
-                    loadingEl.innerText = "データの取得に失敗しました。";
-                    loadingEl.classList.remove('hidden');
-                }
+                 listContainer.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">リリース情報はありません</div>';
             }
-        })
-        .catch(err => {
-            console.error('List fetch error', err);
-            if (!hasRenderedCache) {
-                loadingEl.innerText = "読み込みに失敗しました";
-                loadingEl.classList.remove('hidden');
-            }
-        });
-}
 
-        function getDurationBucket(timeStr) {
-            if (!timeStr || timeStr === '-' || timeStr === '不明') return 'Unknown';
-            const parts = timeStr.split(':');
-            const min = parseInt(parts[0]);
-            if (isNaN(min)) return 'Unknown';
-            if (min === 0) return '~0:59';
-            if (min >= 6) return '6:00~';
-            return `${min}:00~${min}:59`;
-        }
+            const userAge = calculateAgeAtDate(birthDate, firstDate);
+            const userStage = getLifeStage(firstDate, birthDate);
+            document.getElementById('modal-user-age').textContent = `${userAge}歳`;
+            document.getElementById('modal-user-stage').textContent = userStage;
 
-        function renderSongList() {
-            const tbody = document.getElementById('song-list-body');
-            tbody.innerHTML = '';
-
-            // 1. フィルタリング
-            filteredSongs = allSongs.filter(song => {
-                if (activeFilters.era.length > 0 && !activeFilters.era.includes(song.era)) return false;
-                if (activeFilters.arranger.length > 0 && !activeFilters.arranger.includes(song.arranger)) return false;
-                if (activeFilters.title.length > 0 && !activeFilters.title.includes(song.title)) return false;
-                if (activeFilters.duration.length > 0) {
-                    const bucket = getDurationBucket(song.duration);
-                    if (!activeFilters.duration.includes(bucket)) return false;
-                }
-                return true;
-            });
-
-            // 2. ソート処理
-            if (currentSort.column) {
-                filteredSongs.sort((a, b) => {
-                    let valA = a[currentSort.column] || '';
-                    let valB = b[currentSort.column] || '';
-                    
-                    // 時間の場合は '4:30' などを比較可能な数値にする特別処理
-                    if (currentSort.column === 'duration') {
-                        valA = parseDuration(valA);
-                        valB = parseDuration(valB);
+            const liveListEl = document.getElementById('modal-live-list');
+            const liveSection = document.getElementById('modal-live-section');
+            liveListEl.innerHTML = '';
+            
+            const targetKey = `${firstDate.getFullYear()}-${firstDate.getMonth() + 1}`;
+            const addedLives = new Set();
+            let liveFound = false;
+            
+            if (allData && allData.historyData) {
+                allData.historyData.forEach(row => {
+                    if (!row.date) return;
+                    const rd = new Date(row.date);
+                    if (`${rd.getFullYear()}-${rd.getMonth() + 1}` === targetKey && row.live) {
+                        if (!addedLives.has(row.live)) {
+                            addedLives.add(row.live);
+                            liveFound = true;
+                            const liveName = row.live;
+                            const div = document.createElement('div');
+                            div.className = 'p-2 bg-red-50 text-red-600 rounded-lg text-xs font-bold border border-red-100 flex justify-between items-center cursor-pointer active:scale-95 transition-transform';
+                            div.innerHTML = `<span>${row.live}</span> <i data-lucide="chevron-right" class="w-3 h-3"></i>`;
+                            div.onclick = () => { closeModal(); requestSearchInLive(liveName); };
+                            liveListEl.appendChild(div);
+                        }
                     }
-                    // ★追加: 曲名の特別処理（読み仮名優先）
-                    else if (currentSort.column === 'title') {
-                        // readingがあればそれを、なければtitleを使用
-                        valA = (a.reading || a.title).toString();
-                        valB = (b.reading || b.title).toString();
-                    }
-
-                    if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
-                    if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
-                    return 0;
                 });
             }
-
-            // 3. ヘッダーアイコンの更新
-            updateHeaderIcons();
             
-            // Filter Bar Toggle
-            const hasFilter = Object.values(activeFilters).some(arr => arr.length > 0);
-            document.getElementById('filter-bar').classList.toggle('hidden', !hasFilter);
-
-            if (filteredSongs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-gray-400 text-xs">条件に合う曲が見つかりません</td></tr>';
-                return;
+            if (liveFound) {
+                liveSection.classList.remove('hidden');
+                lucide.createIcons();
+            } else {
+                liveSection.classList.add('hidden');
             }
 
-            // 4. 描画
-            filteredSongs.forEach((song, index) => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-orange-50 transition-colors border-b border-gray-100 group cursor-pointer active:scale-[0.99] transition-transform'; 
-                
-                tr.onclick = () => openConfirmModal(song.title);
-
-                tr.innerHTML = `
-                    <td class="p-1 text-sm text-gray-400 align-middle text-center font-mono">
-                        ${index + 1}
-                    </td>
-                    <td class="p-1 text-sm text-gray-600 align-middle whitespace-normal leading-tight">
-                        ${song.era}
-                    </td>
-                    <td class="p-1 text-sm text-gray-600 align-middle break-all font-medium leading-tight">
-                        ${song.title}
-                    </td>
-                    <td class="p-1 text-sm text-gray-600 align-middle whitespace-normal leading-tight">
-                        ${song.arranger}
-                    </td>
-                    <td class="p-1 text-right text-sm text-gray-600 align-middle whitespace-nowrap font-mono">
-                        ${song.duration}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-            lucide.createIcons();
-        }
-
-        // ソート用のヘルパー関数
-        function parseDuration(timeStr) {
-            if (!timeStr || timeStr === '-' || timeStr === '不明') return 0;
-            const parts = timeStr.split(':');
-            return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
-        }
-
-        // ヘッダーアイコン更新
-        function updateHeaderIcons() {
-            const map = { era: 'icon-filter-era', title: 'icon-filter-title', arranger: 'icon-filter-arranger', duration: 'icon-filter-duration' };
+            const overlay = document.getElementById('detail-modal');
+            overlay.classList.add('open');
+            document.querySelector('.modal-card-expanded').scrollTop = 0;
             
-            Object.keys(map).forEach(key => {
-                const iconEl = document.getElementById(map[key]);
-                if (!iconEl) return;
-                
-                const isActive = activeFilters[key].length > 0;
-                const isSorted = currentSort.column === key;
-
-                iconEl.classList.remove('text-gray-300', 'text-black', 'fill-black', 'text-orange-500');
-
-                if (isActive) {
-                    iconEl.classList.add('text-black', 'fill-black');
-                } else if (isSorted) {
-                    iconEl.classList.add('text-orange-500');
-                } else {
-                    iconEl.classList.add('text-gray-300');
-                }
-            });
-            lucide.createIcons();
+            safeTrackEvent('select_content', { content_type: 'map_detail', item_name: items[0].title || 'LiveInfo' });
         }
 
-        // ソート実行
-        function applySort(order) {
-            currentSort = { column: currentFilterColumn, order: order };
-            renderSongList();
-            closeFilterModal();
+        function closeModal() {
+            document.getElementById('detail-modal').classList.remove('open');
         }
 
-        // 確認モーダル制御
-        function openConfirmModal(title) {
-            targetSongForSearch = title;
-            document.getElementById('confirm-song-title').textContent = title;
-            document.getElementById('confirm-modal').classList.remove('hidden');
+        function calculateAgeAtDate(birth, target) {
+            let age = target.getFullYear() - birth.getFullYear();
+            const m = target.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && target.getDate() < birth.getDate())) age--;
+            return age;
         }
-
-        function closeConfirmModal() {
-            document.getElementById('confirm-modal').classList.add('hidden');
-            targetSongForSearch = '';
-        }
-
-        function executeSearchFromList() {
-            if (!targetSongForSearch) return;
-            
-            const title = targetSongForSearch;
-            closeConfirmModal();
-
-            switchTab('title');
-            
-            setTimeout(() => {
-                dom.searchInput.value = title;
-                dom.searchForm.dispatchEvent(new Event('submit', { cancelable: true }));
-            }, 100); 
-        }
-
-        // Filter Modal Logic
-        window.openFilterModal = function(column) {
-            currentFilterColumn = column;
-            const modal = document.getElementById('filter-modal');
-            const content = document.getElementById('filter-modal-content');
-            const list = document.getElementById('filter-options-list');
-            const helperMsg = document.getElementById('filter-helper-msg');
-            const colNameDisplay = document.getElementById('filter-column-name');
-
-            let options = new Set();
-            let msg = "";
-            let colLabel = "";
-
-            if (column === 'era') {
-                allSongs.forEach(s => options.add(s.era));
-                msg = "アルバムに含まれる表題曲のカップリングも含んでるよ";
-                colLabel = "時期 (ALBUM)";
-            } else if (column === 'arranger') {
-                allSongs.forEach(s => options.add(s.arranger));
-                msg = "編曲者を選んでね！";
-                colLabel = "編曲者 (ARRANGER)";
-            } else if (column === 'duration') {
-                allSongs.forEach(s => options.add(getDurationBucket(s.duration)));
-                msg = "曲の長さで絞り込めるよ。";
-                colLabel = "再生時間 (DURATION)";
-            } else if (column === 'title') {
-                allSongs.forEach(s => options.add(s.title));
-                msg = "特定の曲だけも選べるよ";
-                colLabel = "曲名 (TITLE)";
-            }
-
-            const sortedOptions = Array.from(options).sort();
-
-            list.innerHTML = sortedOptions.map(opt => {
-                const isChecked = activeFilters[column].includes(opt);
-                return `
-                    <label class="flex items-center p-3 bg-white border-b border-gray-50 active:bg-gray-50 transition-colors cursor-pointer">
-                        <input type="checkbox" value="${opt}" class="filter-checkbox w-5 h-5 text-orange-500 rounded focus:ring-orange-500 border-gray-300" ${isChecked ? 'checked' : ''}>
-                        <span class="ml-3 text-sm text-gray-700">${opt}</span>
-                    </label>
-                `;
-            }).join('');
-
-            helperMsg.innerHTML = msg;
-            colNameDisplay.textContent = colLabel;
-            
-            modal.classList.remove('hidden');
-            setTimeout(() => {
-                content.style.transform = 'translateY(0)';
-            }, 10);
-        };
-
-        window.closeFilterModal = function() {
-            const modal = document.getElementById('filter-modal');
-            const content = document.getElementById('filter-modal-content');
-            content.style.transform = 'translateY(100%)';
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
-        };
-
-        window.toggleAllFilters = function(check) {
-            document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = check);
-        };
-
-        window.applyFilter = function() {
-            const checkboxes = document.querySelectorAll('.filter-checkbox:checked');
-            const selectedValues = Array.from(checkboxes).map(cb => cb.value);
-            activeFilters[currentFilterColumn] = selectedValues;
-            renderSongList();
-            closeFilterModal();
-        };
-
-        window.clearAllFilters = function() {
-            activeFilters = { era: [], title: [], arranger: [], duration: [] };
-            renderSongList();
-        };
-
-        function showToast(msg) {
-            dom.toast.textContent = msg; dom.toast.classList.remove('opacity-0');
-            setTimeout(() => dom.toast.classList.add('opacity-0'), 2000);
-        }
-
+        
         function safeTrackEvent(eventName, params) {
             try {
                 if (typeof gtag === 'function') {
@@ -1180,4 +1171,5 @@
     </script>
 </body>
 </html>
+
 
