@@ -556,10 +556,36 @@
                 document.getElementById('year').value = y;
                 document.getElementById('month').value = parseInt(m);
                 document.getElementById('day').value = parseInt(d);
+        }
+
+        // ★追加: 親(My LLDB)からのデータ同期を受け取る
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'userDataUpdated') {
+                const userData = event.data.data;
+                // My LLDBに誕生日データがあれば反映する
+                if (userData && userData.profile && userData.profile.birthday) {
+                    const birthStr = userData.profile.birthday;
+                    
+                    // Historyアプリ側のキャッシュも更新（次回起動時用）
+                    localStorage.setItem('lldb_user_birth', birthStr);
+                    
+                    // 画面のセレクトボックスに反映
+                    const [y, m, d] = birthStr.split('-');
+                    const yEl = document.getElementById('year');
+                    const mEl = document.getElementById('month');
+                    const dEl = document.getElementById('day');
+                    
+                    if(yEl && mEl && dEl) {
+                        yEl.value = y;
+                        mEl.value = parseInt(m);
+                        dEl.value = parseInt(d);
+                    }
+                }
             }
         });
+    });
 
-        function startDataLoading() {
+    function startDataLoading() {
             loadingPromise = new Promise(async (resolve) => {
                 if (allData) { resolve(allData); return; }
                 try {
