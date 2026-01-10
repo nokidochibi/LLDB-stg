@@ -2749,9 +2749,20 @@ function openMyLLDBInfo() {
 }
 
 function toggleAttendance(isChecked) {
+    // ★追加: ID未設定なら強制的にモーダルを開く
+    if (!userUserData.settings || !userUserData.settings.syncId) {
+        // トグルの見た目を元に戻す
+        document.getElementById('detail-attendance-toggle').checked = !isChecked;
+        
+        if(confirm('参戦記録をつけるには「My LLDB」の設定が必要です。\n設定画面を開きますか？')) {
+            window.parent.postMessage({ type: 'openMyLLDB' }, '*');
+        }
+        return;
+    }
+
     if (!currentDisplayingRecord) return;
     const dateId = currentDisplayingRecord.date;
-    
+
     // 現在のメモ情報を取得（なければ空）
     const currentData = (userUserData.attendedLives && userUserData.attendedLives[dateId]) || {};
     
