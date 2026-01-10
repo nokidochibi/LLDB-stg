@@ -6,7 +6,6 @@
     <title>Love Like DataBase</title>
     <meta name="theme-color" content="#E63946">
 
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0D09G3X4F1"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -16,12 +15,10 @@
       gtag('config', 'G-0D09G3X4F1');
     </script>
 
-    <!-- アイコン設定 -->
     <link rel="icon" type="image/png" href="./icon.png">
     <link rel="apple-touch-icon" href="./icon.png">
     <link rel="manifest" href='data:application/manifest+json,{"name":"Love Like DataBase","short_name":"LLDB","start_url":".","display":"standalone","background_color":"#F8F8F8","theme_color":"#ef4444","icons":[{"src":"./icon.png","sizes":"192x192 512x512","type":"image/png"}]}'>
 
-    <!-- 外部ライブラリ (共通) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -68,9 +65,6 @@
 </head>
 <body class="bg-gray-50">
 
-    <!-- ==========================================================================
-           【1. COMMON UI】 ヘッダー & 暖簾メニュー
-           ========================================================================== -->
     <style>
         /* 暖簾メニュー & ヘッダー用スタイル */
         #noren-menu {
@@ -117,11 +111,9 @@
         #about-modal.open .modal-card { transform: scale(1); }
     </style>
 
-    <!-- 暖簾メニューHTML -->
     <div id="noren-overlay" onclick="toggleNoren()"></div>
     <div id="noren-menu">
         <div class="flex flex-col">
-            <!-- 1. LLDB Live (#E63946) -->
             <div class="noren-item" onclick="switchApp('live')">
                 <div class="noren-icon bg-[#E63946]"><i data-lucide="mic-2" class="w-6 h-6"></i></div>
                 <div class="flex-1">
@@ -131,7 +123,6 @@
                 <i data-lucide="chevron-right" class="text-gray-300 w-5 h-5"></i>
             </div>
 
-            <!-- 2. LLDB Trends (#1D3557) -->
             <div class="noren-item" onclick="switchApp('trends')">
                 <div class="noren-icon bg-[#1D3557]"><i data-lucide="trending-up" class="w-6 h-6"></i></div>
                 <div class="flex-1">
@@ -141,7 +132,6 @@
                 <i data-lucide="chevron-right" class="text-gray-300 w-5 h-5"></i>
             </div>
 
-            <!-- 3. LLDB Song Helper (#F4A261) -->
             <div class="noren-item" onclick="switchApp('songHelper')">
                 <div class="noren-icon bg-[#F4A261]"><i data-lucide="music" class="w-6 h-6"></i></div>
                 <div class="flex-1">
@@ -151,7 +141,6 @@
                 <i data-lucide="chevron-right" class="text-gray-300 w-5 h-5"></i>
             </div>
 
-            <!-- 4. LLDB History (#2A9D8F) -->
             <div class="noren-item" onclick="switchApp('history')">
                 <div class="noren-icon bg-[#2A9D8F]"><i data-lucide="heart-handshake" class="w-6 h-6"></i></div>
                 <div class="flex-1">
@@ -179,7 +168,6 @@
             <i data-lucide="chevron-right" class="text-gray-300 w-5 h-5"></i>
         </div>
            
-            <!-- About Menu -->
             <div class="noren-item bg-gray-50/50" onclick="openAboutModal()">
                 <div class="noren-icon bg-gray-400"><i data-lucide="info" class="w-6 h-6"></i></div>
                 <div class="flex-1">
@@ -204,21 +192,15 @@
     </div>
   </div>
 
-    <!-- 共通ヘッダー -->
     <header id="main-app-header" class="bg-[#E63946] text-white transition-colors duration-300">
-        <!-- Live App Header as Default -->
         <h1 class="font-black text-[22px] tracking-wide flex-1 truncate pr-2" id="header-title">Love Like DataBase vol.4.1</h1>
         
-        <!-- 🌸 Menu Button -->
         <button id="header-menu-btn" onclick="toggleNoren()" class="p-2 rounded-full hover:bg-white/20 transition active:scale-90 flex items-center justify-center w-10 h-10">
             <span class="flower-icon select-none">🌸</span>
         </button>
     </header>
 
 
-    <!-- ==========================================================================
-           【COMMON UI】 About Modal (このアプリについて)
-           ========================================================================== -->
     <div id="about-modal" onclick="closeAboutModal()">
         <div class="modal-card" onclick="event.stopPropagation()">
             <div class="text-center mb-6">
@@ -348,18 +330,49 @@
     </div>
 
 
-    ```
+    <div id="app-live" class="app-screen active">
+        <iframe src="./index_LLDBLive.html" class="w-full h-full border-none"></iframe>
+    </div>
 
----
+    <div id="app-trends" class="app-screen">
+        <iframe src="./index_LLDBTrends.html" class="w-full h-full border-none"></iframe>
+    </div>
 
-### 修正手順 ②：JavaScriptの正しい配置
+    <div id="app-songHelper" class="app-screen">
+        <iframe src="./index_LLDBSongHelper.html" class="w-full h-full border-none"></iframe>
+    </div>
 
-次に、**ファイルの一番下にある `<script>` タグの中** に、先ほどHTML内から削除したJavaScriptコードを正しく移動させます。
+    <div id="app-history" class="app-screen">
+        <iframe src="./index_LLDBHistory.html" class="w-full h-full border-none"></iframe>
+    </div>
 
-**Before:**
-（ `<script>` タグの最後の方。`switchApp` 関数の定義部分です）
 
-```javascript
+    <script>
+        // ▼ バージョン文字列の整形ロジック (New) ▼
+        const versionNum = APP_VERSION.replace('v', '');
+        const versionParts = versionNum.split('.');
+        
+        // ヘッダー用: 2桁表示 & vol. 表記 (例: vol.4.2)
+        const headerVersion = `vol.${versionParts[0]}.${versionParts[1]}`;
+        // About用: 3桁表示 & vol. 表記 (例: vol.4.2.1)
+        const aboutVersion = `vol.${versionNum}`;
+
+        // ★追加: アプリ名（Configシート）と内部IDのマッピング
+        const APP_ID_MAP = {
+          'LLDB Live': 'live',
+          'LLDB Trends': 'trends',
+          'LLDB Song Helper': 'songHelper',
+          'LLDB History': 'history'
+        };
+
+        // アプリ定義 (タイトル更新)
+        const apps = {
+            'live': { title: `Love Like DataBase ${headerVersion}`, color: 'bg-[#E63946]' }, /* Red */
+            'trends': { title: 'LLDB Trends', color: 'bg-[#1D3557]' },       /* Navy */
+            'songHelper': { title: 'LLDB Song Helper', color: 'bg-[#F4A261]' }, /* Orange */
+            'history': { title: 'LLDB History', color: 'bg-[#2A9D8F]' }       /* Teal */
+        };
+
         // ==========================================================================
         // 【My LLDB】 ユーザーデータ管理マネージャー
         // ==========================================================================
@@ -597,29 +610,43 @@
                     const liveMap = {};
                     if(json.data) {
                         json.data.forEach(t => {
-                            t.lives.forEach(l => {
-                                liveMap[l.id] = { title: l.title, date: l.date, tour: t.tourName };
-                            });
+                            // APIのレスポンス構造に合わせて調整 (liveRecords: json.liveRecords または json.data)
+                            // getLiveBasicDataのレスポンスは {status, liveRecords, version}
+                            const records = json.liveRecords || json.data;
+                            if(records) {
+                                records.forEach(l => {
+                                    // l: {date, tourName, venue...}
+                                    // IDは date を使用している
+                                    liveMap[l.date] = { title: l.tourName, date: l.date, venue: l.venue };
+                                });
+                            }
+                        });
+                    }
+                    
+                    // 修正: getLiveBasicDataのレスポンス構造がフラットな配列の場合の対応
+                    if (json.liveRecords) {
+                        json.liveRecords.forEach(l => {
+                            liveMap[l.date] = { title: l.tourName, date: l.date, venue: l.venue };
                         });
                     }
 
                     // CSV生成
                     let csvContent = "\uFEFF"; // BOM
-                    csvContent += "日付,ツアー,公演名,メモ,リンク\n";
+                    csvContent += "日付,ツアー,会場,メモ,リンク\n";
 
                     const attendedIds = Object.keys(this.data.attendedLives).sort();
                     
                     attendedIds.forEach(id => {
                         const rec = this.data.attendedLives[id];
-                        const info = liveMap[id] || { title: 'Unknown Live', date: id, tour: '-' };
+                        const info = liveMap[id] || { title: 'Unknown Live', date: id, venue: '-' };
                         
                         // CSVエスケープ処理
                         const escape = (txt) => `"${(txt || '').replace(/"/g, '""')}"`;
                         
                         const row = [
                             escape(info.date),
-                            escape(info.tour),
                             escape(info.title),
+                            escape(info.venue),
                             escape(rec.memo),
                             escape(rec.link)
                         ];
@@ -779,6 +806,7 @@
             const container = document.getElementById('update-history-content');
             
             try {
+                console.log("Start loading update history in background...");
                 // APIへリクエスト
                 const response = await fetch(`${GAS_API_URL}?action=getUpdateHistory`);
                 const json = await response.json();
@@ -807,6 +835,7 @@
                     if (container) container.innerHTML = '<p class="text-center text-gray-400 text-xs py-4">更新履歴はありません</p>';
                 }
             } catch (e) {
+                console.error("Update history load failed:", e);
                 if (container) container.innerHTML = '<p class="text-center text-red-400 text-xs py-4">読み込みに失敗しました</p>';
             }
         }
@@ -832,6 +861,7 @@
         // Config更新チェック
         async function checkRemoteConfig() {
             try {
+                console.log("Checking remote config...");
                 const response = await fetch(`${GAS_API_URL}?action=getAppVersions`);
                 const json = await response.json();
                 
@@ -872,6 +902,7 @@
             if (savedVer !== APP_VERSION) {
                 localStorage.clear();
                 localStorage.setItem('lldb_version', APP_VERSION);
+                console.log(`Version updated to ${APP_VERSION}. Cache cleared.`);
             }
 
             loadUpdateHistory();
@@ -900,7 +931,6 @@
                 switchApp('live');
             }
 
-            // ヘッダースクロール
             const header = document.getElementById('main-app-header');
             if(header) {
                 header.addEventListener('click', (e) => {
@@ -949,6 +979,5 @@
             }
         });
     </script>
-
 </body>
 </html>
