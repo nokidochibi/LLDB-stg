@@ -597,9 +597,9 @@ button { font-size: 13px !important; }
     
     <!-- 右側: トグルセット (flex-1 で残り50%確保し、中身を横並び右寄せ) -->
     <div class="flex-1 flex items-center justify-end gap-2">
-        <div class="flex items-center gap-1 cursor-pointer tap-trigger" onclick="openMyLLDBInfo()">
-            <span class="text-[11px] font-bold text-gray-500">参戦したライブのみ</span>
-            <i data-lucide="info" class="w-3 h-3 text-gray-400"></i>
+        <div class="flex items-center gap-1 cursor-pointer tap-trigger" onclick="window.parent.postMessage({type: 'openMyLLDB'}, '*')">
+        <span class="text-[12px] font-bold text-gray-500">参戦したライブのみ</span>
+        <i data-lucide="info" class="w-3 h-3 text-gray-400"></i>
         </div>
         <div class="relative inline-block align-middle select-none shrink-0">
             <input type="checkbox" id="attended-filter-toggle" class="toggle-checkbox" />
