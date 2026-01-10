@@ -879,48 +879,54 @@
         function loadSongsData() {
             // キャッシュチェック
             const cached = localStorage.getItem('lldb_song_list');
+            const version = localStorage.getItem('lldb_song_version');
             const loadingEl = document.getElementById('list-loading');
-            let isLoadedFromCache = false;
+            let hasRenderedCache = false; // ★追加: キャッシュで表示できたかフラグ
             
             if (cached) {
                 try {
                     allSongs = JSON.parse(cached);
-                    renderSongList();
-                    loadingEl.classList.add('hidden');
-                    isLoadedFromCache = true; // ★読み込み成功フラグ
+                    if (allSongs.length > 0) {
+                        renderSongList();
+                        loadingEl.classList.add('hidden');
+                        hasRenderedCache = true;
+                    }
                 } catch(e) {}
             }
 
-            // ★追加: キャッシュがあれば通信せずに終了（爆速化）
-            if (isLoadedFromCache) {
-                console.log("Loaded from cache. Skipping fetch.");
-                return;
-            }
-
-            // キャッシュがない場合のみバックエンドからデータ取得
+            // バックエンドからデータ取得
             fetch(`${GAS_API_URL}?action=get_data`) 
                 .then(res => res.json())
                 .then(data => {
                     if (data && data.songList) {
                         allSongs = data.songList;
-                        // 初回取得時はバージョンも保存
-                        localStorage.setItem('lldb_song_list', JSON.stringify(allSongs));
-                        if (data.version) {
-                            localStorage.setItem('lldb_song_version', data.version);
+                        
+                        // バージョン更新またはキャッシュ表示していなければ描画＆保存
+                        if (!version || version != data.version || !hasRenderedCache) {
+                             // ★修正: ここで必ず描画する
+                            renderSongList();
+                            
+                            try {
+                                localStorage.setItem('lldb_song_list', JSON.stringify(allSongs));
+                                localStorage.setItem('lldb_song_version', data.version);
+                            } catch (e) { console.error("Cache save error", e); }
                         }
-                        renderSongList();
                         loadingEl.classList.add('hidden');
                     } else {
                         // データ形式が不正、またはエラーの場合
                         console.error('Data error:', data);
-                        loadingEl.innerText = "データの取得に失敗しました。";
-                        loadingEl.classList.remove('hidden');
+                        if (!hasRenderedCache) {
+                            loadingEl.innerText = "データの取得に失敗しました。";
+                            loadingEl.classList.remove('hidden');
+                        }
                     }
                 })
                 .catch(err => {
                     console.error('List fetch error', err);
-                    loadingEl.innerText = "読み込みに失敗しました";
-                    loadingEl.classList.remove('hidden');
+                    if (!hasRenderedCache) {
+                        loadingEl.innerText = "読み込みに失敗しました";
+                        loadingEl.classList.remove('hidden');
+                    }
                 });
         }
 
