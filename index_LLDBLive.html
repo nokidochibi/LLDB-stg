@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -549,6 +548,35 @@ button { font-size: 13px !important; }
     50% { background-color: #e5e7eb; }
     100% { background-color: #f3f4f6; }
 }
+
+/* --- My LLDB用スタイル --- */
+.attended-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  background-color: #ecfccb; color: #4d7c0f; font-size: 10px; font-weight: bold;
+  padding: 2px 8px; border-radius: 99px; border: 1px solid #bef264;
+  margin-left: auto;
+}
+.attendance-toggle-container {
+  display: flex; align-items: center; justify-content: space-between;
+  background-color: #f0fdf4; border: 1px solid #bbf7d0;
+  padding: 12px 16px; border-radius: 12px; margin-bottom: 12px;
+}
+.attendance-toggle-label { font-weight: bold; color: #166534; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.user-memo-area {
+  background-color: #fff; border: 1px dashed #cbd5e1; border-radius: 12px;
+  padding: 12px; margin-bottom: 24px; position: relative;
+}
+.user-memo-area.has-content { background-color: #f8fafc; border-style: solid; }
+.memo-placeholder { text-align: center; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 8px; }
+.memo-content { font-size: 13px; color: #334155; white-space: pre-wrap; line-height: 1.6; }
+.memo-link { display: block; margin-top: 8px; font-size: 12px; color: #3b82f6; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.memo-edit-btn {
+  position: absolute; top: 8px; right: 8px;
+  background: #f1f5f9; color: #64748b; border-radius: 6px; 
+  padding: 4px 8px; font-size: 11px; cursor: pointer; font-weight: bold;
+}
+.filter-toggle-row { display: flex; align-items: center; justify-content: flex-end; margin-top: 8px; }
+.filter-toggle-label { font-size: 11px; font-weight: bold; color: #64748b; margin-right: 8px; }
 </style>
 </head>
 <body>
@@ -581,6 +609,13 @@ button { font-size: 13px !important; }
 
       <div>
         <input type="text" id="song-filter-input" placeholder="曲名で絞り込み（楽曲タブから選択）" class="w-full bg-gray-100 text-gray-500 border-dashed" readonly>
+      </div>
+      <div class="filter-toggle-row">
+        <span class="filter-toggle-label">参戦したライブのみ</span>
+        <div class="relative inline-block align-middle select-none">
+            <input type="checkbox" id="attended-filter-toggle" class="toggle-checkbox" />
+            <label for="attended-filter-toggle" class="toggle-label"></label>
+        </div>
       </div>
     </div>
 
@@ -740,6 +775,25 @@ button { font-size: 13px !important; }
   </div>
 </div>
 
+<div id="memo-modal" class="modal-overlay" style="display:none">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeMemoModal()">&times;</span>
+    <h3 class="font-bold text-lg mb-4 text-gray-700">📝 参戦メモ</h3>
+    <div class="mb-4">
+      <label class="block text-xs font-bold text-gray-500 mb-1">ひとことメモ</label>
+      <textarea id="memo-textarea" class="w-full p-3 border border-gray-300 rounded-lg text-sm h-32 focus:ring-2 focus:ring-aiko-red focus:border-transparent" placeholder="感想や座席、誰と行ったかなど..."></textarea>
+    </div>
+    <div class="mb-6">
+      <label class="block text-xs font-bold text-gray-500 mb-1">リンク (Note, X, Instagram等)</label>
+      <input type="url" id="memo-link-input" class="w-full p-3 border border-gray-300 rounded-lg text-sm" placeholder="https://...">
+    </div>
+    <div class="flex gap-2">
+      <button onclick="saveMemo()" class="flex-1 bg-[#E63946] text-white py-3 rounded-xl font-bold shadow">保存する</button>
+      <button onclick="deleteMemo()" class="flex-none bg-gray-200 text-gray-600 py-3 px-4 rounded-xl font-bold">削除</button>
+    </div>
+  </div>
+</div>
+
 <!-- 新デザインのナビゲーション -->
 <nav>
   <div class="flex w-full">
@@ -773,6 +827,9 @@ button { font-size: 13px !important; }
 const API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec";
 const CACHE_KEY = 'lldb_data_v4_1_update_history_v6'; // キャッシュキー変更
 const AIKO_BIRTH = new Date(1975, 10, 22); // 1975/11/22
+
+// ★追加: ユーザーデータ保持用
+let userUserData = { attendedLives: {} };
 
 let appInitializedResolver;
 const appInitializedPromise = new Promise(resolve => {
@@ -1849,15 +1906,11 @@ function populateFilters(records, skipApply = false) {
 function applyFilters() {
   const songFilterInput = document.getElementById('song-filter-input');
   let songFilterValue = songFilterInput.value;
-  
-  // ★修正箇所: 文言除去処理のアップデート
-  // 古い表記と新しい表記の両方に対応して削除を行う
-  songFilterValue = songFilterValue.replace('（楽曲タブから選択）', '')
-                                   .replace('　※楽曲タブから選択', '')
-                                   .replace('(メドレー除外)', '');
+  songFilterValue = songFilterValue.replace('（楽曲タブから選択）', '').replace('　※楽曲タブから選択', '').replace('(メドレー除外)', '');
 
-  // ★トグルの状態取得
   const isMedleyIncluded = document.getElementById('medley-toggle').checked;
+  // ★追加: 参戦フィルタの状態取得
+  const isAttendedOnly = document.getElementById('attended-filter-toggle').checked;
 
   const filters = {
     search: document.getElementById('search-input').value.toLowerCase(),
@@ -1867,17 +1920,22 @@ function applyFilters() {
     song: songFilterValue.toLowerCase(),
   };
 
-  // 入力された検索ワードが、いずれかのツアー名(または略称)と完全一致するかをチェック
   const searchInputVal = document.getElementById('search-input').value.trim();
   const searchLower = searchInputVal.toLowerCase();
   
-  // 完全一致するツアーが存在するか？
   const isExactTourMatch = searchInputVal && allLiveRecords.some(r => 
     r.tourName.toLowerCase() === searchLower || 
     (r.shortTourName && r.shortTourName.toString().toLowerCase() === searchLower)
   );
 
   const filteredRecords = allLiveRecords.filter(rec => {
+    // ★追加: 参戦フィルタ判定
+    if (isAttendedOnly) {
+       if (!userUserData.attendedLives || !userUserData.attendedLives[rec.date]) {
+           return false;
+       }
+    }
+
     const tourName = rec.tourName.toLowerCase();
     let tourMatch = true;
     if (filters.tour === 'pop') tourMatch = tourName.includes('love like pop');
@@ -1885,41 +1943,31 @@ function applyFilters() {
     else if (filters.tour === 'aloha') tourMatch = tourName.includes('love like aloha');
     else if (filters.tour === 'other') tourMatch = !/love like (pop|rock|aloha)/.test(tourName);
 
-    // ★修正箇所: songMatchのロジック変更
     let songMatch = true;
     if (filters.song) {
         if (isMedleyIncluded) {
-            // 従来通り：セットリスト内に該当曲があればOK
             songMatch = rec.setlist.some(s => s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim().toLowerCase() === filters.song);
         } else {
-            // メドレー除外：メドレー区間外で該当曲があるかチェック
             let inMedley = false;
             let found = false;
             for (const s of rec.setlist) {
                 if (s === '__MEDLEY_START__') { inMedley = true; continue; }
                 if (s === '__MEDLEY_END__') { inMedley = false; continue; }
-                if (inMedley) continue; // メドレー中はスキップ
-
+                if (inMedley) continue; 
                 const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim().toLowerCase();
-                if (clean === filters.song) {
-                    found = true;
-                    break;
-                }
+                if (clean === filters.song) { found = true; break; }
             }
             songMatch = found;
         }
     }
     
-    // フリーワード検索ロジック
     let searchMatch = true;
     if (filters.search) {
         if (isExactTourMatch) {
-            // 完全一致モード: 入力された文字と完全に一致するツアー名（または略称）を持つレコードのみヒットさせる
             const nameMatch = rec.tourName.toLowerCase() === filters.search;
             const shortNameMatch = rec.shortTourName && rec.shortTourName.toString().toLowerCase() === filters.search;
             searchMatch = nameMatch || shortNameMatch;
         } else {
-            // 通常モード: 部分一致 (ツアー名、略称、日付、会場、地域)
             const targets = [
                 rec.tourName,
                 rec.shortTourName || '',
@@ -1939,12 +1987,8 @@ function applyFilters() {
   document.getElementById('display-count').textContent = filteredRecords.length;
   document.getElementById('total-count').textContent = allLiveRecords.length;
   
-  // GA4 Tracking
   if (filters.search && filters.search.length > 0) {
-    safeTrackEvent('search', {
-      search_term: filters.search,
-      search_category: 'live_search'
-    });
+    safeTrackEvent('search', { search_term: filters.search, search_category: 'live_search' });
   }
 
   renderLiveList(filteredRecords);
@@ -1965,26 +2009,28 @@ function renderLiveList(records) {
     else if (tourNameLower.includes('love like rock')) { labelType = 'rock'; labelText = 'ROCK'; }
     else if (tourNameLower.includes('love like aloha')) { labelType = 'aloha'; labelText = 'ALOHA'; }
 
+    // ★追加: 参戦判定
+    const isAttended = userUserData.attendedLives && userUserData.attendedLives[rec.date];
+
     const card = document.createElement('div');
     card.className = 'card-base live-card cursor-pointer hover:shadow-md transition bg-white';
     card.innerHTML = `
       <div class="live-card-label ${labelType}">${labelText}</div>
-      <p class="text-gray-500 font-medium text-xs">${rec.date} (${rec.dayOfWeek})</p>
+      <div class="flex justify-between items-start">
+          <p class="text-gray-500 font-medium text-xs">${rec.date} (${rec.dayOfWeek})</p>
+          ${isAttended ? '<span class="attended-badge"><i data-lucide="check" class="w-3 h-3"></i> 参戦</span>' : ''}
+      </div>
       <p class="font-bold mt-1 text-gray-800 text-lg leading-tight">${rec.tourName}</p>
       <p class="text-gray-600 text-sm mt-1">${rec.venue} (${rec.region})</p>
       <p class="mt-2 font-semibold text-aiko-pink text-sm">セットリスト: ${rec.songCount}曲</p>`;
     card.onclick = () => showLiveDetail(rec);
     container.appendChild(card);
   });
+  lucide.createIcons();
 }
 
 function showLiveDetail(rec) {
-  // GA4 Tracking
-  safeTrackEvent('select_content', {
-    content_type: 'live_detail',
-    item_id: rec.date,
-    item_name: rec.tourName
-  });
+  safeTrackEvent('select_content', { content_type: 'live_detail', item_id: rec.date, item_name: rec.tourName });
 
   document.body.classList.add('detail-view');
   currentDisplayingRecord = rec;
@@ -1998,13 +2044,54 @@ function showLiveDetail(rec) {
     backBtn.className = 'back-button-circle';
     backBtn.innerHTML = '<i data-lucide="arrow-left"></i>';
     document.body.appendChild(backBtn);
-    lucide.createIcons();
     backBtn.onclick = hideDetailView;
   }
   backBtn.style.display = 'flex';
 
   const detailContainer = document.getElementById('live-detail');
   detailContainer.style.display = 'block';
+
+  // ★追加: ユーザーデータ取得
+  const userData = userUserData.attendedLives[rec.date] || null;
+  const isAttended = !!userData;
+  const memo = userData ? userData.memo : '';
+  const link = userData ? userData.link : '';
+
+  // メモ表示用HTML
+  let memoHtml = '';
+  if (isAttended) {
+      if (memo || link) {
+          memoHtml = `
+            <div class="user-memo-area has-content">
+                <div class="memo-edit-btn" onclick="openMemoModal()"><i data-lucide="edit-3" class="w-3 h-3 inline"></i> 編集</div>
+                <div class="memo-content">${memo || '<span class="text-gray-300">メモなし</span>'}</div>
+                ${link ? `<a href="${link}" target="_blank" class="memo-link"><i data-lucide="link" class="w-3 h-3 inline"></i> ${link}</a>` : ''}
+            </div>`;
+      } else {
+          memoHtml = `
+            <div class="user-memo-area">
+                <div class="memo-placeholder" onclick="openMemoModal()">
+                    <i data-lucide="edit-3" class="w-4 h-4 inline mb-1"></i><br>
+                    タップしてメモやリンクを記録
+                </div>
+            </div>`;
+      }
+  }
+
+  // ★追加: 参戦トグルHTML
+  const attendanceHtml = `
+    <div class="attendance-toggle-container">
+        <div class="attendance-toggle-label">
+            <i data-lucide="${isAttended ? 'check-circle-2' : 'circle'}" class="w-5 h-5 ${isAttended ? 'text-green-600' : 'text-gray-300'}"></i>
+            <span>${isAttended ? '参戦しました！' : '参戦記録をつける'}</span>
+        </div>
+        <div class="relative inline-block align-middle select-none">
+            <input type="checkbox" id="detail-attendance-toggle" class="toggle-checkbox" ${isAttended ? 'checked' : ''} onchange="toggleAttendance(this.checked)"/>
+            <label for="detail-attendance-toggle" class="toggle-label"></label>
+        </div>
+    </div>
+    ${memoHtml}
+  `;
 
   const minYear = 1998;
   const maxYear = new Date().getFullYear();
@@ -2020,27 +2107,15 @@ function showLiveDetail(rec) {
   function createTimelineHtml(songName) {
     const songInfo = songData[songName];
     if (!songInfo || !songInfo.year) return ''; 
-    
     const songYear = songInfo.year;
     let percent = ((songYear - minYear) / (maxYear - minYear)) * 100;
     percent = Math.max(0, Math.min(100, percent)); 
-    
     const type = normalizeType(songInfo.type);
-    
     let dotColor = '#D1D5DB'; 
     if (type === '表題曲') dotColor = '#FF69B4'; 
     else if (type === 'カップリング曲') dotColor = '#3B82F6'; 
     else if (type === 'アルバム曲') dotColor = '#EAB308'; 
-    
-    return `
-      <div class="timeline-container" onclick="this.querySelector('.timeline-dot').classList.toggle('active'); event.stopPropagation();">
-        <div class="timeline-bar">
-          <div class="timeline-dot" style="left: ${percent}%; background-color: ${dotColor};">
-            <div class="year-tooltip">${songYear}</div>
-          </div>
-        </div>
-      </div>
-    `;
+    return `<div class="timeline-container" onclick="this.querySelector('.timeline-dot').classList.toggle('active'); event.stopPropagation();"><div class="timeline-bar"><div class="timeline-dot" style="left: ${percent}%; background-color: ${dotColor};"><div class="year-tooltip">${songYear}</div></div></div></div>`;
   }
 
   let setlistHtml = '', songNum = 1, inMedley = false, medleyNum = 1, encoreNum = 0;
@@ -2059,26 +2134,17 @@ function showLiveDetail(rec) {
         }
       }
       inMedley = true;
-      setlistHtml += `<div class="setlist-item setlist-medley-title${nextSongIsEncore ? ' setlist-encore' : ''}" style="justify-content: flex-start;">
-        <div class="setlist-left-content">
-          <span class="setlist-item-number">${songNum++}.</span>
-          <span class="setlist-item-title">メドレー</span>
-        </div>
-      </div>`;
+      setlistHtml += `<div class="setlist-item setlist-medley-title${nextSongIsEncore ? ' setlist-encore' : ''}" style="justify-content: flex-start;"><div class="setlist-left-content"><span class="setlist-item-number">${songNum++}.</span><span class="setlist-item-title">メドレー</span></div></div>`;
       medleyNum = 1;
       return;
     }
 
     const cleanSong = s.replace(/_アンコール(?: #\d+)?/g, '').trim();
-    
     const songInfo = songData[cleanSong];
     if (songInfo) {
       const normalizedType = normalizeType(songInfo.type);
-      if (typeCounts[normalizedType] !== undefined) {
-        typeCounts[normalizedType]++;
-      } else {
-        typeCounts['その他']++;
-      }
+      if (typeCounts[normalizedType] !== undefined) typeCounts[normalizedType]++;
+      else typeCounts['その他']++;
     }
 
     let currentEncore = s.includes('_アンコール') ? (s.includes('#3') ? 3 : s.includes('#2') ? 2 : 1) : 0;
@@ -2088,60 +2154,16 @@ function showLiveDetail(rec) {
     }
 
     const timeline = createTimelineHtml(cleanSong);
-
-    setlistHtml += `
-      <div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}">
-        <div class="setlist-left-content">
-          <span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span>
-          <span class="setlist-item-title">${cleanSong}</span>
-        </div>
-        ${timeline}
-      </div>`;
+    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${timeline}</div>`;
   });
 
-  const legendHtml = `
-    <div class="flex flex-col items-end justify-end pb-1">
-      <div class="text-[10px] text-gray-400 leading-none mb-1 text-center w-full">リリース年</div>
-      <div class="flex items-center text-[10px] text-gray-400 leading-none">
-        <span class="mr-1">1998</span>
-        <div class="w-20 h-[1px] bg-gray-300 mx-1 relative flex items-center justify-center">
-            <div class="w-2 h-2 rounded-full shadow-sm" style="background-color: var(--aiko-pink);"></div>
-        </div>
-        <span class="ml-1">${maxYear}</span>
-      </div>
-    </div>`;
+  const legendHtml = `<div class="flex flex-col items-end justify-end pb-1"><div class="text-[10px] text-gray-400 leading-none mb-1 text-center w-full">リリース年</div><div class="flex items-center text-[10px] text-gray-400 leading-none"><span class="mr-1">1998</span><div class="w-20 h-[1px] bg-gray-300 mx-1 relative flex items-center justify-center"><div class="w-2 h-2 rounded-full shadow-sm" style="background-color: var(--aiko-pink);"></div></div><span class="ml-1">${maxYear}</span></div></div>`;
 
-  const summaryHtml = `
-    <div class="mt-6 p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between">
-      <div class="flex-1">
-        <div class="mb-2 text-sm font-bold text-gray-600">📊 このライブの成分表</div>
-        <div class="text-xs font-bold leading-relaxed">
-          <div class="text-aiko-pink">● 表題曲: ${typeCounts['表題曲']}</div>
-          <div class="text-blue-500">● カップリング: ${typeCounts['カップリング曲']}</div>
-          <div class="text-yellow-500">● アルバム: ${typeCounts['アルバム曲']}</div>
-        </div>
-      </div>
-      <div style="width: 80px; height: 80px; flex-shrink: 0;">
-        <canvas id="component-chart"></canvas>
-      </div>
-    </div>
-  `;
+  const summaryHtml = `<div class="mt-6 p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between"><div class="flex-1"><div class="mb-2 text-sm font-bold text-gray-600">📊 このライブの成分表</div><div class="text-xs font-bold leading-relaxed"><div class="text-aiko-pink">● 表題曲: ${typeCounts['表題曲']}</div><div class="text-blue-500">● カップリング: ${typeCounts['カップリング曲']}</div><div class="text-yellow-500">● アルバム: ${typeCounts['アルバム曲']}</div></div></div><div style="width: 80px; height: 80px; flex-shrink: 0;"><canvas id="component-chart"></canvas></div></div>`;
 
-  const setlistHeaderHtml = `
-    <div class="flex justify-between items-end mt-8 mb-2">
-       <h3 class="font-bold text-gray-700 text-lg cursor-pointer flex items-center gap-2" onclick="copySetlist()">🎵 セットリスト</h3>
-       ${legendHtml}
-    </div>
-  `;
+  const setlistHeaderHtml = `<div class="flex justify-between items-end mt-8 mb-2"><h3 class="font-bold text-gray-700 text-lg cursor-pointer flex items-center gap-2" onclick="copySetlist()">🎵 セットリスト</h3>${legendHtml}</div>`;
 
-  const setlistSection = setlistHtml.trim()
-    ? `
-       ${summaryHtml}
-       ${setlistHeaderHtml}
-       <div class="card-base shadow-none border border-gray-100 pb-2 bg-white">
-         ${setlistHtml}
-       </div>`
-    : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3><div class="card-base text-gray-500 text-sm leading-relaxed bg-white">セットリストを知っている方がいましたら、よかったらぜひX(Twitter)の<a href="https://twitter.com/noki_dochibi" target="_blank" class="text-blue-500 underline">@noki_dochibi</a>まで教えてください。</div>`;
+  const setlistSection = setlistHtml.trim() ? `${summaryHtml}${setlistHeaderHtml}<div class="card-base shadow-none border border-gray-100 pb-2 bg-white">${setlistHtml}</div>` : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3><div class="card-base text-gray-500 text-sm leading-relaxed bg-white">セットリストを知っている方がいましたら、よかったらぜひX(Twitter)の<a href="https://twitter.com/noki_dochibi" target="_blank" class="text-blue-500 underline">@noki_dochibi</a>まで教えてください。</div>`;
 
   detailContainer.innerHTML = `
     <div id="detail-header-area" class="pt-2 -mt-2 cursor-pointer pl-[70px]">
@@ -2152,13 +2174,15 @@ function showLiveDetail(rec) {
       <div class="border-t my-3 border-gray-100"></div>
       <p class="text-gray-500 text-xs font-semibold mb-1">会場</p><p class="font-bold text-lg text-gray-800">${rec.venue} (${rec.region})</p>
     </div>
+    ${attendanceHtml}
+    
     ${setlistSection}
     <p class="text-center text-gray-400 mt-8 text-xs">※注:今まさにあなたが見ているセトリ 間違いじゃないとは言い切れない🌸</p>`;
 
   document.getElementById('detail-header-area').onclick = hideDetailView;
   document.getElementById('app').scrollTop = 0;
+  lucide.createIcons(); 
 
-  // グラフ描画
   setTimeout(() => renderComponentChart(typeCounts), 0);
 }
 
@@ -2469,8 +2493,13 @@ function setupEventListeners() {
     const songInput = document.getElementById('song-filter-input');
     songInput.value = '';
     songInput.placeholder = '曲名で絞り込み（楽曲タブで選択）';
+    // ★追加: トグルもオフにする
+    document.getElementById('attended-filter-toggle').checked = false;
     applyFilters();
   });
+
+  // ★追加: 参戦フィルタトグルのリスナー
+  document.getElementById('attended-filter-toggle').addEventListener('change', applyFilters);
 
   document.getElementById('song-search-input').addEventListener('input', () => {
     renderSongRanking();
@@ -2484,11 +2513,8 @@ function setupEventListeners() {
     document.getElementById('show-setlist-btn').style.display = 'none';
   });
 
-  // メドレー切り替えトグル
   document.getElementById('medley-toggle').addEventListener('change', () => {
-      // ランキング再描画
       renderSongRanking();
-      // グラフも再描画
       renderLiveCountChart();
   });
 
@@ -2496,19 +2522,12 @@ function setupEventListeners() {
     const songName = document.getElementById('song-search-input').value;
     if (songName) {
       const songInput = document.getElementById('song-filter-input');
-      
-      // ▼▼▼ 修正箇所: トグルの状態取得して文言分岐 ▼▼▼
       const isMedleyIncluded = document.getElementById('medley-toggle').checked;
-      
       if (isMedleyIncluded) {
-         // メドレー込みの場合
          songInput.value = `${songName}　※楽曲タブから選択`;
       } else {
-         // メドレー除外の場合
          songInput.value = `${songName}(メドレー除外)　※楽曲タブから選択`;
       }
-      // ▲▲▲ 修正箇所ここまで ▲▲▲
-
       switchToTab('search');
       applyFilters();
     }
@@ -2547,18 +2566,17 @@ function setupEventListeners() {
     tab.addEventListener('click', e => { e.preventDefault(); switchToTab(tab.dataset.tab); });
   });
 
-  [document.getElementById('modal-overlay')].forEach(modal => {
-    modal.addEventListener('click', e => { if (e.target === e.currentTarget) e.target.style.display = 'none'; });
+  [document.getElementById('modal-overlay'), document.getElementById('memo-modal')].forEach(modal => {
+    if(modal) modal.addEventListener('click', e => { if (e.target === e.currentTarget) e.target.style.display = 'none'; });
   });
 
-  // ★追加: フィルタ操作のトラッキング (既存のイベントリスナーはそのままに、追加で登録)
   ['tour-select', 'year-select', 'region-select'].forEach(id => {
       const el = document.getElementById(id);
       if(el) {
           el.addEventListener('change', (e) => {
               if(e.target.value) {
                   safeTrackEvent('select_content', {
-                      content_type: 'filter_' + id.replace('-select', ''), // filter_tour, filter_year etc.
+                      content_type: 'filter_' + id.replace('-select', ''),
                       item_id: e.target.value
                   });
               }
@@ -2620,6 +2638,21 @@ function safeTrackEvent(eventName, params) {
 }
 // 親画面からのメッセージ（検索指示 or 更新指示）を受け取る
 window.addEventListener('message', (event) => {
+  if (event.data.type === 'userDataUpdated') {
+    userUserData = event.data.data;
+    // リスト画面なら再描画してバッジを反映
+    if (!document.body.classList.contains('detail-view')) {
+        // フィルタ適用処理を呼ぶとrenderLiveListも走る
+        applyFilters();
+    } else if (currentDisplayingRecord) {
+        // 詳細画面を開いている場合、表示更新（ただし編集中は邪魔しないように簡易的なDOM操作のみ推奨だが、今回はshowLiveDetail再実行で整合性を保つ）
+        const modal = document.getElementById('memo-modal');
+        if (modal.style.display === 'none') {
+            showLiveDetail(currentDisplayingRecord);
+        }
+    }
+  }
+
   // ケース1: 検索指示
   if (event.data.type === 'execLiveSearch') {
     if (typeof window.findAndShowLive === 'function') {
@@ -2860,6 +2893,80 @@ function showAnniversaryModal(events) {
     contentDiv.innerHTML = html;
     document.getElementById('modal-overlay').style.display = 'flex';
     lucide.createIcons(); // アイコン再描画
+}
+
+// --- My LLDB Functions ---
+
+function toggleAttendance(isChecked) {
+    if (!currentDisplayingRecord) return;
+    const dateId = currentDisplayingRecord.date;
+    
+    // 現在のメモ情報を取得（なければ空）
+    const currentData = (userUserData.attendedLives && userUserData.attendedLives[dateId]) || {};
+    
+    // 親へ送信
+    window.parent.postMessage({
+        type: 'updateUserLiveRecord',
+        id: dateId,
+        attended: isChecked,
+        memo: currentData.memo || '',
+        link: currentData.link || ''
+    }, '*');
+    
+    // 楽観的UI更新（レスポンスを待たずにUIを変える）
+    if(!userUserData.attendedLives) userUserData.attendedLives = {};
+    if(!userUserData.attendedLives[dateId]) userUserData.attendedLives[dateId] = {};
+    
+    if(isChecked) {
+        // データはそのまま
+    } else {
+        delete userUserData.attendedLives[dateId];
+    }
+    // 詳細画面の表示更新
+    showLiveDetail(currentDisplayingRecord);
+}
+
+function openMemoModal() {
+    if (!currentDisplayingRecord) return;
+    const dateId = currentDisplayingRecord.date;
+    const data = (userUserData.attendedLives && userUserData.attendedLives[dateId]) || {};
+    
+    document.getElementById('memo-textarea').value = data.memo || '';
+    document.getElementById('memo-link-input').value = data.link || '';
+    
+    document.getElementById('memo-modal').style.display = 'flex';
+}
+
+function closeMemoModal() {
+    document.getElementById('memo-modal').style.display = 'none';
+}
+
+function saveMemo() {
+    if (!currentDisplayingRecord) return;
+    const dateId = currentDisplayingRecord.date;
+    
+    const memoVal = document.getElementById('memo-textarea').value;
+    const linkVal = document.getElementById('memo-link-input').value;
+    
+    // 親へ送信 (参戦フラグは必ずtrueになる)
+    window.parent.postMessage({
+        type: 'updateUserLiveRecord',
+        id: dateId,
+        attended: true,
+        memo: memoVal,
+        link: linkVal
+    }, '*');
+    
+    closeMemoModal();
+    // 少し待ってから再描画（メッセージ到達ラグ考慮）
+    setTimeout(() => showLiveDetail(currentDisplayingRecord), 100);
+}
+
+function deleteMemo() {
+    if(!confirm('メモを削除しますか？')) return;
+    document.getElementById('memo-textarea').value = '';
+    document.getElementById('memo-link-input').value = '';
+    saveMemo();
 }
 </script>
 </body>
