@@ -54,12 +54,9 @@ body {
 }
 
 body.detail-view nav { display: none !important; }
-/* body.detail-view { padding-top: 0; }  <- 不要になったので削除または無視でOK */
 
 @media screen and (max-device-width: 1024px) and (orientation: landscape) {
   body.landscape nav { display: none !important; }
-  /* body.landscape { padding-top: 0; } */
-  /* body.landscape main { padding-bottom: 24px !important; } */
 }
 
 /* mobile-frameでスクロールを一元管理 */
@@ -592,18 +589,21 @@ button { font-size: 13px !important; }
   <div id="tab-search" class="tab-content" style="display:block">
     <p class="text-gray-400 mb-1 text-xs text-right font-mono">Data updated: <span id="last-update-date">-</span></p>
     <div class="card-base bg-white border-0">
-  <div class="flex gap-2 mb-2 items-center justify-between">
+  <div class="flex gap-2 mb-2 items-center">
+    <!-- 左側: 検索窓 (flex-1 で幅50%確保) -->
     <div class="relative flex-1">
         <input type="text" id="search-input" placeholder="フリーワードで検索" class="w-full px-3 py-2 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-red-200 focus:border-red-400 transition">
     </div>
-    <div class="flex flex-col items-end justify-center shrink-0">
-        <div class="flex items-center gap-1 mb-1">
-            <span class="text-[10px] font-bold text-gray-500">参戦したライブのみ</span>
-            <i data-lucide="info" class="w-3 h-3 text-gray-400 cursor-pointer" onclick="openMyLLDBInfo()"></i>
+    
+    <!-- 右側: トグルセット (flex-1 で残り50%確保し、中身を横並び右寄せ) -->
+    <div class="flex-1 flex items-center justify-end gap-2">
+        <div class="flex items-center gap-1 cursor-pointer tap-trigger" onclick="openMyLLDBInfo()">
+            <span class="text-[11px] font-bold text-gray-500">参戦したライブのみ</span>
+            <i data-lucide="info" class="w-3 h-3 text-gray-400"></i>
         </div>
-        <div class="relative inline-block align-middle select-none">
+        <div class="relative inline-block align-middle select-none shrink-0">
             <input type="checkbox" id="attended-filter-toggle" class="toggle-checkbox" />
-            <label for="attended-filter-toggle" class="toggle-label" style="transform: scale(0.8); transform-origin: right center;"></label>
+            <label for="attended-filter-toggle" class="toggle-label" style="transform: scale(0.9); display:block;"></label>
         </div>
     </div>
   </div>
@@ -788,61 +788,6 @@ button { font-size: 13px !important; }
       <label class="block text-xs font-bold text-gray-500 mb-1">ひとことメモ</label>
       <textarea id="memo-textarea" class="w-full p-3 border border-gray-300 rounded-lg text-sm h-40 focus:ring-2 focus:ring-aiko-red focus:border-transparent" placeholder="座席、誰と行ったか、noteやXなどのリンクなど..."></textarea>
     </div>
-    ```
-
----
-
-### 5. メモ保存処理の修正 (JS)
-リンク入力欄の値を保存・復元する処理を削除します。
-
-**場所:** `openMemoModal()`, `saveMemo()`, `deleteMemo()`
-
-#### After (修正版コード)
-```javascript
-// --- My LLDB Functions ---
-
-// インフォメーションアイコン用
-function openMyLLDBInfo() {
-    // My LLDBのモーダルを表示するためのメッセージ送信
-    window.parent.postMessage({ type: 'openMyLLDBModal' }, '*');
-}
-
-function openMemoModal() {
-    if (!currentDisplayingRecord) return;
-    const dateId = currentDisplayingRecord.date;
-    const data = (userUserData.attendedLives && userUserData.attendedLives[dateId]) || {};
-    
-    document.getElementById('memo-textarea').value = data.memo || '';
-    // リンク欄へのセット処理は削除
-    
-    document.getElementById('memo-modal').style.display = 'flex';
-}
-
-function saveMemo() {
-    if (!currentDisplayingRecord) return;
-    const dateId = currentDisplayingRecord.date;
-    
-    const memoVal = document.getElementById('memo-textarea').value;
-    
-    // 親へ送信 (linkプロパティは空文字を送る)
-    window.parent.postMessage({
-        type: 'updateUserLiveRecord',
-        id: dateId,
-        attended: true,
-        memo: memoVal,
-        link: '' 
-    }, '*');
-    
-    closeMemoModal();
-    // 少し待ってから再描画（メッセージ到達ラグ考慮）
-    setTimeout(() => showLiveDetail(currentDisplayingRecord), 100);
-}
-
-function deleteMemo() {
-    if(!confirm('メモを削除しますか？')) return;
-    document.getElementById('memo-textarea').value = '';
-    saveMemo();
-}
     <div class="flex gap-2">
       <button onclick="saveMemo()" class="flex-1 bg-[#E63946] text-white py-3 rounded-xl font-bold shadow">保存する</button>
       <button onclick="deleteMemo()" class="flex-none bg-gray-200 text-gray-600 py-3 px-4 rounded-xl font-bold">削除</button>
@@ -957,7 +902,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let allLiveRecords = [], 
-    songStats = {},                
+    songStats = {},                 
     songStatsNoMedley = {},        
     patternStats = {}, 
     lastPlayedStats = {}, 
@@ -2070,6 +2015,7 @@ function renderLiveList(records) {
 
     const card = document.createElement('div');
     card.className = 'card-base live-card cursor-pointer hover:shadow-md transition bg-white';
+    // 修正: 参戦バッジを日付の横に表示
     card.innerHTML = `
       <div class="live-card-label ${labelType}">${labelText}</div>
       <div class="flex items-center gap-2 mt-1">
@@ -2108,10 +2054,9 @@ function showLiveDetail(rec) {
   detailContainer.style.display = 'block';
 
   // ★追加: ユーザーデータ取得
-  const userData = userUserData.attendedLives[rec.date] || null;
+  const userData = (userUserData.attendedLives && userUserData.attendedLives[rec.date]) || null;
   const isAttended = !!userData;
   const memo = userData ? userData.memo : '';
-  // link変数はもう使わないので削除、または無視
 
   // URL自動リンク化用関数
   const linkify = (text) => {
@@ -2125,14 +2070,15 @@ function showLiveDetail(rec) {
   if (isAttended) {
       if (memo) {
           memoHtml = `
-            <div class="user-memo-area has-content">
-                <div class="memo-edit-btn" onclick="openMemoModal()"><i data-lucide="edit-3" class="w-3 h-3 inline"></i> 編集</div>
+            <div class="user-memo-area has-content clickable-item" onclick="openMemoModal()">
+                <div class="memo-edit-btn"><i data-lucide="edit-3" class="w-3 h-3 inline"></i> 編集</div>
                 <div class="memo-content">${linkify(memo)}</div>
             </div>`;
       } else {
+          // 修正: 確実にクリックできるよう、親divにもonclickを付与し、スタイル調整
           memoHtml = `
-            <div class="user-memo-area">
-                <div class="memo-placeholder" onclick="openMemoModal()">
+            <div class="user-memo-area clickable-item" onclick="openMemoModal()">
+                <div class="memo-placeholder" style="pointer-events:none;">
                     <i data-lucide="edit-3" class="w-4 h-4 inline mb-1"></i><br>
                     タップしてメモやリンクを記録
                 </div>
@@ -2301,7 +2247,6 @@ function hideDetailView() {
   document.body.classList.remove('detail-view');
   document.getElementById('live-detail').style.display = 'none';
   document.getElementById('back-button-fixed').style.display = 'none';
-  // document.getElementById('main-header').style.display = 'flex'; // ヘッダーは親管理なのでここでは触らない
   document.querySelector('nav').style.display = 'flex';
   
   // グラフの破棄
@@ -2310,7 +2255,14 @@ function hideDetailView() {
     chartInstances.component = null;
   }
 
-  switchToTab(document.querySelector('.tab-item.active').dataset.tab);
+  // ★追加: リスト画面の再描画（バッジの状態を反映させるため）
+  applyFilters();
+
+  // タブ表示の復元
+  const currentTab = document.querySelector('.tab-item.active').dataset.tab;
+  document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+  document.getElementById(`tab-${currentTab}`).style.display = 'block';
+
   currentDisplayingRecord = null;
 }
 
@@ -2757,212 +2709,28 @@ async function fetchAndHotSwap() {
   }
 }
 
-// ★追加: 今日は何の日ロジック
-function checkTodayEvents() {
-    // ★追加: すでにチェック済みなら何もしない（重複表示防止）
-    if (hasCheckedTodayEvents) return;
-    hasCheckedTodayEvents = true;
-
-    // 日本時間の現在時刻を取得
-    const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
-    const todayMonth = now.getMonth() + 1;
-    const todayDate = now.getDate();
-
-    console.log(`Today (JST): ${todayMonth}/${todayDate}`);
-
-    anniversaryQueue = [];
-
-    // 日付比較用ヘルパー関数
-    const isSameDate = (val) => {
-        if (!val) return false;
-        
-        // 入力が何であれ一度Dateオブジェクトにする
-        const dateObj = new Date(val);
-        if (isNaN(dateObj.getTime())) return false;
-
-        // その時刻を日本時間(JST)に変換した時の月日を取得する
-        // これにより、UTC "2000-01-03T15:00:00Z" (JST 1/4 00:00) も
-        // UTC "2000-01-04T00:00:00Z" (JST 1/4 09:00) も、どちらも「4日」になる
-        const jstObj = new Date(dateObj.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
-        const m = jstObj.getMonth() + 1;
-        const d = jstObj.getDate();
-
-        return m === todayMonth && d === todayDate;
-    };
-
-    // 1. ライブ開催日のチェック
-    allLiveRecords.forEach(rec => {
-        if (isSameDate(rec.date)) {
-            anniversaryQueue.push({ type: 'live', data: rec });
-        }
-    });
-
-    // 2. CDリリース日のチェック
-    listData.forEach(item => {
-        if (isSameDate(item.releaseDate)) {
-            anniversaryQueue.push({ type: 'cd', data: item });
-        }
-    });
-
-    console.log(`Hits: ${anniversaryQueue.length}`); // デバッグログ
-
-    // キューがあれば処理開始
-    if (anniversaryQueue.length > 0) {
-        processNextAnniversary();
-    }
-}
-
-function processNextAnniversary() {
-    // キューが空なら何もしない
-    if (anniversaryQueue.length === 0) return;
-    
-    // キューの中身を全て渡してモーダルを表示
-    // 配列のコピーを渡して、元のキューは空にする
-    showAnniversaryModal([...anniversaryQueue]);
-    
-    // キューをリセット（閉じた後に再度表示されないように）
-    anniversaryQueue = [];
-}
-
-function showAnniversaryModal(events) {
-    const contentDiv = document.getElementById('modal-body');
-    if (!contentDiv) return;
-
-    let html = '';
-    const nowYear = new Date().getFullYear();
-    const birth = new Date(1975, 10, 22); // 1975/11/22 (念のためここで再定義)
-
-    // 引数が配列でない場合（単一オブジェクトの場合）のガード
-    if (!Array.isArray(events)) {
-        events = [events];
-    }
-
-    events.forEach(event => {
-        // 各カードを囲むラッパー
-        html += '<div class="mb-8 last:mb-0 border-b border-dashed border-gray-200 pb-8 last:border-0 last:pb-0">';
-
-        if (event.type === 'live') {
-            const rec = event.data;
-            const recYear = new Date(rec.date).getFullYear();
-            const yearsAgo = nowYear - recYear;
-            const yearsAgoText = yearsAgo > 0 ? `${yearsAgo}年前の` : '';
-            
-            const tourNameLower = rec.tourName.toLowerCase();
-            let labelType = 'other', labelText = 'Event';
-            if (tourNameLower.includes('love like pop')) { labelType = 'pop'; labelText = 'POP'; }
-            else if (tourNameLower.includes('love like rock')) { labelType = 'rock'; labelText = 'ROCK'; }
-            else if (tourNameLower.includes('love like aloha')) { labelType = 'aloha'; labelText = 'ALOHA'; }
-
-            html += `
-                <h2 class="font-bold text-center text-xl mb-4 text-aiko-pink">🎉 ${yearsAgoText}今日は何の日？</h2>
-                <div class="card-base live-card cursor-pointer shadow-md" onclick="closeModal(); showLiveDetail(allLiveRecords.find(r => r.date === '${rec.date}' && r.tourName === '${rec.tourName.replace(/'/g, "\\'")}' ))">
-                    <div class="live-card-label ${labelType}">${labelText}</div>
-                    <p class="text-gray-500 font-medium text-xs">${rec.date} (${rec.dayOfWeek})</p>
-                    <p class="font-bold mt-1 text-gray-800 text-lg leading-tight">${rec.tourName}</p>
-                    <p class="text-gray-600 text-sm mt-1">${rec.venue} (${rec.region})</p>
-                    <p class="mt-2 font-semibold text-aiko-pink text-sm">セットリスト: ${rec.songCount}曲</p>
-                </div>
-                <p class="text-center text-gray-400 text-xs mt-2">👆 タップで詳細へ</p>
-            `;
-        } else if (event.type === 'cd') {
-            const item = event.data;
-            
-            // 日付パースの安全策
-            let releaseDateObj = new Date(item.releaseDate);
-            if (isNaN(releaseDateObj.getTime())) {
-                 // 文字列 "yyyy/mm/dd" から再生成を試みる
-                 const parts = String(item.releaseDate).split('/');
-                 if (parts.length === 3) {
-                     releaseDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
-                 } else {
-                     // それでもダメなら今日の日付を入れてエラー回避
-                     releaseDateObj = new Date();
-                 }
-            }
-            
-            const rYear = releaseDateObj.getFullYear();
-            const rMonth = releaseDateObj.getMonth() + 1;
-            const rDay = releaseDateObj.getDate();
-            
-            const yearsAgo = nowYear - rYear;
-            const yearsAgoText = yearsAgo > 0 ? `${yearsAgo}年前の` : '';
-            
-            // --- 年齢・日数計算ロジック ---
-            // 1. 年齢 (Y歳 Mヶ月 D日)
-            let ageY = rYear - birth.getFullYear();
-            let ageM = rMonth - (birth.getMonth() + 1);
-            let ageD = rDay - birth.getDate();
-            
-            if (ageD < 0) {
-                ageM--;
-                // 前月の日数を足す
-                const prevMonthLastDay = new Date(rYear, rMonth - 1, 0).getDate();
-                ageD += prevMonthLastDay;
-            }
-            if (ageM < 0) {
-                ageY--;
-                ageM += 12;
-            }
-
-            // 2. 生まれてからの総日数
-            // 時差の影響を受けないように正午基準で計算
-            const d1 = new Date(birth.getFullYear(), birth.getMonth(), birth.getDate(), 12, 0, 0);
-            const d2 = new Date(rYear, rMonth - 1, rDay, 12, 0, 0);
-            const diffTime = Math.abs(d2 - d1);
-            const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
-            // ---------------------------
-
-            const img1 = item.img1 || 'https://placehold.jp/150x150.png?text=No%20Image';
-            const img2 = item.img2; 
-
-            html += `
-                <h2 class="font-bold text-center text-xl mb-4 text-aiko-pink">🎂 ${yearsAgoText}今日は何の日？</h2>
-                <div class="card-base bg-white p-5 shadow-md rounded-2xl">
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="border border-gray-300 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-white">${item.type}</span>
-                        <span class="text-xs text-gray-400 font-mono tracking-widest">${rYear}.${rMonth}.${rDay}</span>
-                    </div>
-
-                    <h3 class="text-center font-bold text-gray-800 text-xl mb-5 leading-tight">${item.title}</h3>
-
-                    <div class="flex justify-center gap-3 mb-6">
-                        <img src="${img1}" class="${img2 ? 'w-[45%]' : 'w-[60%]'} rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.src='https://placehold.jp/150x150.png?text=No%20Image'">
-                        ${img2 ? `<img src="${img2}" class="w-[45%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.style.display='none'">` : ''}
-                    </div>
-
-                    <div class="bg-[#EFF8F7] rounded-xl p-3 mb-5 flex justify-between items-center">
-                        <span class="text-xs font-bold text-[#4A8078]">当時のaiko</span>
-                        <div class="text-right">
-                            <div class="text-sm font-bold text-[#4A8078]">
-                                ${ageY}歳${ageM}カ月${ageD}日
-                            </div>
-                            <div class="text-[10px] text-gray-400 font-mono">
-                                (${totalDays.toLocaleString()}日)
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-left">
-                        <p class="text-[10px] text-gray-400 mb-1 flex items-center gap-1 font-bold">
-                            <i data-lucide="music" class="w-3 h-3"></i> 収録曲
-                        </p>
-                        <div class="border border-dashed border-gray-200 rounded-xl p-3 bg-gray-50 text-sm text-gray-700 leading-relaxed">
-                            ${item.tracks ? item.tracks.replace(/\//g, '<br>') : '収録曲情報なし'}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        html += '</div>'; // wrapper close
-    });
-
-    contentDiv.innerHTML = html;
-    document.getElementById('modal-overlay').style.display = 'flex';
-    lucide.createIcons(); // アイコン再描画
-}
-
 // --- My LLDB Functions ---
+
+// ★追加: My LLDBの説明モーダルを開く
+function openMyLLDBInfo() {
+    const html = `
+        <h2 class="font-bold text-center text-xl mb-4 text-aiko-pink">My LLDB とは？</h2>
+        <div class="text-sm text-gray-600 leading-relaxed space-y-3">
+            <p>あなたが参戦したライブや、思い出の公演を記録できる機能です。</p>
+            <div class="bg-green-50 p-3 rounded-lg border border-green-100">
+                <p class="font-bold text-green-800 mb-1">✅ 参戦記録</p>
+                <p class="text-xs">公演詳細ページの「参戦しました！」をONにすると記録されます。</p>
+            </div>
+            <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                <p class="font-bold text-blue-800 mb-1">📝 メモ・リンク</p>
+                <p class="text-xs">当時の思い出や、SNSの投稿リンクなどを公演ごとに保存できます。</p>
+            </div>
+            <p class="text-xs text-gray-400 mt-4">※記録は現在お使いのブラウザに保存されます。</p>
+        </div>
+    `;
+    document.getElementById('modal-body').innerHTML = html;
+    document.getElementById('modal-overlay').style.display = 'flex';
+}
 
 function toggleAttendance(isChecked) {
     if (!currentDisplayingRecord) return;
@@ -2999,7 +2767,6 @@ function openMemoModal() {
     const data = (userUserData.attendedLives && userUserData.attendedLives[dateId]) || {};
     
     document.getElementById('memo-textarea').value = data.memo || '';
-    document.getElementById('memo-link-input').value = data.link || '';
     
     document.getElementById('memo-modal').style.display = 'flex';
 }
@@ -3013,15 +2780,20 @@ function saveMemo() {
     const dateId = currentDisplayingRecord.date;
     
     const memoVal = document.getElementById('memo-textarea').value;
-    const linkVal = document.getElementById('memo-link-input').value;
     
+    // 即時反映のためにローカルデータを更新
+    if(!userUserData.attendedLives) userUserData.attendedLives = {};
+    if(!userUserData.attendedLives[dateId]) userUserData.attendedLives[dateId] = {};
+    userUserData.attendedLives[dateId].memo = memoVal;
+    userUserData.attendedLives[dateId].link = ''; 
+
     // 親へ送信 (参戦フラグは必ずtrueになる)
     window.parent.postMessage({
         type: 'updateUserLiveRecord',
         id: dateId,
         attended: true,
         memo: memoVal,
-        link: linkVal
+        link: '' 
     }, '*');
     
     closeMemoModal();
@@ -3032,7 +2804,6 @@ function saveMemo() {
 function deleteMemo() {
     if(!confirm('メモを削除しますか？')) return;
     document.getElementById('memo-textarea').value = '';
-    document.getElementById('memo-link-input').value = '';
     saveMemo();
 }
 </script>
