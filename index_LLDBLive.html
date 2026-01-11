@@ -996,7 +996,14 @@ function startLoadingAnimation(mode) {
   }, (mode === 'smart' ? 1200 : 5500));
 }
 
+// ★追加: ローディング完了フラグ
+let isLoadingFinished = false;
+
 function finishLoading() {
+  // ★追加: 既に完了処理が走っていたら何もしない（紙吹雪の二重発生防止）
+  if (isLoadingFinished) return;
+  isLoadingFinished = true;
+
   startConfetti();
   const loadingDiv = document.getElementById('loading-container');
   if (loadingDiv) {
