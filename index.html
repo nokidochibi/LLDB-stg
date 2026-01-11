@@ -192,7 +192,7 @@
   </div>
 
     <header id="main-app-header" class="bg-[#E63946] text-white transition-colors duration-300">
-        <h1 class="font-black text-[22px] tracking-wide flex-1 truncate pr-2" id="header-title"><span id="header-title-text">Love Like DataBase</span> <span id="display-version"></span></h1>
+        <h1 class="font-black text-[22px] tracking-wide flex-1 truncate pr-2" id="header-title"><span id="header-title-text">Love Like DataBase</span> <span id="display-version">vol. </span></h1>
         
         <button id="header-menu-btn" onclick="toggleNoren()" class="p-2 rounded-full hover:bg-white/20 transition active:scale-90 flex items-center justify-center w-10 h-10">
             <span class="flower-icon select-none">🌸</span>
@@ -880,7 +880,15 @@
                 const response = await fetch(`${GAS_API_URL}?action=getUpdateHistory`);
                 const json = await response.json();
 
-                if (json.status === 'success' && json.data.length > 0) {
+                // スプレッドシートの最新バージョン（B2セル）を真っ先に反映（履歴の有無に関わらず）
+                if (json.version_all) {
+                    const versionElement = document.getElementById('display-version');
+                    if (versionElement) {
+                        versionElement.textContent = 'vol.' + json.version_all;
+                    }
+                }
+
+                if (json.status === 'success' && json.data && json.data.length > 0) {
                     // HTMLを生成
                     let html = '<div class="flex flex-col gap-3">';
                     json.data.forEach(item => {
@@ -899,13 +907,6 @@
                     if (container) {
                         container.innerHTML = html;
                         isUpdateHistoryLoaded = true;
-                    }
-                    // スプレッドシートの最新バージョン（B2セル）をヘッダーに反映
-                    if (json.version_all) {
-                        const versionElement = document.getElementById('display-version');
-                        if (versionElement) {
-                            versionElement.textContent = 'vol.' + json.version_all;
-                        }
                     }
                 } else {
                     if (container) container.innerHTML = '<p class="text-center text-gray-400 text-xs py-4">更新履歴はありません</p>';
