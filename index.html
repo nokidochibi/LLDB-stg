@@ -192,7 +192,7 @@
   </div>
 
     <header id="main-app-header" class="bg-[#E63946] text-white transition-colors duration-300">
-        <h1 class="font-black text-[22px] tracking-wide flex-1 truncate pr-2" id="header-title">Love Like DataBase <span id="display-version">vol.4.1</span></h1>
+        <h1 class="font-black text-[22px] tracking-wide flex-1 truncate pr-2" id="header-title"><span id="header-title-text">Love Like DataBase</span> <span id="display-version"></span></h1>
         
         <button id="header-menu-btn" onclick="toggleNoren()" class="p-2 rounded-full hover:bg-white/20 transition active:scale-90 flex items-center justify-center w-10 h-10">
             <span class="flower-icon select-none">🌸</span>
@@ -256,7 +256,7 @@
                 参戦メモや誕生日を保存できます。
               </p>
         
-              <h3 class="text-sm font-bold text-gray-700 mb-3">▼データ保存方法（どちらか選んでね）</h3>
+              <h3 class="text-sm font-bold text-gray-700 mb-3">▼データ保存方法（①か②のどちらかを選んでね）</h3>
         
               <div class="mb-6">
                 <p class="text-sm text-gray-600 mb-2 leading-relaxed">
@@ -328,9 +328,9 @@
                   <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
                   参戦履歴をCSVで出力
                 </button>
-                <p class="text-[12px] text-gray-300 mt-2 text-center leading-tight">
+                <p class="text-[12px] text-gray-400 mt-2 text-center leading-tight">
                   参戦メモをExcelで開ける形式でダウンロードします。<br>
-                  アプリが使えなくなった場合でも、あなたのデータは守られます。
+                  アプリが使えなくなっても、あなたのデータを残せます。
                 </p>
               </div>
         
@@ -376,7 +376,7 @@
 
         // アプリ定義 (タイトル更新)
         const apps = {
-            'live': { title: `Love Like DataBase ${headerVersion}`, color: 'bg-[#E63946]' }, /* Red */
+            'live': { title: 'Love Like DataBase', color: 'bg-[#E63946]' }, /* Red */
             'trends': { title: 'LLDB Trends', color: 'bg-[#1D3557]' },       /* Navy */
             'songHelper': { title: 'LLDB Song Helper', color: 'bg-[#F4A261]' }, /* Orange */
             'history': { title: 'LLDB History', color: 'bg-[#2A9D8F]' }      /* Teal */
@@ -800,7 +800,14 @@
             if(apps[appName]) {
                 // TailwindのJITカラークラス(bg-[#...])を動的に適用するため、style属性ではなくclassNameを更新
                 header.className = `${apps[appName].color} text-white transition-colors duration-300 flex items-center justify-between px-4 fixed top-0 z-30 shadow-sm w-full h-[60px]`;
-                title.textContent = apps[appName].title;
+                
+                // タイトルテキストのみを更新し、バージョン表示用のspanは消さないようにする
+                const titleText = document.getElementById('header-title-text');
+                if (titleText) titleText.textContent = apps[appName].title;
+
+                // バージョン番号は「Live」アプリの時だけ表示し、他では隠す
+                const versionEl = document.getElementById('display-version');
+                if (versionEl) versionEl.style.display = (appName === 'live') ? 'inline' : 'none';
             }
 
             // 暖簾を閉じる
@@ -967,6 +974,7 @@
 
         // --- DOMContentLoaded ---
         document.addEventListener('DOMContentLoaded', () => {
+            // 1. キャッシュクリアチェック
             const savedVer = localStorage.getItem('lldb_version');
             if (savedVer !== APP_VERSION) {
                 localStorage.clear();
@@ -974,14 +982,25 @@
                 console.log(`Version updated to ${APP_VERSION}. Cache cleared.`);
             }
 
-            loadUpdateHistory();
-            checkRemoteConfig();
-
+            // 2. IframeのURLを設定して読み込みを開始させる（優先度①：ライブ情報取得の開始）
             document.querySelectorAll('iframe').forEach(iframe => {
                 const currentSrc = iframe.getAttribute('src');
-                const separator = currentSrc.includes('?') ? '&' : '?';
-                iframe.setAttribute('src', `${currentSrc}${separator}v=${APP_VERSION}`);
+                if (currentSrc) {
+                    const separator = currentSrc.includes('?') ? '&' : '?';
+                    iframe.setAttribute('src', `${currentSrc}${separator}v=${APP_VERSION}`);
+                }
             });
+
+            // 3. アプリの初期画面を表示する（ハッシュルーティング）
+            const hash = window.location.hash;
+            if (hash === '#song') { switchApp('songHelper'); } 
+            else if (hash === '#trends') { switchApp('trends'); } 
+            else if (hash === '#history') { switchApp('history'); } 
+            else { switchApp('live'); }
+
+            // 4. バックグラウンド処理を開始（優先度②：スプシの4.6取得など）
+            loadUpdateHistory();
+            checkRemoteConfig();
             
             const aboutVerEl = document.getElementById('about-version-display');
             if(aboutVerEl) aboutVerEl.textContent = aboutVersion;
