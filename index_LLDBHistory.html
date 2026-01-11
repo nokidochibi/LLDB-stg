@@ -556,6 +556,7 @@
                 document.getElementById('year').value = y;
                 document.getElementById('month').value = parseInt(m);
                 document.getElementById('day').value = parseInt(d);
+                generateHistory(); // 自動で計算を開始
         }
 
         // ★追加: 親(My LLDB)からのデータ同期を受け取る
@@ -579,6 +580,7 @@
                         yEl.value = y;
                         mEl.value = parseInt(m);
                         dEl.value = parseInt(d);
+                        generateHistory(); // データを受け取ったら自動で計算
                     }
                 }
             }
