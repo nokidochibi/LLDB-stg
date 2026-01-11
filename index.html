@@ -1006,18 +1006,6 @@
             if(aboutVerEl) aboutVerEl.textContent = aboutVersion;
 
             lucide.createIcons();
-            
-            // ハッシュルーティング
-            const hash = window.location.hash;
-            if (hash === '#song') {
-                switchApp('songHelper');
-            } else if (hash === '#trends') {
-                switchApp('trends');
-            } else if (hash === '#history') {
-                switchApp('history');
-            } else {
-                switchApp('live');
-            }
 
             const header = document.getElementById('main-app-header');
             if(header) {
