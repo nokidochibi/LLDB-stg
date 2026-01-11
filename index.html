@@ -505,7 +505,7 @@
                 const input = document.getElementById('manual-sync-id');
                 const val = input.value.trim();
                 if (!val) return;
-                if (!confirm(`LLDB ID「${val}」を設定しますか。\n\n※OKを押した後、数秒お待ちください。\n　クラウド上のデータをこの端末に復元します。`)) return;
+                if (!confirm(`LLDB ID「${val}」を設定しますか。\n\n※OKを押した後、数秒お待ちください。\n　データをこの端末に復元します。`)) return;
             
                 this.data.settings.syncId = val;
                 this.save(true); // 一旦保存(同期はしない)
