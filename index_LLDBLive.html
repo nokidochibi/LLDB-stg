@@ -734,62 +734,76 @@ button { font-size: 13px !important; }
 
   <!-- 軌跡タブ (Historyアプリ移植デザイン) -->
  <div id="tab-records" class="tab-content" style="display:none">
-  <div id="records-unregistered" class="card-base bg-white text-center py-10 hidden">
-    <p class="text-gray-500 text-sm">
-      この機能は <a href="#" onclick="window.parent.postMessage({type: 'openMyLLDB'}, '*'); return false;" class="text-aiko-red underline font-bold">My LLDB</a> に登録すると使えるよ
-    </p>
-  </div>
+  <div id="records-unregistered" class="card-base bg-white text-center py-10 hidden">
+    <p class="text-gray-500 text-sm">
+      この機能は <a href="#" onclick="window.parent.postMessage({type: 'openMyLLDB'}, '*'); return false;" class="text-aiko-red underline font-bold">My LLDB</a> に登録すると使えるよ
+    </p>
+  </div>
 
-  <div id="records-content" class="hidden">
-    <div class="mb-5">
-      <h3 class="font-bold mb-2 text-gray-700 text-base flex items-center gap-2"><i data-lucide="bar-chart-2" class="w-4 h-4 text-aiko-red"></i> 年別参戦回数</h3>
-      <div class="card-base bg-white p-2">
-        <canvas id="user-yearly-chart" style="height:200px;"></canvas>
-      </div>
+  <div id="records-content" class="hidden">
+    <div class="mb-5">
+      <h3 class="font-bold mb-2 text-gray-700 text-base flex items-center gap-2"><i data-lucide="bar-chart-2" class="w-4 h-4 text-aiko-red"></i> 年別参戦回数</h3>
+      <div class="card-base bg-white p-2">
+        <canvas id="user-yearly-chart" style="height:220px; max-height:220px"></canvas>
+      </div>
+    </div>
+
+    <div class="card-base bg-white border-0 p-4 mb-5 flex items-center justify-between overflow-hidden relative">
+      <div class="flex-1">
+        <h3 class="font-bold mb-2 text-gray-700 text-base flex items-center gap-2">
+          <i data-lucide="bar-chart" class="w-4 h-4 text-aiko-red"></i> 
+          あなたの参戦回数: <span id="user-total-attended" class="text-aiko-red text-lg">0</span>
+        </h3>
+        <div id="user-category-counts" class="text-sm font-bold space-y-1">
+          </div>
+      </div>
+      <div style="width: 100px; height: 100px;" class="flex-shrink-0">
+        <canvas id="user-category-doughnut"></canvas>
+      </div>
+    </div>
+
+    <div class="mb-3 flex items-center gap-2 px-1">
+      <h3 class="font-bold text-gray-700 text-base flex items-center gap-2"><i data-lucide="music-2" class="w-4 h-4 text-aiko-red"></i> あなたが聴いた曲</h3>
+    </div>
+
+    <div class="card-base bg-white border-0 mb-4 p-3">
+      <div class="flex gap-2 mb-3">
+        <input type="text" id="record-song-search" placeholder="楽曲名で検索" class="flex-1 px-3 bg-gray-50 border-gray-200" oninput="renderUserSongRanking()">
+        <button onclick="document.getElementById('record-song-search').value=''; renderUserSongRanking()" class="action-btn clear-btn">クリア</button>
+      </div>
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-gray-500 text-xs font-bold">全楽曲: <span id="user-total-songs" class="text-gray-800">0</span> 曲</span>
+        <div class="flex items-center gap-2">
+          <span class="text-[12px] font-bold text-gray-500">メドレー込み</span>
+          <div class="relative inline-block align-middle select-none shrink-0">
+            <input type="checkbox" id="user-medley-toggle" class="toggle-checkbox" checked onchange="renderUserSongRanking()" />
+            <label for="user-medley-toggle" class="toggle-label" style="transform: scale(0.85); display:block;"></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex justify-end mb-3 px-1">
+      <div class="flex gap-1 items-center shrink-0">
+        <div id="user-sort-count-btn" onclick="switchUserSongSort('count')" class="flex items-center gap-0.5 bg-white px-2 py-1.5 rounded-lg shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-all">
+            <span class="text-[11px] font-bold text-gray-600">聴いた回数</span>
+            <i id="user-sort-icon-count" data-lucide="chevron-down" class="w-3 h-3 text-aiko-red"></i>
+        </div>
+        <div id="user-sort-year-btn" onclick="switchUserSongSort('year')" class="flex items-center gap-0.5 bg-white px-2 py-1.5 rounded-lg shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-all">
+            <span class="text-[11px] font-bold text-gray-600">(最終参戦年)</span>
+            <i id="user-sort-icon-year" data-lucide="chevrons-up-down" class="w-3 h-3 text-gray-300"></i>
+        </div>
+      </div>
     </div>
 
-    <div class="card-base bg-white border-0 p-4 mb-5 flex items-center justify-between overflow-hidden">
-      <div class="flex-1">
-        <h3 class="font-bold mb-3 text-gray-700 text-base flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4 text-aiko-red"></i> あなたの参戦記録</h3>
-        <div id="user-category-counts" class="text-sm font-bold space-y-1">
-          </div>
-      </div>
-      <div style="width: 100px; height: 100px;" class="flex-shrink-0">
-        <canvas id="user-category-doughnut"></canvas>
-      </div>
-    </div>
-
-    <div class="mb-3 flex items-center gap-2">
-      <h3 class="font-bold text-gray-700 text-base flex items-center gap-2"><i data-lucide="music-2" class="w-4 h-4 text-aiko-red"></i> あなたが聴いた曲</h3>
-    </div>
-
-    <div class="card-base bg-white border-0 mb-4 p-3">
-      <div class="flex gap-2 mb-3">
-        <input type="text" id="record-song-search" placeholder="楽曲名で検索" class="flex-1 px-3 bg-gray-50 border-gray-200" oninput="renderUserSongRanking()">
-        <button onclick="document.getElementById('record-song-search').value=''; renderUserSongRanking()" class="action-btn clear-btn">クリア</button>
-      </div>
-      <div class="flex justify-between items-center text-xs font-bold text-gray-500 mb-2">
-        <span>全楽曲: <span id="user-total-songs" class="text-gray-800">0</span> 曲</span>
-        <div class="flex border rounded-lg overflow-hidden border-gray-200">
-           <button id="user-sort-count" onclick="switchUserSongSort('count')" class="px-3 py-1 bg-white text-gray-500 font-bold active-sort">聴いた回数</button>
-           <button id="user-sort-year" onclick="switchUserSongSort('year')" class="px-3 py-1 bg-white text-gray-500 font-bold">最終参戦年</button>
-        </div>
-      </div>
-      <div class="flex justify-end items-center gap-2 mb-2">
-        <span class="text-[10px] text-gray-400 font-bold leading-none">メドレー<br>込み</span>
-        <div class="relative inline-block align-middle select-none">
-          <input type="checkbox" id="user-medley-toggle" class="toggle-checkbox" checked onchange="renderUserSongRanking()" />
-          <label for="user-medley-toggle" class="toggle-label" style="transform: scale(0.8);"></label>
-        </div>
-      </div>
-    </div>
-
-    <div id="user-song-ranking-container" class="space-y-2">
-      </div>
+    <div id="user-song-ranking-container"></div>
   </div>
 </div>
 <style>
-  .active-sort { background-color: #f1f5f9 !important; color: #334155 !important; }
+  /* 記録タブ用追加スタイル */
+  #user-song-ranking-container .rank-number { font-size: 16px; width: 28px; text-align: right; }
+  #user-song-ranking-container .song-title { font-size: 16px; }
+  #user-song-ranking-container .song-count { font-size: 15px; }
 </style>
 
 </main>
@@ -2436,13 +2450,15 @@ if (tabId === 'records') {
 }
 
 // --- 記録タブ専用ロジック ---
-let userSongSortMode = 'count';
+let userSongSortState = 'count-desc';
 
-function switchUserSongSort(mode) {
-  userSongSortMode = mode;
-  document.getElementById('user-sort-count').classList.toggle('active-sort', mode === 'count');
-  document.getElementById('user-sort-year').classList.toggle('active-sort', mode === 'year');
-  renderUserSongRanking();
+function switchUserSongSort(key) {
+    if (userSongSortState.startsWith(key)) {
+        userSongSortState = userSongSortState.endsWith('desc') ? key + '-asc' : key + '-desc';
+    } else {
+        userSongSortState = key + '-desc';
+    }
+    renderUserSongRanking();
 }
 
 function renderRecordsTab() {
@@ -2463,14 +2479,20 @@ function renderRecordsTab() {
   const attendedDates = Object.keys(userUserData.attendedLives || {});
   const attendedRecords = allLiveRecords.filter(r => attendedDates.includes(r.date));
   
-  // 1. 年別集計
-  const yearlyCounts = {};
+  // あなたの参戦回数（合計）
+  document.getElementById('user-total-attended').textContent = attendedDates.length;
+
+  // 1. 年別集計（全ライブ vs 参戦ライブ）
+  const allYearlyCounts = {};
+  allLiveRecords.forEach(r => { if(r.year) allYearlyCounts[r.year] = (allYearlyCounts[r.year] || 0) + 1; });
+  
+  const userYearlyCounts = {};
   const catCounts = { pop: 0, rock: 0, aloha: 0, other: 0 };
-  const songFreq = {}; // { 曲名: { count: 0, countNoMedley: 0, lastYear: 0 } }
+  const songFreq = {}; 
 
   attendedRecords.forEach(rec => {
     // 年別
-    yearlyCounts[rec.year] = (yearlyCounts[rec.year] || 0) + 1;
+    userYearlyCounts[rec.year] = (userYearlyCounts[rec.year] || 0) + 1;
     
     // カテゴリ別
     const name = rec.tourName.toLowerCase();
@@ -2490,7 +2512,7 @@ function renderRecordsTab() {
       if (!songFreq[clean]) songFreq[clean] = { count: 0, countNoMedley: 0, lastYear: 0 };
       songFreq[clean].count++;
       if (!inMedley) songFreq[clean].countNoMedley++;
-      if (rec.year > songFreq[clean].lastYear) songFreq[clean].lastYear = rec.year;
+      if (parseInt(rec.year) > songFreq[clean].lastYear) songFreq[clean].lastYear = parseInt(rec.year);
     });
   });
 
@@ -2503,35 +2525,63 @@ function renderRecordsTab() {
   `;
 
   // グラフ描画
-  renderUserCharts(yearlyCounts, catCounts);
+  renderUserCharts(allYearlyCounts, userYearlyCounts, catCounts);
   
-  // ランキング保持用グローバル（検索時に使用）
+  // ランキング保持用
   window.currentUserSongStats = songFreq;
   renderUserSongRanking();
 }
 
-function renderUserCharts(yearly, cat) {
-  // 年別バーチャート
+function renderUserCharts(allYearly, userYearly, cat) {
+  // 年別バーチャート（全ライブを背景に、参戦を前面に）
   const ctxYear = document.getElementById('user-yearly-chart').getContext('2d');
   if (chartInstances.userYearly) chartInstances.userYearly.destroy();
   
-  const years = Object.keys(yearly).sort();
+  const years = Object.keys(allYearly).sort();
   chartInstances.userYearly = new Chart(ctxYear, {
     type: 'bar',
     data: {
       labels: years,
-      datasets: [{
-        data: years.map(y => yearly[y]),
-        backgroundColor: '#FF69B4',
-        borderRadius: 4
-      }]
+      datasets: [
+        {
+          label: '参戦数',
+          data: years.map(y => userYearly[y] || 0),
+          backgroundColor: 'rgba(255, 105, 180, 0.8)',
+          borderColor: 'rgba(255, 105, 180, 1)',
+          borderWidth: 1,
+          borderRadius: 4,
+          stack: 'stack1',
+          datalabels: {
+            display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+            color: 'gray',
+            anchor: 'end',
+            align: 'end',
+            offset: -2,
+            font: { size: 10, weight: 'bold' }
+          }
+        },
+        {
+          label: '全ライブ',
+          data: years.map(y => Math.max(0, (allYearly[y] || 0) - (userYearly[y] || 0))),
+          backgroundColor: 'rgba(229, 231, 235, 0.8)',
+          borderColor: 'rgba(229, 231, 235, 1)',
+          borderWidth: 1,
+          borderRadius: 4,
+          stack: 'stack1',
+          datalabels: { display: false }
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } }, x: { ticks: { font: { size: 10 } } } }
-    }
+      scales: { 
+        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 5, font: { size: 10 } } }, 
+        x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 90, minRotation: 90 } } 
+      }
+    },
+    plugins: [ChartDataLabels]
   });
 
   // カテゴリドーナツ
@@ -2558,9 +2608,24 @@ function renderUserCharts(yearly, cat) {
 
 function renderUserSongRanking() {
   const container = document.getElementById('user-song-ranking-container');
+  if (!container) return;
   const search = document.getElementById('record-song-search').value.toLowerCase();
   const isMedley = document.getElementById('user-medley-toggle').checked;
   const stats = window.currentUserSongStats || {};
+
+  // アイコン更新
+  const countIcon = document.getElementById('user-sort-icon-count');
+  const yearIcon = document.getElementById('user-sort-icon-year');
+  [countIcon, yearIcon].forEach(icon => {
+      icon.setAttribute('data-lucide', 'chevrons-up-down');
+      icon.classList.remove('text-aiko-red');
+      icon.classList.add('text-gray-300');
+  });
+  const activeIcon = userSongSortState.startsWith('count') ? countIcon : yearIcon;
+  activeIcon.classList.remove('text-gray-300');
+  activeIcon.classList.add('text-aiko-red');
+  activeIcon.setAttribute('data-lucide', userSongSortState.endsWith('desc') ? 'chevron-down' : 'chevron-up');
+  lucide.createIcons();
 
   const list = Object.entries(stats)
     .filter(([name]) => name.toLowerCase().includes(search))
@@ -2570,27 +2635,39 @@ function renderUserSongRanking() {
       lastYear: data.lastYear 
     }))
     .filter(item => item.count > 0)
-    .sort((a, b) => userSongSortMode === 'count' ? b.count - a.count : b.lastYear - a.lastYear);
+    .sort((a, b) => {
+      if (userSongSortState === 'count-desc') return b.count - a.count || b.lastYear - a.lastYear;
+      if (userSongSortState === 'count-asc') return a.count - b.count || a.lastYear - b.lastYear;
+      if (userSongSortState === 'year-desc') return b.lastYear - a.lastYear || b.count - a.count;
+      if (userSongSortState === 'year-asc') return a.lastYear - b.lastYear || b.count - a.count;
+      return 0;
+    });
 
   document.getElementById('user-total-songs').textContent = list.length;
 
-  container.innerHTML = list.map((item, i) => `
-    <div class="card-base p-3 mb-2 flex items-center justify-between bg-white border border-gray-50">
-      <div class="flex items-center gap-3 flex-1 min-w-0">
-        <span class="text-sm italic font-black text-gray-200 w-4">${i+1}</span>
-        <span class="font-bold text-gray-700 truncate text-sm">${item.name}</span>
-      </div>
-      <div class="flex items-center gap-3 shrink-0 ml-2">
-        <div class="text-right">
-          <span class="font-black text-gray-600 text-sm">${item.count}</span>
-          <span class="text-[9px] text-gray-400 ml-0.5 font-bold">回</span>
-        </div>
-        <div class="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-0.5 rounded border">
-          ${item.lastYear}年
-        </div>
-      </div>
-    </div>
-  `).join('');
+  let currentRank = 0;
+  let lastVal = -1;
+  let skip = 1;
+
+  container.innerHTML = list.map((item, i) => {
+    if (item.count !== lastVal) {
+      if (lastVal !== -1) { currentRank += skip; skip = 1; } 
+      else { currentRank = 1; }
+      lastVal = item.count;
+    } else {
+      skip++;
+    }
+
+    const rankColor = currentRank <= 3 && search === '' ? ['text-aiko-pink','text-aiko-yellow','text-aiko-blue'][currentRank-1] : 'text-gray-300';
+
+    return `
+      <div class="card-base p-3 mb-2 clickable-item flex items-center border border-gray-100 bg-white" onclick="selectSong('${item.name.replace(/'/g, "\\'")}')">
+        <span class="rank-number ${rankColor}">${currentRank}</span>
+        <span class="song-title text-gray-700">${item.name}</span>
+        <span class="song-count">${item.count} <span>回</span></span>
+        <span class="text-[11px] text-gray-400 ml-2 w-14 text-right">(${item.lastYear}年)</span>
+      </div>`;
+  }).join('');
 }
   
 function renderSongRanking() {
