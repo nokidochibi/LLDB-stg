@@ -732,7 +732,7 @@ button { font-size: 13px !important; }
     <div id="last-songs" class="card-base bg-white p-2"></div></div>
   </div>
 
-  <!-- 記録タブ (Historyアプリ移植デザイン) -->
+  <!-- 軌跡タブ (Historyアプリ移植デザイン) -->
  <div id="tab-records" class="tab-content" style="display:none">
   <div id="records-unregistered" class="card-base bg-white text-center py-10 hidden">
     <p class="text-gray-500 text-sm">
@@ -785,12 +785,12 @@ button { font-size: 13px !important; }
     <div class="flex justify-end mb-3 px-1">
       <div class="flex gap-1 items-center shrink-0">
         <div onclick="switchUserSongSort('count')" class="flex items-center gap-0.5 bg-white px-2 py-1.5 rounded-lg shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-all">
-            <span class="text-[11px] font-bold text-gray-600">聴いた回数</span>
-            <i id="user-sort-icon-count" data-lucide="chevron-down" class="w-3 h-3 text-aiko-red"></i>
+          <span class="text-[11px] font-bold text-gray-600">聴いた回数</span>
+          <i id="user-sort-icon-count" data-lucide="chevron-down" class="w-3 h-3 text-aiko-red"></i>
         </div>
         <div onclick="switchUserSongSort('year')" class="flex items-center gap-0.5 bg-white px-2 py-1.5 rounded-lg shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-all">
-            <span class="text-[11px] font-bold text-gray-600">(最終参戦年)</span>
-            <i id="user-sort-icon-year" data-lucide="chevrons-up-down" class="w-3 h-3 text-gray-300"></i>
+          <span class="text-[11px] font-bold text-gray-600">(最終参戦年)</span>
+          <i id="user-sort-icon-year" data-lucide="chevrons-up-down" class="w-3 h-3 text-gray-300"></i>
         </div>
       </div>
     </div>
@@ -951,13 +951,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-let allLiveRecords = [], 
-    songStats = {},                   
-    songStatsNoMedley = {},         
+let allLiveRecords = [],
+    songStats = {},
+    songStatsNoMedley = {},
     songLastYears = {},
     songLastYearsNoMedley = {},
     songSortState = 'count-desc', 
-    patternStats = {}, 
+    patternStats = {},
     albumData = [], 
     songData = {}, 
     historyData = [], 
@@ -2424,9 +2424,13 @@ function selectRegion(regionName) {
 
 function switchToTab(tabId) {
   document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.tab-item[data-tab="${tabId}"]`).classList.add('active');
+  const targetTabItem = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
+  if (targetTabItem) targetTabItem.classList.add('active');
+
   document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-  document.getElementById(`tab-${tabId}`).style.display = 'block';
+  const targetTabContent = document.getElementById(`tab-${tabId}`);
+  if (targetTabContent) targetTabContent.style.display = 'block';
+
   document.getElementById('app').scrollTop = 0;
   lucide.createIcons();
 
@@ -3158,5 +3162,4 @@ function deleteMemo() {
 </script>
 
 </body>
-
 </html>
