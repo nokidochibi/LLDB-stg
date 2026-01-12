@@ -660,22 +660,29 @@ button { font-size: 13px !important; }
         <button id="show-setlist-btn" class="action-btn setlist-btn" style="display: none;">公演表示</button>
       </div>
       <div class="flex justify-between items-center text-lg font-semibold">
-        <span class="text-gray-500">全楽曲: <span id="total-songs" class="font-bold text-gray-800">-</span> 曲</span>
-        <select id="song-sort" class="text-aiko-red font-bold border-none bg-transparent focus:ring-0" style="padding:0!important; width:auto!important; border:none!important;">
-          <option value="count-desc">演奏回数 降順</option><option value="count-asc">演奏回数 昇順</option><option value="year-desc">最終演奏年 降順</option><option value="year-asc">最終演奏年 昇順</option>
-        </select>
+        <span class="text-gray-500 text-sm">全楽曲: <span id="total-songs" class="font-bold text-gray-800">-</span> 曲</span>
+        <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-full shadow-sm border border-gray-100 scale-90">
+          <span class="text-[10px] font-bold text-gray-500">メドレー<br>込み</span>
+          <div class="relative inline-block align-middle select-none">
+              <input type="checkbox" name="toggle" id="medley-toggle" class="toggle-checkbox" checked/>
+              <label for="medley-toggle" class="toggle-label"></label>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="flex justify-between items-center mt-6 mb-3 px-1">
-      <h3 id="song-ranking-header" class="font-bold text-gray-700 text-lg cursor-pointer select-none tap-trigger flex items-center gap-2">
+    <div class="flex items-center mt-6 mb-3 px-1 gap-2">
+      <h3 id="song-ranking-header" class="font-bold text-gray-700 text-[15px] flex-1 cursor-pointer select-none tap-trigger flex items-center gap-1">
         <span id="song-ranking-icon" class="inline-block">🎸</span> 演奏回数ランキング
       </h3>
-      <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-full shadow-sm border border-gray-100">
-        <span class="text-[10px] font-bold text-gray-500">メドレー<br>込み</span>
-        <div class="relative inline-block align-middle select-none">
-            <input type="checkbox" name="toggle" id="medley-toggle" class="toggle-checkbox" checked/>
-            <label for="medley-toggle" class="toggle-label"></label>
+      <div class="flex gap-1 items-center shrink-0">
+        <div onclick="updateSongSort('count')" class="flex items-center gap-0.5 bg-white px-2 py-1.5 rounded-lg shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-all">
+            <span class="text-[11px] font-bold text-gray-600">演奏回数</span>
+            <i id="sort-icon-count" data-lucide="chevron-down" class="w-3 h-3 text-aiko-red"></i>
+        </div>
+        <div onclick="updateSongSort('year')" class="flex items-center gap-0.5 bg-white px-2 py-1.5 rounded-lg shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-all">
+            <span class="text-[11px] font-bold text-gray-600">(最終演奏年)</span>
+            <i id="sort-icon-year" data-lucide="chevrons-up-down" class="w-3 h-3 text-gray-300"></i>
         </div>
       </div>
     </div>
@@ -907,7 +914,8 @@ let allLiveRecords = [],
     songStatsNoMedley = {},
     songLastYears = {},
     songLastYearsNoMedley = {},
-    patternStats = {}, 
+    songSortState = 'count-desc', // ★追加
+    patternStats = {},
     lastPlayedStats = {}, 
     albumData = [], 
     songData = {}, 
@@ -2444,8 +2452,11 @@ function switchToTab(tabId) {
 function renderSongRanking() {
 const container = document.getElementById('song-ranking-container');
 if (!container) return;
-const sortOrder = document.getElementById('song-sort').value;
+const sortOrder = songSortState; // ★ここを変更
 const searchTerm = document.getElementById('song-search-input').value.toLowerCase();
+
+// アイコンの状態を更新
+updateSortIcons();
 
 const isMedleyIncluded = document.getElementById('medley-toggle').checked;
 const targetStats = isMedleyIncluded ? songStats : songStatsNoMedley;
@@ -2497,6 +2508,36 @@ return `
 <span class="song-count">${item.count} <span>回</span></span>
 <span class="text-[11px] text-gray-400 ml-2 w-14 text-right">${yearText}</span>
 </div>`}).join('');
+}
+
+function updateSongSort(key) {
+    if (songSortState.startsWith(key)) {
+        songSortState = songSortState.endsWith('desc') ? key + '-asc' : key + '-desc';
+    } else {
+        songSortState = key + '-desc';
+    }
+    renderSongRanking();
+}
+
+function updateSortIcons() {
+    const countIcon = document.getElementById('sort-icon-count');
+    const yearIcon = document.getElementById('sort-icon-year');
+    if (!countIcon || !yearIcon) return;
+    countIcon.setAttribute('data-lucide', 'chevrons-up-down');
+    countIcon.classList.replace('text-aiko-red', 'text-gray-300');
+    yearIcon.setAttribute('data-lucide', 'chevrons-up-down');
+    yearIcon.classList.replace('text-gray-300', 'text-aiko-red'); // 予備：一度リセット
+    yearIcon.setAttribute('data-lucide', 'chevrons-up-down');
+    yearIcon.classList.replace('text-aiko-red', 'text-gray-300');
+
+    if (songSortState.startsWith('count')) {
+        countIcon.classList.replace('text-gray-300', 'text-aiko-red');
+        countIcon.setAttribute('data-lucide', songSortState.endsWith('desc') ? 'chevron-down' : 'chevron-up');
+    } else {
+        yearIcon.classList.replace('text-gray-300', 'text-aiko-red');
+        yearIcon.setAttribute('data-lucide', songSortState.endsWith('desc') ? 'chevron-down' : 'chevron-up');
+    }
+    lucide.createIcons();
 }
 
 function renderPatternStats() {
@@ -2594,7 +2635,6 @@ function setupEventListeners() {
     renderSongRanking();
     document.getElementById('show-setlist-btn').style.display = 'none';
   });
-  document.getElementById('song-sort').addEventListener('change', renderSongRanking);
   document.getElementById('song-clear-btn').addEventListener('click', () => {
     document.getElementById('song-search-input').value = '';
     renderSongRanking();
