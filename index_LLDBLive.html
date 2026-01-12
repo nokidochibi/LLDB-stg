@@ -659,21 +659,21 @@ button { font-size: 13px !important; }
         <button id="song-clear-btn" class="action-btn clear-btn">クリア</button>
         <button id="show-setlist-btn" class="action-btn setlist-btn" style="display: none;">公演表示</button>
       </div>
-      <div class="flex justify-between items-center text-lg font-semibold">
+      <div class="flex justify-between items-center">
         <span class="text-gray-500 text-sm">全楽曲: <span id="total-songs" class="font-bold text-gray-800">-</span> 曲</span>
-        <div class="flex items-center gap-2 bg-white px-2 py-1 rounded-full shadow-sm border border-gray-100 scale-90">
-          <span class="text-[10px] font-bold text-gray-500">メドレー<br>込み</span>
-          <div class="relative inline-block align-middle select-none">
-              <input type="checkbox" name="toggle" id="medley-toggle" class="toggle-checkbox" checked/>
-              <label for="medley-toggle" class="toggle-label"></label>
-          </div>
+        <div class="flex items-center gap-2">
+            <span class="text-[12px] font-bold text-gray-500">メドレー込み</span>
+            <div class="relative inline-block align-middle select-none shrink-0">
+                <input type="checkbox" name="toggle" id="medley-toggle" class="toggle-checkbox" checked/>
+                <label for="medley-toggle" class="toggle-label" style="transform: scale(0.85); display:block;"></label>
+            </div>
         </div>
       </div>
     </div>
 
-    <div class="flex items-center mt-6 mb-3 px-1 gap-2">
+    <div class="flex items-center mt-6 mb-3 px-1 gap-1">
       <h3 id="song-ranking-header" class="font-bold text-gray-700 text-[15px] flex-1 cursor-pointer select-none tap-trigger flex items-center gap-1">
-        <span id="song-ranking-icon" class="inline-block">🎸</span> 演奏回数ランキング
+        <span id="song-ranking-icon" class="inline-block">🎸</span> ランキング
       </h3>
       <div class="flex gap-1 items-center shrink-0">
         <div onclick="updateSongSort('count')" class="flex items-center gap-0.5 bg-white px-2 py-1.5 rounded-lg shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-all">
@@ -914,7 +914,7 @@ let allLiveRecords = [],
     songStatsNoMedley = {},
     songLastYears = {},
     songLastYearsNoMedley = {},
-    songSortState = 'count-desc', // ★追加
+    songSortState = 'count-desc', 
     patternStats = {},
     lastPlayedStats = {}, 
     albumData = [], 
@@ -2523,20 +2523,20 @@ function updateSortIcons() {
     const countIcon = document.getElementById('sort-icon-count');
     const yearIcon = document.getElementById('sort-icon-year');
     if (!countIcon || !yearIcon) return;
-    countIcon.setAttribute('data-lucide', 'chevrons-up-down');
-    countIcon.classList.replace('text-aiko-red', 'text-gray-300');
-    yearIcon.setAttribute('data-lucide', 'chevrons-up-down');
-    yearIcon.classList.replace('text-gray-300', 'text-aiko-red'); // 予備：一度リセット
-    yearIcon.setAttribute('data-lucide', 'chevrons-up-down');
-    yearIcon.classList.replace('text-aiko-red', 'text-gray-300');
 
-    if (songSortState.startsWith('count')) {
-        countIcon.classList.replace('text-gray-300', 'text-aiko-red');
-        countIcon.setAttribute('data-lucide', songSortState.endsWith('desc') ? 'chevron-down' : 'chevron-up');
-    } else {
-        yearIcon.classList.replace('text-gray-300', 'text-aiko-red');
-        yearIcon.setAttribute('data-lucide', songSortState.endsWith('desc') ? 'chevron-down' : 'chevron-up');
-    }
+    // 一旦すべての色とアイコンをリセット
+    [countIcon, yearIcon].forEach(icon => {
+        icon.setAttribute('data-lucide', 'chevrons-up-down');
+        icon.classList.remove('text-aiko-red');
+        icon.classList.add('text-gray-300');
+    });
+
+    // 現在のソート状態に合わせて色と矢印をセット
+    const activeIcon = songSortState.startsWith('count') ? countIcon : yearIcon;
+    activeIcon.classList.remove('text-gray-300');
+    activeIcon.classList.add('text-aiko-red');
+    activeIcon.setAttribute('data-lucide', songSortState.endsWith('desc') ? 'chevron-down' : 'chevron-up');
+
     lucide.createIcons();
 }
 
