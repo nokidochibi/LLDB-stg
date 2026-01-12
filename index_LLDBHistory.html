@@ -355,7 +355,7 @@
                         <select id="day" class="flex-[2]"></select>
                     </div>
                 </div>
-                <button onclick="generateHistory()" class="bg-[#2A9D8F] hover:bg-[#1F7A6F] text-white font-bold p-3.5 rounded-xl shadow-md transition-transform active:scale-95 flex-shrink-0">
+                <button onclick="generateHistory(true)" class="bg-[#2A9D8F] hover:bg-[#1F7A6F] text-white font-bold p-3.5 rounded-xl shadow-md transition-transform active:scale-95 flex-shrink-0">
                     <i data-lucide="check" class="w-6 h-6"></i>
                 </button>
             </div>
@@ -639,7 +639,7 @@
             lucide.createIcons();
         }
 
-        async function generateHistory() {
+        async function generateHistory(isManual = false) {
             const y = document.getElementById('year').value;
             const m = document.getElementById('month').value;
             const d = document.getElementById('day').value;
@@ -648,11 +648,13 @@
             const birthStr = `${y}-${m}-${d}`;
             localStorage.setItem('lldb_user_birth', birthStr);
 
-            // ★追加: 親ウィンドウへ誕生日情報を送信して保存させる
-            window.parent.postMessage({
+            // ★修正: 手動実行時（ボタン押下時）のみ親へ送信してループを防止
+            if (isManual) {
+              window.parent.postMessage({
                 type: 'updateUserBirth',
                 birthday: birthStr
-            }, '*');
+              }, '*');
+            }
 
             safeTrackEvent('generate_lead', { item_category: 'history_timeline' });
 
@@ -1199,5 +1201,3 @@
     </script>
 </body>
 </html>
-
-
