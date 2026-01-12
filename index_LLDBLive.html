@@ -724,12 +724,6 @@ button { font-size: 13px !important; }
       </div>
     </div>
 
-    <div class="mb-5">
-        <h3 class="font-bold mb-2 text-gray-700 text-base flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-gray-400"></i> 最近演奏されていない曲 TOP 10</h3>
-        <p class="text-gray-400 mb-2 ml-1 text-xs">※過去に1度でも演奏された曲が対象</p>
-        <div id="not-played-recently-songs" class="card-base bg-white p-2"></div>
-    </div>
-
     <div class="mb-5"><h3 class="font-bold mb-2 text-gray-700 text-base">🎬 オープニング曲 TOP 10</h3>
     <div id="opening-songs" class="card-base bg-white p-2"></div></div>
     <div class="mb-5"><h3 class="font-bold mb-2 text-gray-700 text-base">👏 アンコール曲 TOP 10</h3>
@@ -916,7 +910,6 @@ let allLiveRecords = [],
     songLastYearsNoMedley = {},
     songSortState = 'count-desc', 
     patternStats = {},
-    lastPlayedStats = {}, 
     albumData = [], 
     songData = {}, 
     historyData = [], 
@@ -1061,7 +1054,6 @@ function initializeApp(data) {
 
   analyzeSongStats(allLiveRecords);
   analyzePatterns(allLiveRecords);
-  analyzeLastPlayed(allLiveRecords);
   populateFilters(allLiveRecords);
   
   if (historyData.length > 0) {
@@ -1082,7 +1074,6 @@ function initializeApp(data) {
   renderAlbumChart();
   renderSongRanking(); 
   renderPatternStats();
-  renderLastPlayedRanking();
   renderVenueRanking();
   renderVenueLiveCountChart();
 
@@ -1870,53 +1861,6 @@ function analyzePatterns(records) {
     });
   });
   patternStats = { openingSongs: o, encoreSongs: e, lastSongs: l };
-}
-
-function analyzeLastPlayed(records) {
-  lastPlayedStats = {};
-  records.forEach(rec => {
-    const recDate = new Date(rec.date);
-    
-    rec.setlist.forEach(s => {
-      if (s.startsWith('__MEDLEY_') || s === 'メドレー') return;
-      
-      const cleanName = s.replace(/_アンコール(?: #\d+)?/g, '').trim();
-      if (!cleanName) return;
-      // カギカッコ付きを除外
-      if (cleanName.includes('[') || cleanName.includes(']')) return;
-      if (!songData[cleanName]) return;
-
-      if (!lastPlayedStats[cleanName] || recDate > lastPlayedStats[cleanName].dateObj) {
-        lastPlayedStats[cleanName] = {
-          dateObj: recDate,
-          tourName: rec.tourName,
-          year: rec.year
-        };
-      }
-    });
-  });
-}
-
-function renderLastPlayedRanking() {
-  const container = document.getElementById('not-played-recently-songs');
-  if (!container) return;
-
-  const sorted = Object.entries(lastPlayedStats)
-    .sort((a, b) => a[1].dateObj - b[1].dateObj)
-    .slice(0, 10);
-
-  container.innerHTML = sorted.map(([song, data], i) => {
-    const rankColor = i < 3 ? ['text-aiko-pink','text-aiko-yellow','text-aiko-blue'][i] : 'text-gray-300';
-    const borderClass = i !== sorted.length - 1 ? 'border-b border-gray-100' : '';
-    
-    return `<div class="p-3 clickable-item flex items-center ${borderClass}" onclick="selectSong('${song.replace(/'/g, "\\'")}')">
-      <span class="rank-number ${rankColor}">${i + 1}</span>
-      <div class="flex-1 min-w-0">
-        <div class="song-title text-gray-700 truncate">${song}</div>
-        <div class="text-xs text-gray-400 mt-0.5 truncate">(${data.year}) ${data.tourName}</div>
-      </div>
-    </div>`;
-  }).join('');
 }
 
 function populateFilters(records, skipApply = false) {
