@@ -2319,7 +2319,13 @@ function showLiveDetail(rec) {
 
   const setlistHeaderHtml = `<div class="flex justify-between items-end mt-8 mb-2"><h3 class="font-bold text-gray-700 text-lg cursor-pointer flex items-center gap-2" onclick="copySetlist()">🎵 セットリスト</h3>${legendHtml}</div>`;
 
-  const setlistSection = setlistHtml.trim() ? `${summaryHtml}${setlistHeaderHtml}<div class="card-base shadow-none border border-gray-100 pb-2 bg-white">${setlistHtml}</div>` : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3><div class="card-base text-gray-500 text-sm leading-relaxed bg-white">セットリストを知っている方がいましたら、よかったらぜひX(Twitter)の<a href="https://twitter.com/noki_dochibi" target="_blank" class="text-blue-500 underline">@noki_dochibi</a>まで教えてください。</div>`;
+  const setlistSection = setlistHtml.trim() 
+    ? `${summaryHtml}${setlistHeaderHtml}<div class="card-base shadow-none border border-gray-100 pb-2 bg-white">${setlistHtml}</div>` 
+    : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3>
+       <div class="card-base text-gray-500 text-sm leading-relaxed bg-white">
+         この日のセトリがわかる方は　<span class="text-blue-500 underline cursor-pointer font-bold" onclick="if(confirm('セトリ投稿フォームに移動しますか？')){ window.open('https://twitter.com/noki_dochibi', '_blank'); }">こちら</span>　から教えてください。<br>
+         セットリストは　2026年3月4日以降に更新予定です。
+       </div>`;
 
   detailContainer.innerHTML = `
     <div id="detail-header-area" class="pt-2 -mt-2 cursor-pointer pl-[70px]">
