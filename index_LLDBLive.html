@@ -3043,6 +3043,9 @@ function setupEventListeners() {
       const songInput = document.getElementById('song-filter-input');
       const isMedleyIncluded = document.getElementById('user-medley-toggle').checked;
       
+      // ★修正: 検索処理が参照している「楽曲タブ」側のトグルも同期させる
+      document.getElementById('medley-toggle').checked = isMedleyIncluded;
+
       if (isMedleyIncluded) {
            songInput.value = `${songName}　※楽曲タブから選択`;
       } else {
