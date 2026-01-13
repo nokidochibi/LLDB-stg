@@ -2523,13 +2523,13 @@ function renderRecordsTab() { // 独立した関数として定義
         });
     });
 
-    // UI反映: カテゴリテキスト (2列表示に変更)
+    // UI反映: カテゴリテキスト (2列表示・短縮表記)
             document.getElementById('user-category-counts').innerHTML = `
                 <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
-                    <p class="text-pink-500 truncate">・Love Like Pop: ${catCounts.pop}</p>
-                    <p class="text-yellow-500 truncate">・Love Like Aloha: ${catCounts.aloha}</p>
-                    <p class="text-blue-500 truncate">・Love Like Rock: ${catCounts.rock}</p>
-                    <p class="text-gray-400 truncate">・その他のEvent: ${catCounts.other}</p>
+                    <p class="text-pink-500 truncate">・Pop: ${catCounts.pop}</p>
+                    <p class="text-yellow-500 truncate">・Aloha: ${catCounts.aloha}</p>
+                    <p class="text-blue-500 truncate">・Rock: ${catCounts.rock}</p>
+                    <p class="text-gray-400 truncate">・Event: ${catCounts.other}</p>
                 </div>
             `;
 
