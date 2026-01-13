@@ -2456,216 +2456,276 @@ function switchUserSongSort(key) {
     } else {
         userSongSortState = key + '-desc';
     }
-    renderUserSongRanking();
-}
+    function renderRecordsTab() {
+    const isRegistered = userUserData.settings && userUserData.settings.syncId;
+    const unregisteredDiv = document.getElementById('records-unregistered');
+    const contentDiv = document.getElementById('records-content');
 
-function renderRecordsTab() {
-  const isRegistered = userUserData.settings && userUserData.settings.syncId;
-  const unregisteredDiv = document.getElementById('records-unregistered');
-  const contentDiv = document.getElementById('records-content');
+    if (!isRegistered) {
+        unregisteredDiv.classList.remove('hidden');
+        contentDiv.classList.add('hidden');
+        return;
+    }
 
-  if (!isRegistered) {
-    unregisteredDiv.classList.remove('hidden');
-    contentDiv.classList.add('hidden');
-    return;
-  }
+    unregisteredDiv.classList.add('hidden');
+    contentDiv.classList.remove('hidden');
 
-  unregisteredDiv.classList.add('hidden');
-  contentDiv.classList.remove('hidden');
-
-  // データ集計
-  const attendedDates = Object.keys(userUserData.attendedLives || {});
-  const attendedRecords = allLiveRecords.filter(r => attendedDates.includes(r.date));
-  
-  // あなたの参戦回数（合計）を表示
-  document.getElementById('user-total-attended').textContent = attendedDates.length;
-
-  // 1. 年別集計（全ライブ vs 参戦ライブ）
-  const allYearlyCounts = {};
-  allLiveRecords.forEach(r => { if(r.year) allYearlyCounts[r.year] = (allYearlyCounts[r.year] || 0) + 1; });
-  
-  const userYearlyCounts = {};
-  const catCounts = { pop: 0, rock: 0, aloha: 0, other: 0 };
-  const songFreq = {}; 
-
-  attendedRecords.forEach(rec => {
-    // 年別
-    userYearlyCounts[rec.year] = (userYearlyCounts[rec.year] || 0) + 1;
-    
-    // カテゴリ別
-    const name = rec.tourName.toLowerCase();
-    if (name.includes('pop')) catCounts.pop++;
-    else if (name.includes('rock')) catCounts.rock++;
-    else if (name.includes('aloha')) catCounts.aloha++;
-    else catCounts.other++;
-
-    // 楽曲別
-    let inMedley = false;
-    rec.setlist.forEach(s => {
-      if (s === '__MEDLEY_START__') { inMedley = true; return; }
-      if (s === '__MEDLEY_END__') { inMedley = false; return; }
-      const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
-      if (!clean || clean === 'メドレー' || clean.includes('[') || clean.includes(']')) return;
-
-      if (!songFreq[clean]) songFreq[clean] = { count: 0, countNoMedley: 0, lastYear: 0 };
-      songFreq[clean].count++;
-      if (!inMedley) songFreq[clean].countNoMedley++;
-      if (parseInt(rec.year) > songFreq[clean].lastYear) songFreq[clean].lastYear = parseInt(rec.year);
-    });
-  });
-
-  // UI反映: カテゴリテキスト
-  document.getElementById('user-category-counts').innerHTML = `
-    <p class="text-pink-500">・ Love Like Pop: ${catCounts.pop}</p>
-    <p class="text-blue-500">・ Love Like Rock: ${catCounts.rock}</p>
-    <p class="text-yellow-500">・ Love Like Aloha: ${catCounts.aloha}</p>
-    <p class="text-gray-400">・ その他のEvent: ${catCounts.other}</p>
-  `;
-
-  // グラフ描画
-  renderUserCharts(allYearlyCounts, userYearlyCounts, catCounts);
-  
-  // ランキング用グローバル保持
-  window.currentUserSongStats = songFreq;
-  renderUserSongRanking();
-}
-
-function renderUserCharts(allYearly, userYearly, cat, targetSong = null) {
-  // 年別バーチャート
-  const ctxYear = document.getElementById('user-yearly-chart').getContext('2d');
-  if (chartInstances.userYearly) chartInstances.userYearly.destroy();
-  
-  const years = Object.keys(allYearly).sort();
-  let datasets = [];
-
-  if (targetSong) {
-    // 曲フィルタモード: 
-    // ピンク = 参戦した中でその曲を聴いた回数
-    // グレー = 参戦したけどその曲は聴いてない回数 (参戦数 - 聴いた回数)
-    
-    // 集計処理
-    const songCountsByYear = {};
+    // データ集計
     const attendedDates = Object.keys(userUserData.attendedLives || {});
-    const isMedleyIncluded = document.getElementById('user-medley-toggle').checked;
+    const attendedRecords = allLiveRecords.filter(r => attendedDates.includes(r.date));
 
-    allLiveRecords.forEach(rec => {
-        if (!attendedDates.includes(rec.date)) return;
-        
-        let count = 0;
+    // あなたの参戦回数（合計）を表示
+    document.getElementById('user-total-attended').textContent = attendedDates.length;
+
+    // 1. 年別集計（全ライブ vs 参戦ライブ）
+    const allYearlyCounts = {};
+    allLiveRecords.forEach(r => { if(r.year) allYearlyCounts[r.year] = (allYearlyCounts[r.year] || 0) + 1; });
+
+    const userYearlyCounts = {};
+    const catCounts = { pop: 0, rock: 0, aloha: 0, other: 0 };
+    // ★追加: 年ごとの内訳集計用
+    const breakdown = { pop: {}, rock: {}, aloha: {}, other: {} };
+    
+    const songFreq = {};
+
+    attendedRecords.forEach(rec => {
+        // 年別合計
+        userYearlyCounts[rec.year] = (userYearlyCounts[rec.year] || 0) + 1;
+
+        // カテゴリ別判定
+        const name = rec.tourName.toLowerCase();
+        let catKey = 'other';
+        if (name.includes('pop')) catKey = 'pop';
+        else if (name.includes('rock')) catKey = 'rock';
+        else if (name.includes('aloha')) catKey = 'aloha';
+
+        // 全体カウントを加算
+        catCounts[catKey]++;
+
+        // ★年別・カテゴリ別カウントを加算
+        if (rec.year) {
+            if (!breakdown[catKey][rec.year]) breakdown[catKey][rec.year] = 0;
+            breakdown[catKey][rec.year]++;
+        }
+
+        // 楽曲別
         let inMedley = false;
         rec.setlist.forEach(s => {
             if (s === '__MEDLEY_START__') { inMedley = true; return; }
             if (s === '__MEDLEY_END__') { inMedley = false; return; }
-            if (!isMedleyIncluded && inMedley) return;
-            
             const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
-            if (clean === targetSong) count++;
-        });
+            if (!clean || clean === 'メドレー' || clean.includes('[') || clean.includes(']')) return;
 
-        if (count > 0 && rec.year) {
-            songCountsByYear[rec.year] = (songCountsByYear[rec.year] || 0) + 1; // 1公演で2回やっても1カウントとする(参戦回数ベースなので)
-        }
+            if (!songFreq[clean]) songFreq[clean] = { count: 0, countNoMedley: 0, lastYear: 0 };
+            songFreq[clean].count++;
+            if (!inMedley) songFreq[clean].countNoMedley++;
+            if (parseInt(rec.year) > songFreq[clean].lastYear) songFreq[clean].lastYear = parseInt(rec.year);
+        });
     });
 
-    datasets = [
-      {
-        label: targetSong,
-        data: years.map(y => songCountsByYear[y] || 0),
-        backgroundColor: 'rgba(255, 105, 180, 0.9)',
-        borderColor: 'rgba(255, 105, 180, 1)',
-        borderWidth: 1,
-        borderRadius: 4,
-        stack: 'stack1',
-        datalabels: {
-            display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
-            color: 'white',
-            anchor: 'center',
-            align: 'center',
-            font: { size: 10, weight: 'bold' },
-            formatter: val => val
+    // UI反映: カテゴリテキスト
+    document.getElementById('user-category-counts').innerHTML = `
+        <p class="text-pink-500">・ Love Like Pop: ${catCounts.pop}</p>
+        <p class="text-blue-500">・ Love Like Rock: ${catCounts.rock}</p>
+        <p class="text-yellow-500">・ Love Like Aloha: ${catCounts.aloha}</p>
+        <p class="text-gray-400">・ その他のEvent: ${catCounts.other}</p>
+    `;
+
+    // グラフ描画（breakdownを渡すように変更）
+    renderUserCharts(allYearlyCounts, userYearlyCounts, catCounts, null, breakdown);
+
+    // ランキング用グローバル保持
+    window.currentUserSongStats = songFreq;
+    renderUserSongRanking();
+}
+
+function renderUserCharts(allYearly, userYearly, cat, targetSong = null, breakdown = null) {
+    // 年別バーチャート
+    const ctxYear = document.getElementById('user-yearly-chart').getContext('2d');
+    if (chartInstances.userYearly) chartInstances.userYearly.destroy();
+
+    const years = Object.keys(allYearly).sort();
+    let datasets = [];
+
+    if (targetSong) {
+        // 曲フィルタモード: 既存のまま
+        // ピンク = 参戦した中でその曲を聴いた回数
+        // グレー = 参戦したけどその曲は聴いてない回数 (参戦数 - 聴いた回数)
+
+        // 集計処理
+        const songCountsByYear = {};
+        const attendedDates = Object.keys(userUserData.attendedLives || {});
+        const isMedleyIncluded = document.getElementById('user-medley-toggle').checked;
+
+        allLiveRecords.forEach(rec => {
+            if (!attendedDates.includes(rec.date)) return;
+
+            let count = 0;
+            let inMedley = false;
+            rec.setlist.forEach(s => {
+                if (s === '__MEDLEY_START__') { inMedley = true; return; }
+                if (s === '__MEDLEY_END__') { inMedley = false; return; }
+                if (!isMedleyIncluded && inMedley) return;
+
+                const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
+                if (clean === targetSong) count++;
+            });
+
+            if (count > 0 && rec.year) {
+                songCountsByYear[rec.year] = (songCountsByYear[rec.year] || 0) + 1;
+            }
+        });
+
+        datasets = [
+            {
+                label: targetSong,
+                data: years.map(y => songCountsByYear[y] || 0),
+                backgroundColor: 'rgba(255, 105, 180, 0.9)',
+                borderColor: 'rgba(255, 105, 180, 1)',
+                borderWidth: 1,
+                borderRadius: 4,
+                stack: 'stack1',
+                datalabels: {
+                    display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+                    color: 'white',
+                    anchor: 'center',
+                    align: 'center',
+                    font: { size: 10, weight: 'bold' },
+                    formatter: val => val
+                }
+            },
+            {
+                label: 'その他参戦',
+                data: years.map(y => Math.max(0, (userYearly[y] || 0) - (songCountsByYear[y] || 0))),
+                backgroundColor: 'rgba(209, 213, 219, 0.8)',
+                borderColor: 'rgba(209, 213, 219, 1)',
+                borderWidth: 1,
+                borderRadius: 4,
+                stack: 'stack1',
+                datalabels: { display: false }
+            }
+        ];
+
+    } else {
+        // ★変更: 通常モード（曲指定なし）
+        // 以前は「参戦数」1本でしたが、Pop/Rock/Aloha/Other に分割して積み上げます
+        
+        if (breakdown) {
+            datasets = [
+                {
+                    label: 'Pop',
+                    data: years.map(y => breakdown.pop[y] || 0),
+                    backgroundColor: '#FF69B4', // Pink
+                    stack: 'stack1',
+                    borderRadius: 2,
+                    datalabels: { display: false } // 個別の数値は出さない（ごちゃつくため）
+                },
+                {
+                    label: 'Rock',
+                    data: years.map(y => breakdown.rock[y] || 0),
+                    backgroundColor: '#3B82F6', // Blue
+                    stack: 'stack1',
+                    borderRadius: 2,
+                    datalabels: { display: false }
+                },
+                {
+                    label: 'Aloha',
+                    data: years.map(y => breakdown.aloha[y] || 0),
+                    backgroundColor: '#EAB308', // Yellow
+                    stack: 'stack1',
+                    borderRadius: 2,
+                    datalabels: { display: false }
+                },
+                {
+                    label: 'Event/Other',
+                    data: years.map(y => breakdown.other[y] || 0),
+                    backgroundColor: '#94A3B8', // Gray-blue
+                    stack: 'stack1',
+                    borderRadius: 2,
+                    datalabels: { display: false }
+                },
+                {
+                    label: '未参戦 (全ライブ)',
+                    // 全ライブ数から、参戦数の合計を引いて、残りをグレーで表示
+                    data: years.map(y => Math.max(0, (allYearly[y] || 0) - (userYearly[y] || 0))),
+                    backgroundColor: 'rgba(229, 231, 235, 0.5)', // 薄いグレー
+                    borderColor: 'rgba(229, 231, 235, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    stack: 'stack1',
+                    datalabels: { display: false }
+                }
+            ];
+        } else {
+            // 万が一 breakdown がない場合のフォールバック（旧ロジック）
+            datasets = [
+                {
+                    label: '参戦数',
+                    data: years.map(y => userYearly[y] || 0),
+                    backgroundColor: 'rgba(255, 105, 180, 0.8)',
+                    stack: 'stack1'
+                },
+                {
+                    label: '全ライブ',
+                    data: years.map(y => Math.max(0, (allYearly[y] || 0) - (userYearly[y] || 0))),
+                    backgroundColor: 'rgba(229, 231, 235, 0.8)',
+                    stack: 'stack1'
+                }
+            ];
         }
-      },
-      {
-        label: 'その他参戦',
-        data: years.map(y => Math.max(0, (userYearly[y] || 0) - (songCountsByYear[y] || 0))),
-        backgroundColor: 'rgba(209, 213, 219, 0.8)', // 薄いグレー
-        borderColor: 'rgba(209, 213, 219, 1)',
-        borderWidth: 1,
-        borderRadius: 4,
-        stack: 'stack1',
-        datalabels: { display: false }
-      }
-    ];
-
-  } else {
-    // 通常モード: 全ライブ(グレー) vs 参戦数(ピンク)
-    datasets = [
-        {
-          label: '参戦数',
-          data: years.map(y => userYearly[y] || 0),
-          backgroundColor: 'rgba(255, 105, 180, 0.8)',
-          borderColor: 'rgba(255, 105, 180, 1)',
-          borderWidth: 1,
-          borderRadius: 4,
-          stack: 'stack1',
-          datalabels: {
-            display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
-            color: 'gray',
-            anchor: 'end',
-            align: 'end',
-            offset: -2,
-            font: { size: 10, weight: 'bold' },
-            formatter: val => val
-          }
-        },
-        {
-          label: '全ライブ',
-          data: years.map(y => Math.max(0, (allYearly[y] || 0) - (userYearly[y] || 0))),
-          backgroundColor: 'rgba(229, 231, 235, 0.8)',
-          borderColor: 'rgba(229, 231, 235, 1)',
-          borderWidth: 1,
-          borderRadius: 4,
-          stack: 'stack1',
-          datalabels: { display: false }
-        }
-    ];
-  }
-
-  chartInstances.userYearly = new Chart(ctxYear, {
-    type: 'bar',
-    data: { labels: years, datasets: datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { 
-        y: { stacked: true, beginAtZero: true, min: 0, ticks: { font: { size: 10 }, stepSize: 5 } }, 
-        x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 90, minRotation: 90, autoSkip: false } } 
-      }
-    },
-    plugins: [ChartDataLabels]
-  });
-
-  // カテゴリドーナツ
-  const ctxCat = document.getElementById('user-category-doughnut').getContext('2d');
-  if (chartInstances.userCategory) chartInstances.userCategory.destroy();
-  chartInstances.userCategory = new Chart(ctxCat, {
-    type: 'doughnut',
-    data: {
-      labels: ['Pop', 'Rock', 'Aloha', 'Other'],
-      datasets: [{
-        data: [cat.pop, cat.rock, cat.aloha, cat.other],
-        backgroundColor: ['#FF69B4', '#3B82F6', '#EAB308', '#94A3B8'],
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '70%',
-      plugins: { legend: { display: false }, tooltip: { enabled: false } }
     }
-  });
+
+    chartInstances.userYearly = new Chart(ctxYear, {
+        type: 'bar',
+        data: { labels: years, datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        // ツールチップで合計を表示する工夫
+                        footer: (tooltipItems) => {
+                            let total = 0;
+                            tooltipItems.forEach(t => { 
+                                // 未参戦(薄いグレー)は合計に含めない方が「参戦数」として分かりやすいかもですが、
+                                // ここでは「その年の合計」として表示します
+                                total += t.parsed.y; 
+                            });
+                            return 'Total: ' + total;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { stacked: true, beginAtZero: true, min: 0, ticks: { font: { size: 10 }, stepSize: 5 } },
+                x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 90, minRotation: 90, autoSkip: false } }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+
+    // カテゴリドーナツ
+    const ctxCat = document.getElementById('user-category-doughnut').getContext('2d');
+    if (chartInstances.userCategory) chartInstances.userCategory.destroy();
+    chartInstances.userCategory = new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pop', 'Rock', 'Aloha', 'Other'],
+            datasets: [{
+                data: [cat.pop, cat.rock, cat.aloha, cat.other],
+                backgroundColor: ['#FF69B4', '#3B82F6', '#EAB308', '#94A3B8'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: { legend: { display: false }, tooltip: { enabled: false } }
+        }
+    });
 }
 
 function renderUserSongRanking() {
