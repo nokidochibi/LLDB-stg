@@ -928,6 +928,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // 3. データ読み込み開始 (キャッシュがあればそれを使い、なければfetch)
   loadAllData(isCachedLoaded);
 
+  // ★追加: アプリに戻ってきた時（スリープ復帰やタブ切り替え）に日付チェックを走らせる
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+       // 画面が表示されたら、少し待ってから「今日は何の日？」を再チェック
+       console.log("App resumed. Checking events...");
+       setTimeout(checkTodayEvents, 1500);
+    }
+  });
+
   // 4. アニメーション完了と初期化完了を待って画面を表示
   Promise.all([appInitializedPromise, animationFinishedPromise])
     .then(() => {
@@ -3072,52 +3081,53 @@ function handleError(error) {
   document.getElementById('live-list-container').innerHTML = `<p class="text-center text-red-500 py-8 text-sm">データ読み込み中にエラーが発生しました。<br>(${error.message})</p>`;
 }
 
-  // ★追加: スリープ復帰検知 & 今日は何の日ロジック (真・完全版)
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-        // アプリに戻ってきた時にチェックを実行
-        checkTodayEvents();
-    }
-});
-
+  // ★追加: 今日は何の日ロジック (1日1回制限＆自動検知対応版)
 function checkTodayEvents() {
     // 日本時間の現在時刻を取得
     const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
     const todayMonth = now.getMonth() + 1;
     const todayDate = now.getDate();
-    const todayStr = `${now.getFullYear()}-${todayMonth}-${todayDate}`;
+    const currentYear = now.getFullYear();
 
-    // ★1日1回制限: すでに今日表示済みなら何もしない
-    const lastShown = localStorage.getItem('lldb_last_anniversary_date');
-    if (lastShown === todayStr) {
+    // 「今日」を識別するキー (例: "2024-11-22")
+    const todayKey = `${currentYear}-${todayMonth}-${todayDate}`;
+    // 最後に挨拶した日付を取り出す
+    const lastGreetingDate = localStorage.getItem('lldb_last_greeting_date');
+
+    console.log(`Check Events: ${todayKey} (Last greeted: ${lastGreetingDate})`);
+
+    // もし今日すでに挨拶（ポップアップ表示）済みなら、静かに終了する
+    if (lastGreetingDate === todayKey) {
+        console.log("Today's greeting already done. Skip.");
         return;
     }
 
-    console.log(`Checking events for (JST): ${todayMonth}/${todayDate}`);
     anniversaryQueue = [];
 
     // 日付比較用ヘルパー関数
     const isSameDate = (val) => {
         if (!val) return false;
+        
+        // 入力が何であれ一度Dateオブジェクトにする
         const dateObj = new Date(val);
         if (isNaN(dateObj.getTime())) return false;
+
+        // その時刻を日本時間(JST)に変換した時の月日を取得する
         const jstObj = new Date(dateObj.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
-        return (jstObj.getMonth() + 1) === todayMonth && jstObj.getDate() === todayDate;
+        const m = jstObj.getMonth() + 1;
+        const d = jstObj.getDate();
+
+        return m === todayMonth && d === todayDate;
     };
 
-    // 1. aiko誕生日チェック (11/22)
-    if (todayMonth === 11 && todayDate === 22) {
-        anniversaryQueue.push({ type: 'birthday', year: now.getFullYear() });
-    }
-
-    // 2. ライブ開催日のチェック
+    // 1. ライブ開催日のチェック
     allLiveRecords.forEach(rec => {
         if (isSameDate(rec.date)) {
             anniversaryQueue.push({ type: 'live', data: rec });
         }
     });
 
-    // 3. CDリリース日のチェック
+    // 2. CDリリース日のチェック
     if (typeof listData !== 'undefined' && Array.isArray(listData)) {
         listData.forEach(item => {
             if (isSameDate(item.releaseDate)) {
@@ -3130,17 +3140,25 @@ function checkTodayEvents() {
 
     // キューがあれば処理開始
     if (anniversaryQueue.length > 0) {
-        // ★表示フラグを今日の日付で保存
-        localStorage.setItem('lldb_last_anniversary_date', todayStr);
         processNextAnniversary();
+        
+        // ★ここで「今日挨拶した」と記録する（これにより今日はもう出なくなる）
+        localStorage.setItem('lldb_last_greeting_date', todayKey);
     }
 }
 
 function processNextAnniversary() {
+    // キューが空なら何もしない
     if (anniversaryQueue.length === 0) return;
+    
+    // 現在モーダルが開いていたら待機（閉じた時に再呼び出しされる）
     if (document.getElementById('modal-overlay').style.display === 'flex') return;
     
+    // キューの中身を全て渡してモーダルを表示
+    // 配列のコピーを渡して、元のキューは空にする
     showAnniversaryModal([...anniversaryQueue]);
+    
+    // キューをリセット（閉じた後に再度表示されないように）
     anniversaryQueue = [];
 }
 
@@ -3152,25 +3170,16 @@ function showAnniversaryModal(events) {
     const nowYear = new Date().getFullYear();
     const birth = new Date(1975, 10, 22); // 1975/11/22
 
-    if (!Array.isArray(events)) events = [events];
+    // 引数が配列でない場合（単一オブジェクトの場合）のガード
+    if (!Array.isArray(events)) {
+        events = [events];
+    }
 
     events.forEach(event => {
+        // 各カードを囲むラッパー
         html += '<div class="mb-8 last:mb-0 border-b border-dashed border-gray-200 pb-8 last:border-0 last:pb-0">';
 
-        // ▼ 誕生日
-        if (event.type === 'birthday') {
-            const age = event.year - 1975;
-            html += `
-                <h2 class="font-bold text-center text-xl mb-4 text-aiko-pink">🎂 Happy Birthday aiko!!</h2>
-                <div class="card-base bg-white p-6 shadow-md rounded-2xl text-center">
-                    <p class="text-gray-600 font-bold mb-2">今日はaikoの誕生日です！</p>
-                    <div class="text-4xl font-extrabold text-aiko-red mb-2">${age}歳</div>
-                    <p class="text-sm text-gray-400">おめでとうございます🎉</p>
-                </div>
-            `;
-        }
-        // ▼ ライブ
-        else if (event.type === 'live') {
+        if (event.type === 'live') {
             const rec = event.data;
             const recYear = new Date(rec.date).getFullYear();
             const yearsAgo = nowYear - recYear;
@@ -3193,32 +3202,46 @@ function showAnniversaryModal(events) {
                 </div>
                 <p class="text-center text-gray-400 text-xs mt-2">👆 タップで詳細へ</p>
             `;
-        } 
-        // ▼ CD
-        else if (event.type === 'cd') {
+        } else if (event.type === 'cd') {
             const item = event.data;
+            
+            // 日付パースの安全策
             let releaseDateObj = new Date(item.releaseDate);
             if (isNaN(releaseDateObj.getTime())) {
                  const parts = String(item.releaseDate).split('/');
-                 if (parts.length === 3) releaseDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
-                 else releaseDateObj = new Date();
+                 if (parts.length === 3) {
+                     releaseDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+                 } else {
+                     releaseDateObj = new Date();
+                 }
             }
             
             const rYear = releaseDateObj.getFullYear();
             const rMonth = releaseDateObj.getMonth() + 1;
             const rDay = releaseDateObj.getDate();
+            
             const yearsAgo = nowYear - rYear;
             const yearsAgoText = yearsAgo > 0 ? `${yearsAgo}年前の` : '';
             
+            // --- 年齢・日数計算ロジック ---
             let ageY = rYear - birth.getFullYear();
             let ageM = rMonth - (birth.getMonth() + 1);
             let ageD = rDay - birth.getDate();
-            if (ageD < 0) { ageM--; ageD += new Date(rYear, rMonth - 1, 0).getDate(); }
-            if (ageM < 0) { ageY--; ageM += 12; }
+            
+            if (ageD < 0) {
+                ageM--;
+                const prevMonthLastDay = new Date(rYear, rMonth - 1, 0).getDate();
+                ageD += prevMonthLastDay;
+            }
+            if (ageM < 0) {
+                ageY--;
+                ageM += 12;
+            }
 
             const d1 = new Date(birth.getFullYear(), birth.getMonth(), birth.getDate(), 12, 0, 0);
             const d2 = new Date(rYear, rMonth - 1, rDay, 12, 0, 0);
-            const totalDays = Math.floor(Math.abs(d2 - d1) / (1000 * 60 * 60 * 24)); 
+            const diffTime = Math.abs(d2 - d1);
+            const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
 
             const img1 = item.img1 || 'https://placehold.jp/150x150.png?text=No%20Image';
             const img2 = item.img2; 
@@ -3230,20 +3253,30 @@ function showAnniversaryModal(events) {
                         <span class="border border-gray-300 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-white">${item.type}</span>
                         <span class="text-xs text-gray-400 font-mono tracking-widest">${rYear}.${rMonth}.${rDay}</span>
                     </div>
+
                     <h3 class="text-center font-bold text-gray-800 text-xl mb-5 leading-tight">${item.title}</h3>
+
                     <div class="flex justify-center gap-3 mb-6">
                         <img src="${img1}" class="${img2 ? 'w-[45%]' : 'w-[60%]'} rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.src='https://placehold.jp/150x150.png?text=No%20Image'">
                         ${img2 ? `<img src="${img2}" class="w-[45%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.style.display='none'">` : ''}
                     </div>
+
                     <div class="bg-[#EFF8F7] rounded-xl p-3 mb-5 flex justify-between items-center">
                         <span class="text-xs font-bold text-[#4A8078]">当時のaiko</span>
                         <div class="text-right">
-                            <div class="text-sm font-bold text-[#4A8078]">${ageY}歳${ageM}カ月${ageD}日</div>
-                            <div class="text-[10px] text-gray-400 font-mono">(${totalDays.toLocaleString()}日)</div>
+                            <div class="text-sm font-bold text-[#4A8078]">
+                                ${ageY}歳${ageM}カ月${ageD}日
+                            </div>
+                            <div class="text-[10px] text-gray-400 font-mono">
+                                (${totalDays.toLocaleString()}日)
+                            </div>
                         </div>
                     </div>
+
                     <div class="text-left">
-                        <p class="text-[10px] text-gray-400 mb-1 flex items-center gap-1 font-bold"><i data-lucide="music" class="w-3 h-3"></i> 収録曲</p>
+                        <p class="text-[10px] text-gray-400 mb-1 flex items-center gap-1 font-bold">
+                            <i data-lucide="music" class="w-3 h-3"></i> 収録曲
+                        </p>
                         <div class="border border-dashed border-gray-200 rounded-xl p-3 bg-gray-50 text-sm text-gray-700 leading-relaxed">
                             ${item.tracks ? item.tracks.replace(/\//g, '<br>') : '収録曲情報なし'}
                         </div>
@@ -3258,7 +3291,6 @@ function showAnniversaryModal(events) {
     contentDiv.innerHTML = html;
     document.getElementById('modal-overlay').style.display = 'flex';
     if(typeof lucide !== 'undefined') lucide.createIcons();
-}
 }
 
 function showModal(song, type) {
