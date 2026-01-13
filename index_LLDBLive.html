@@ -745,9 +745,9 @@ button { font-size: 13px !important; }
         <div id="user-category-counts" class="text-sm font-bold space-y-1">
           </div>
       </div>
-      <div style="width: 100px; height: 100px;" class="flex-shrink-0">
-        <canvas id="user-category-doughnut"></canvas>
-      </div>
+      <div style="width: 70px; height: 70px;" class="flex-shrink-0">
+  <canvas id="user-category-doughnut"></canvas>
+</div>
     </div>
 
     <div class="card-base bg-white border-0 mb-4 p-3">
@@ -2525,7 +2525,7 @@ function renderRecordsTab() { // 独立した関数として定義
 
     // UI反映: カテゴリテキスト (2列表示・短縮表記)
             document.getElementById('user-category-counts').innerHTML = `
-                <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-base">
                     <p class="text-pink-500 truncate">・Pop: ${catCounts.pop}</p>
                     <p class="text-yellow-500 truncate">・Aloha: ${catCounts.aloha}</p>
                     <p class="text-blue-500 truncate">・Rock: ${catCounts.rock}</p>
