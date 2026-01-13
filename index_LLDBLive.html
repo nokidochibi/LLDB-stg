@@ -2551,12 +2551,8 @@ function renderUserCharts(allYearly, userYearly, cat, targetSong = null, breakdo
     let datasets = [];
 
     if (targetSong) {
-        // 曲フィルタモード: 既存のまま
-        // ピンク = 参戦した中でその曲を聴いた回数
-        // グレー = 参戦したけどその曲は聴いてない回数 (参戦数 - 聴いた回数)
-
-        // 集計処理
-        const songCountsByYear = {};
+        // ★修正: 曲フィルタモードでもカテゴリ別に積み上げる
+        const songBreakdown = { pop: {}, rock: {}, aloha: {}, other: {} };
         const attendedDates = Object.keys(userUserData.attendedLives || {});
         const isMedleyIncluded = document.getElementById('user-medley-toggle').checked;
 
@@ -2575,33 +2571,41 @@ function renderUserCharts(allYearly, userYearly, cat, targetSong = null, breakdo
             });
 
             if (count > 0 && rec.year) {
-                songCountsByYear[rec.year] = (songCountsByYear[rec.year] || 0) + 1;
+                // カテゴリ判定
+                const name = rec.tourName.toLowerCase();
+                let catKey = 'other';
+                if (name.includes('pop')) catKey = 'pop';
+                else if (name.includes('rock')) catKey = 'rock';
+                else if (name.includes('aloha')) catKey = 'aloha';
+                
+                songBreakdown[catKey][rec.year] = (songBreakdown[catKey][rec.year] || 0) + 1;
             }
         });
 
+        // データセット生成ヘルパー
+        const createDataset = (label, dataMap, color) => ({
+            label: label,
+            data: years.map(y => dataMap[y] || 0),
+            backgroundColor: color,
+            stack: 'stack1',
+            borderRadius: 2,
+            datalabels: { display: false }
+        });
+
         datasets = [
-            {
-                label: targetSong,
-                data: years.map(y => songCountsByYear[y] || 0),
-                backgroundColor: 'rgba(255, 105, 180, 0.9)',
-                borderColor: 'rgba(255, 105, 180, 1)',
-                borderWidth: 1,
-                borderRadius: 4,
-                stack: 'stack1',
-                datalabels: {
-                    display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
-                    color: 'white',
-                    anchor: 'center',
-                    align: 'center',
-                    font: { size: 10, weight: 'bold' },
-                    formatter: val => val
-                }
-            },
+            createDataset('Pop', songBreakdown.pop, '#FF69B4'),
+            createDataset('Rock', songBreakdown.rock, '#3B82F6'),
+            createDataset('Aloha', songBreakdown.aloha, '#EAB308'),
+            createDataset('Other', songBreakdown.other, '#94A3B8'),
             {
                 label: 'その他参戦',
-                data: years.map(y => Math.max(0, (userYearly[y] || 0) - (songCountsByYear[y] || 0))),
-                backgroundColor: 'rgba(209, 213, 219, 0.8)',
-                borderColor: 'rgba(209, 213, 219, 1)',
+                // 全参戦数 - (Pop + Rock + Aloha + Other のその曲を聴いた回数合計)
+                data: years.map(y => {
+                    const listenedCount = (songBreakdown.pop[y] || 0) + (songBreakdown.rock[y] || 0) + (songBreakdown.aloha[y] || 0) + (songBreakdown.other[y] || 0);
+                    return Math.max(0, (userYearly[y] || 0) - listenedCount);
+                }),
+                backgroundColor: 'rgba(229, 231, 235, 0.8)', // 薄いグレー
+                borderColor: 'rgba(229, 231, 235, 1)',
                 borderWidth: 1,
                 borderRadius: 4,
                 stack: 'stack1',
