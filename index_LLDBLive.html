@@ -768,7 +768,8 @@ button { font-size: 13px !important; }
     <div class="card-base bg-white border-0 mb-4 p-3">
       <div class="flex gap-2 mb-3">
         <input type="text" id="record-song-search" placeholder="楽曲名で検索" class="flex-1 px-3 bg-gray-50 border-gray-200" oninput="renderUserSongRanking()">
-        <button onclick="document.getElementById('record-song-search').value=''; renderUserSongRanking()" class="action-btn clear-btn">クリア</button>
+        <button id="record-song-clear-btn" class="action-btn clear-btn">クリア</button>
+        <button id="user-show-setlist-btn" class="action-btn setlist-btn" style="display: none;">公演表示</button>
       </div>
       <div class="flex justify-between items-center mb-2">
         <span class="text-gray-500 text-xs font-bold">全楽曲: <span id="user-total-songs" class="text-gray-800">0</span> 曲</span>
@@ -2652,7 +2653,7 @@ function renderUserSongRanking() {
   let skip = 1;
 
   container.innerHTML = list.map((item, i) => {
-    // 順位計算ロジック（楽曲タブと同じ）
+    // 順位計算ロジック
     if (item.count !== lastVal) {
       if (lastVal !== -1) { currentRank += skip; skip = 1; } 
       else { currentRank = 1; }
@@ -2664,8 +2665,14 @@ function renderUserSongRanking() {
     const rankColor = currentRank <= 3 && searchInputText === '' ? ['text-aiko-pink','text-aiko-yellow','text-aiko-blue'][currentRank-1] : 'text-gray-300';
 
     return `
-      <div class="card-base p-3 mb-2 clickable-item flex items-center border border-gray-100 bg-white" onclick="selectSong('${item.name.replace(/'/g, "\\'")}')">
+      <div class="card-base p-3 mb-2 clickable-item flex items-center border border-gray-100 bg-white" onclick="selectUserSong('${item.name.replace(/'/g, "\\'")}')">
         <span class="rank-number ${rankColor}">${currentRank}</span>
+        <span class="song-title text-gray-700">${item.name}</span>
+        <span class="song-count">${item.count} <span>回</span></span>
+        <span class="text-[11px] text-gray-400 ml-2 w-14 text-right">(${item.lastYear}年)</span>
+      </div>`;
+  }).join('');
+}
         <span class="song-title text-gray-700">${item.name}</span>
         <span class="song-count">${item.count} <span>回</span></span>
         <span class="text-[11px] text-gray-400 ml-2 w-14 text-right">(${item.lastYear}年)</span>
@@ -2884,6 +2891,51 @@ function setupEventListeners() {
       switchToTab('search');
       applyFilters();
     }
+function setupEventListeners() {
+  ['search-input', 'tour-select', 'year-select', 'region-select', 'song-filter-input'].forEach(id => {
+    document.getElementById(id).addEventListener(id.includes('select') ? 'change' : 'input', applyFilters);
+  });
+
+  document.getElementById('clear-all-btn').addEventListener('click', () => {
+    ['search-input', 'tour-select', 'year-select', 'region-select'].forEach(id => document.getElementById(id).value = '');
+    const songInput = document.getElementById('song-filter-input');
+    songInput.value = '';
+    songInput.placeholder = '曲名で絞り込み（楽曲タブで選択）';
+    document.getElementById('attended-filter-toggle').checked = false;
+    applyFilters();
+  });
+
+  document.getElementById('attended-filter-toggle').addEventListener('change', applyFilters);
+
+  document.getElementById('song-search-input').addEventListener('input', () => {
+    renderSongRanking();
+    document.getElementById('show-setlist-btn').style.display = 'none';
+  });
+  document.getElementById('song-clear-btn').addEventListener('click', () => {
+    document.getElementById('song-search-input').value = '';
+    renderSongRanking();
+    renderLiveCountChart();
+    document.getElementById('show-setlist-btn').style.display = 'none';
+  });
+
+  document.getElementById('medley-toggle').addEventListener('change', () => {
+      renderSongRanking();
+      renderLiveCountChart();
+  });
+
+  document.getElementById('show-setlist-btn').addEventListener('click', () => {
+    const songName = document.getElementById('song-search-input').value;
+    if (songName) {
+      const songInput = document.getElementById('song-filter-input');
+      const isMedleyIncluded = document.getElementById('medley-toggle').checked;
+      if (isMedleyIncluded) {
+         songInput.value = `${songName}　※楽曲タブから選択`;
+      } else {
+         songInput.value = `${songName}(メドレー除外)　※楽曲タブから選択`;
+      }
+      switchToTab('search');
+      applyFilters();
+    }
   });
 
   document.getElementById('venue-search-input').addEventListener('input', renderVenueRanking);
@@ -2936,6 +2988,65 @@ function setupEventListeners() {
           });
       }
   });
+
+  // ★追加: 記録タブでの曲選択処理
+  function selectUserSong(songName) {
+    document.getElementById('record-song-search').value = songName;
+    renderUserSongRanking();
+    
+    const allYearlyCounts = {};
+    allLiveRecords.forEach(r => { if(r.year) allYearlyCounts[r.year] = (allYearlyCounts[r.year] || 0) + 1; });
+    
+    const userYearlyCounts = {};
+    const catCounts = { pop: 0, rock: 0, aloha: 0, other: 0 };
+    const attendedDates = Object.keys(userUserData.attendedLives || {});
+    
+    allLiveRecords.forEach(rec => {
+      if (attendedDates.includes(rec.date)) {
+          userYearlyCounts[rec.year] = (userYearlyCounts[rec.year] || 0) + 1;
+          const name = rec.tourName.toLowerCase();
+          if (name.includes('pop')) catCounts.pop++;
+          else if (name.includes('rock')) catCounts.rock++;
+          else if (name.includes('aloha')) catCounts.aloha++;
+          else catCounts.other++;
+      }
+    });
+
+    renderUserCharts(allYearlyCounts, userYearlyCounts, catCounts, songName);
+    document.getElementById('user-show-setlist-btn').style.display = 'inline-block';
+    document.getElementById('app').scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ★追加: 記録タブのクリアボタン動作
+  document.getElementById('record-song-clear-btn').addEventListener('click', () => {
+      document.getElementById('record-song-search').value = '';
+      renderUserSongRanking();
+      renderRecordsTab(); // 初期状態（全参戦モード）に戻す
+      document.getElementById('user-show-setlist-btn').style.display = 'none';
+  });
+
+  // ★追加: 記録タブの「公演表示」ボタン動作
+  document.getElementById('user-show-setlist-btn').addEventListener('click', () => {
+      const songName = document.getElementById('record-song-search').value;
+      if (!songName) return;
+      
+      const songInput = document.getElementById('song-filter-input');
+      const isMedleyIncluded = document.getElementById('user-medley-toggle').checked;
+      
+      if (isMedleyIncluded) {
+           songInput.value = `${songName}　※楽曲タブから選択`;
+      } else {
+           songInput.value = `${songName}(メドレー除外)　※楽曲タブから選択`;
+      }
+      
+      // 参戦フィルタをONにする
+      document.getElementById('attended-filter-toggle').checked = true;
+      
+      switchToTab('search');
+      applyFilters();
+  });
+
+  window.selectUserSong = selectUserSong;
 }
 
 function handleError(error) {
