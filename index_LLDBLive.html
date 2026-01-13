@@ -643,6 +643,17 @@ button { font-size: 13px !important; }
       </div>
     </div>
 
+    <div class="card-base bg-white border-0 p-4 mb-5 flex items-center justify-between overflow-hidden relative">
+      <div class="flex-1">
+        <h3 class="font-bold mb-3 text-gray-700 text-base flex items-center gap-2">
+          <i data-lucide="ticket" class="w-4 h-4 text-aiko-red"></i> 全ライブ開催回数: <span id="total-held-lives" class="text-lg text-aiko-red">0</span>
+        </h3>
+        <div id="live-category-counts" class="text-sm font-bold space-y-1"></div>
+      </div>
+      <div style="width: 70px; height: 70px;" class="flex-shrink-0">
+        <canvas id="live-category-doughnut"></canvas>
+      </div>
+    </div>
     <div class="card-base bg-white border-0 mb-4">
       <div class="flex gap-2 mb-3 items-center">
         <div class="relative flex-1">
@@ -1114,6 +1125,7 @@ function initializeApp(data) {
   window.addEventListener('resize', checkOrientation);
 
   renderLiveCountChart();
+  renderTotalLiveCategorySummary(); // ★追加: 全ライブサマリの描画
   renderAlbumChart();
   renderSongRanking(); 
   renderPatternStats();
@@ -1659,87 +1671,174 @@ function renderAlbumChart() {
   });
 }
 
+// ★改修: カテゴリ別積上げグラフを描画する関数
 function renderLiveCountChart() {
   const canvas = document.getElementById('live-count-chart');
   if (!canvas) return;
   if (chartInstances.liveCount) chartInstances.liveCount.destroy();
 
-  const liveCountsByYear = allLiveRecords.reduce((acc, rec) => {
-    if (rec.year) acc[rec.year] = (acc[rec.year] || 0) + 1;
-    return acc;
-  }, {});
-
   const songToSearch = document.getElementById('song-search-input').value.trim();
   const isMedleyIncluded = document.getElementById('medley-toggle').checked;
 
-  const songPlaysByYear = {};
-  if (songToSearch) {
-    allLiveRecords.forEach(rec => {
-      if (!rec.year) return;
-      
+  // 1. データ集計用オブジェクト初期化
+  const years = [];
+  const breakdown = { pop: {}, rock: {}, aloha: {}, other: {}, total: {} };
+  
+  // 年リスト作成と初期化
+  allLiveRecords.forEach(rec => {
+    if(!rec.year) return;
+    if(!breakdown.total[rec.year]) {
+      years.push(rec.year);
+      breakdown.total[rec.year] = 0;
+      breakdown.pop[rec.year] = 0;
+      breakdown.rock[rec.year] = 0;
+      breakdown.aloha[rec.year] = 0;
+      breakdown.other[rec.year] = 0;
+    }
+    breakdown.total[rec.year]++;
+  });
+  years.sort((a,b) => a - b);
+
+  // 2. 積上げデータの計算
+  allLiveRecords.forEach(rec => {
+    if(!rec.year) return;
+    
+    let isCounted = false;
+
+    if (songToSearch) {
+      // 曲検索時: その曲が演奏されたかどうかチェック
       let inMedley = false;
       let count = 0;
-
       rec.setlist.forEach(s => {
         if (s === '__MEDLEY_START__') { inMedley = true; return; }
         if (s === '__MEDLEY_END__') { inMedley = false; return; }
-        
-        // メドレー除外設定で、かつ現在メドレー中ならスキップ
         if (!isMedleyIncluded && inMedley) return;
-
+        
         const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
-        if (clean.toLowerCase() === songToSearch.toLowerCase()) {
-            count++;
-        }
+        if (clean.toLowerCase() === songToSearch.toLowerCase()) count++;
       });
+      if(count > 0) isCounted = true;
+    } else {
+      // 未検索時: 全てカウント
+      isCounted = true;
+    }
 
-      if (count > 0) songPlaysByYear[rec.year] = (songPlaysByYear[rec.year] || 0) + count;
+    if (isCounted) {
+      const name = rec.tourName.toLowerCase();
+      if (name.includes('pop')) breakdown.pop[rec.year]++;
+      else if (name.includes('rock')) breakdown.rock[rec.year]++;
+      else if (name.includes('aloha')) breakdown.aloha[rec.year]++;
+      else breakdown.other[rec.year]++;
+    }
+  });
+
+  // 3. データセット作成
+  // 共通のデータラベル設定（一番上のバーにのみ合計を表示するためのロジック）
+  const getDatalabelsConfig = () => ({
+    display: (ctx) => {
+      const dsIndex = ctx.datasetIndex;
+      const dataIndex = ctx.dataIndex;
+      const datasets = ctx.chart.data.datasets;
+      if (datasets[dsIndex].data[dataIndex] === 0) return false;
+      // 自分より上のデータセット(index 0~3)に値があるかチェック
+      for (let i = dsIndex + 1; i <= 3; i++) {
+        if (datasets[i].data[dataIndex] > 0) return false;
+      }
+      return true; // 自分が積上げの最上部
+    },
+    color: 'gray', anchor: 'end', align: 'end', offset: -2,
+    font: { size: 10, weight: 'bold' },
+    formatter: (value, ctx) => {
+      const idx = ctx.dataIndex;
+      const ds = ctx.chart.data.datasets;
+      // 0~3 (Pop, Rock, Aloha, Other) の合計を表示
+      return ds[0].data[idx] + ds[1].data[idx] + ds[2].data[idx] + ds[3].data[idx];
+    }
+  });
+
+  const datalabelsConfig = getDatalabelsConfig();
+
+  const datasets = [
+    { label: 'Pop', data: years.map(y => breakdown.pop[y]), backgroundColor: '#FF69B4', stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
+    { label: 'Rock', data: years.map(y => breakdown.rock[y]), backgroundColor: '#3B82F6', stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
+    { label: 'Aloha', data: years.map(y => breakdown.aloha[y]), backgroundColor: '#EAB308', stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
+    { label: 'Other', data: years.map(y => breakdown.other[y]), backgroundColor: '#94A3B8', stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig }
+  ];
+
+  // 曲検索時は、演奏されなかった分をグレーで積む
+  if (songToSearch) {
+    datasets.push({
+      label: '未演奏',
+      data: years.map(y => {
+        const played = breakdown.pop[y] + breakdown.rock[y] + breakdown.aloha[y] + breakdown.other[y];
+        return Math.max(0, breakdown.total[y] - played);
+      }),
+      backgroundColor: 'rgba(229, 231, 235, 0.8)',
+      borderColor: 'rgba(229, 231, 235, 1)',
+      borderWidth: 1,
+      stack: 'stack1',
+      datalabels: { display: false }
     });
   }
 
-  const years = Object.keys(liveCountsByYear).sort((a, b) => a - b);
-  const totalLiveData = years.map(year => liveCountsByYear[year]);
-  const songPlayData = years.map(year => songPlaysByYear[year] || 0);
-
-  const datasets = [{
-    label: '楽曲演奏',
-    data: songPlayData,
-    backgroundColor: 'rgba(255, 105, 180, 0.8)',
-    borderColor: 'rgba(255, 105, 180, 1)',
-    borderWidth: 1,
-    stack: 'stack1',
-    datalabels: {
-      display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
-      color: 'gray',
-      anchor: 'end',
-      align: 'end',
-      offset: -2,
-      font: { size: 10, weight: 'bold' },
-      formatter: val => val
-    }
-  }, {
-    label: 'その他',
-    data: totalLiveData.map((total, i) => Math.max(0, total - songPlayData[i])),
-    backgroundColor: 'rgba(229, 231, 235, 0.8)',
-    borderColor: 'rgba(229, 231, 235, 1)',
-    borderWidth: 1,
-    stack: 'stack1',
-    datalabels: { display: false }
-  }];
-
   chartInstances.liveCount = new Chart(canvas, {
     type: 'bar',
-    data: { labels: years, datasets },
+    data: { labels: years, datasets: datasets },
     plugins: [ChartDataLabels],
     options: {
       ...chartCommonOptions,
       scales: {
-        x: {
-          stacked: true,
-          ticks: { font: { size: 10 }, maxRotation: 90, minRotation: 90, autoSkip: false }
-        },
+        x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 90, minRotation: 90, autoSkip: false } },
         y: { stacked: true, beginAtZero: true, min: 0, ticks: { font: { size: 10 }, stepSize: 5 } }
       }
+    }
+  });
+}
+
+// ★追加: 全ライブ開催回数のサマリ（ドーナツグラフ）を描画する関数
+function renderTotalLiveCategorySummary() {
+  const totalCount = allLiveRecords.length;
+  document.getElementById('total-held-lives').textContent = totalCount;
+
+  const counts = { pop: 0, rock: 0, aloha: 0, other: 0 };
+  allLiveRecords.forEach(rec => {
+    const name = rec.tourName.toLowerCase();
+    if (name.includes('pop')) counts.pop++;
+    else if (name.includes('rock')) counts.rock++;
+    else if (name.includes('aloha')) counts.aloha++;
+    else counts.other++;
+  });
+
+  document.getElementById('live-category-counts').innerHTML = `
+    <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-base">
+      <p class="text-pink-500 truncate">・Pop: ${counts.pop}</p>
+      <p class="text-yellow-500 truncate">・Aloha: ${counts.aloha}</p>
+      <p class="text-blue-500 truncate">・Rock: ${counts.rock}</p>
+      <p class="text-gray-400 truncate">・Event: ${counts.other}</p>
+    </div>
+  `;
+
+  const canvas = document.getElementById('live-category-doughnut');
+  if (!canvas) return;
+  
+  // 既存チャートがあれば破棄 (chartInstancesに格納場所を作る)
+  if (chartInstances.liveCategory) chartInstances.liveCategory.destroy();
+
+  chartInstances.liveCategory = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: ['Pop', 'Rock', 'Aloha', 'Other'],
+      datasets: [{
+        data: [counts.pop, counts.rock, counts.aloha, counts.other],
+        backgroundColor: ['#FF69B4', '#3B82F6', '#EAB308', '#94A3B8'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: { legend: { display: false }, tooltip: { enabled: false } }
     }
   });
 }
