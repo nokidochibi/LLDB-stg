@@ -750,30 +750,27 @@ button { font-size: 13px !important; }
       </div>
     </div>
 
-    <div class="mb-3 flex items-center gap-2 px-1">
-      <h3 class="font-bold text-gray-700 text-base flex items-center gap-2"><i data-lucide="music-2" class="w-4 h-4 text-aiko-red"></i> あなたが聴いた曲</h3>
-    </div>
-
     <div class="card-base bg-white border-0 mb-4 p-3">
-      <div class="flex gap-2 mb-3">
-        <input type="text" id="record-song-search" placeholder="楽曲名で検索" class="flex-1 px-3 bg-gray-50 border-gray-200" oninput="renderUserSongRanking()">
-        <button id="record-song-clear-btn" class="action-btn clear-btn">クリア</button>
-        <button id="user-show-setlist-btn" class="action-btn setlist-btn" style="display: none;">公演表示</button>
-      </div>
-      <div class="flex justify-between items-center mb-2">
-        <span class="text-gray-500 text-xs font-bold">全楽曲: <span id="user-total-songs" class="text-gray-800">0</span> 曲</span>
-        <div class="flex items-center gap-2">
-          <span class="text-[12px] font-bold text-gray-500">メドレー込み</span>
-          <div class="relative inline-block align-middle select-none shrink-0">
-            <input type="checkbox" id="user-medley-toggle" class="toggle-checkbox" checked onchange="renderUserSongRanking()" />
-            <label for="user-medley-toggle" class="toggle-label" style="transform: scale(0.85); display:block;"></label>
-          </div>
+            <div class="flex gap-2 mb-3">
+                <input type="text" id="record-song-search" placeholder="楽曲名で検索" class="flex-1 px-3 bg-gray-50 border-gray-200" oninput="renderUserSongRanking()">
+                <button id="record-song-clear-btn" class="action-btn clear-btn">クリア</button>
+                <button id="user-show-setlist-btn" class="action-btn setlist-btn" style="display: none;">公演表示</button>
+            </div>
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-gray-500 text-xs font-bold">全楽曲: <span id="user-total-songs" class="text-gray-800">0</span> 曲</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-[12px] font-bold text-gray-500">メドレー込み</span>
+                    <div class="relative inline-block align-middle select-none shrink-0">
+                        <input type="checkbox" id="user-medley-toggle" class="toggle-checkbox" checked onchange="renderUserSongRanking()" />
+                        <label for="user-medley-toggle" class="toggle-label" style="transform: scale(0.85); display:block;"></label>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <div class="flex justify-end mb-3 px-1">
-      <div class="flex gap-1 items-center shrink-0">
+        <div class="flex justify-between items-end mb-3 px-1">
+            <h3 class="font-bold text-gray-700 text-base flex items-center gap-2"><i data-lucide="music-2" class="w-4 h-4 text-aiko-red"></i> あなたが聴いた曲</h3>
+            <div class="flex gap-1 items-center shrink-0">
         <div onclick="switchUserSongSort('count')" class="flex items-center gap-0.5 bg-white px-2 py-1.5 rounded-lg shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-all">
           <span class="text-[11px] font-bold text-gray-600">聴いた回数</span>
           <i id="user-sort-icon-count" data-lucide="chevron-down" class="w-3 h-3 text-aiko-red"></i>
@@ -2526,13 +2523,15 @@ function renderRecordsTab() { // 独立した関数として定義
         });
     });
 
-    // UI反映: カテゴリテキスト
-    document.getElementById('user-category-counts').innerHTML = `
-        <p class="text-pink-500">・ Love Like Pop: ${catCounts.pop}</p>
-        <p class="text-blue-500">・ Love Like Rock: ${catCounts.rock}</p>
-        <p class="text-yellow-500">・ Love Like Aloha: ${catCounts.aloha}</p>
-        <p class="text-gray-400">・ その他のEvent: ${catCounts.other}</p>
-    `;
+    // UI反映: カテゴリテキスト (2列表示に変更)
+            document.getElementById('user-category-counts').innerHTML = `
+                <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                    <p class="text-pink-500 truncate">・Love Like Pop: ${catCounts.pop}</p>
+                    <p class="text-yellow-500 truncate">・Love Like Aloha: ${catCounts.aloha}</p>
+                    <p class="text-blue-500 truncate">・Love Like Rock: ${catCounts.rock}</p>
+                    <p class="text-gray-400 truncate">・その他のEvent: ${catCounts.other}</p>
+                </div>
+            `;
 
     // グラフ描画（breakdownを渡すように変更）
     renderUserCharts(allYearlyCounts, userYearlyCounts, catCounts, null, breakdown);
