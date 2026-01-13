@@ -2987,7 +2987,7 @@ function setupEventListeners() {
   });
 
   // ★追加: 記録タブでの曲選択処理
-  function selectUserSong(songName) {
+  function selectUserSong(songName, skipScroll = false) {
     document.getElementById('record-song-search').value = songName;
     renderUserSongRanking();
     
@@ -3011,7 +3011,10 @@ function setupEventListeners() {
 
     renderUserCharts(allYearlyCounts, userYearlyCounts, catCounts, songName);
     document.getElementById('user-show-setlist-btn').style.display = 'inline-block';
-    document.getElementById('app').scrollTo({ top: 0, behavior: 'smooth' });
+    
+    if (!skipScroll) {
+        document.getElementById('app').scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   // ★追加: 記録タブのクリアボタン動作
@@ -3020,6 +3023,16 @@ function setupEventListeners() {
       renderUserSongRanking();
       renderRecordsTab(); // 初期状態（全参戦モード）に戻す
       document.getElementById('user-show-setlist-btn').style.display = 'none';
+  });
+
+  // ★追加: 記録タブのメドレートグル連動
+  document.getElementById('user-medley-toggle').addEventListener('change', () => {
+      const songName = document.getElementById('record-song-search').value;
+      if (songName) {
+          selectUserSong(songName, true); // スクロールせずにグラフ更新
+      } else {
+          renderUserSongRanking();
+      }
   });
 
   // ★追加: 記録タブの「公演表示」ボタン動作
