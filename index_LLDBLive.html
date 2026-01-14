@@ -621,7 +621,7 @@ button { font-size: 13px !important; }
         </div>
 
         <div class="flex justify-between items-end mb-3 px-1">
-            <h3 class="font-bold text-gray-700 text-base flex items-center gap-2"><i data-lucide="music-2" class="w-4 h-4 text-aiko-red"></i> あなたが聴いた曲</h3>
+            <h3 id="user-song-ranking-header" class="font-bold text-gray-700 text-base flex items-center gap-2 cursor-pointer select-none tap-trigger"><span id="user-song-ranking-icon" class="inline-block"><i data-lucide="music-2" class="w-4 h-4 text-aiko-red"></i></span> あなたが聴いた曲</h3>
             <div class="flex gap-1 items-center shrink-0">
         <div onclick="switchUserSongSort('count')" class="flex items-center gap-0.5 bg-white px-2 py-1.5 rounded-lg shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-all">
           <span class="text-[11px] font-bold text-gray-600">聴いた回数</span>
