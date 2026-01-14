@@ -438,6 +438,10 @@ function renderLiveCountChart() {
 }
 
 function renderTotalLiveCategorySummary(targetSong = null) {
+  // 文言更新
+  const labelEl = document.getElementById('song-stats-label');
+  if (labelEl) labelEl.textContent = targetSong ? 'この曲の演奏回数' : '全ライブ開催回数';
+
   let targetRecords = allLiveRecords;
   
   if (targetSong) {
@@ -1210,6 +1214,10 @@ function switchUserSongSort(key) {
 }
 
 function renderRecordsTab() { 
+    // 文言リセット
+    const labelEl = document.getElementById('user-stats-label');
+    if (labelEl) labelEl.textContent = 'あなたの参戦回数';
+
     const isRegistered = userUserData.settings && userUserData.settings.syncId;
     const unregisteredDiv = document.getElementById('records-unregistered');
     const contentDiv = document.getElementById('records-content');
@@ -1692,6 +1700,7 @@ function setupEventListeners() {
     document.getElementById('song-search-input').value = '';
     renderSongRanking();
     renderLiveCountChart();
+    renderTotalLiveCategorySummary(); // 文言とチャートをリセット
     document.getElementById('show-setlist-btn').style.display = 'none';
   });
 
@@ -1769,6 +1778,10 @@ function setupEventListeners() {
   // --- Records Tab Listeners ---
 
   function selectUserSong(songName, skipScroll = false) {
+    // 文言更新
+    const labelEl = document.getElementById('user-stats-label');
+    if (labelEl) labelEl.textContent = songName ? 'この曲を聴いた回数' : 'あなたの参戦回数';
+
     document.getElementById('record-song-search').value = songName;
     renderUserSongRanking();
     
