@@ -181,7 +181,12 @@
             .max-w-lg { max-width: none !important; }
             .mx-auto { margin-left: 0; margin-right: 0; }
             .disco-grid { width: 100vw; } /* 画面幅いっぱい */
-            #input-area { max-width: 512px; margin: 16px auto; } /* 入力欄は中央寄せ維持 */
+            
+            /* ★NEW: ヘッダー・フッター・ヒントを非表示にして領域最大化 */
+            #input-area { display: none !important; }
+            nav { display: none !important; }
+            body { padding-bottom: env(safe-area-inset-bottom) !important; }
+            #view-map .text-center { display: none !important; } /* 「横向きにしてね」のヒントも消す */
         }
 
         .disco-grid {
