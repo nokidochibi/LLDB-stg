@@ -9,10 +9,10 @@ const AIKO_BIRTH = new Date(1975, 10, 22); // 1975/11/22
 
 // 配色定義 (Maintenance: Change colors here)
 const THEME_COLORS = {
-  POP:   '#FF4757', // 新色
-  ROCK:  '#1E90FF', // 新色
-  ALOHA: '#FFA502', // 新色
-  EVENT: '#747D8C', // 新色
+  POP:   '#FF6B6B', // 新色
+  ROCK:  '#54A0FF', // 新色
+  ALOHA: '#FFC048', // 新色
+  EVENT: '#B2BEC3', // 新色
   PINK:  '#FF69B4', // aiko-pink (維持)
   GRAY:  '#9CA3AF',
   BG_GRAY: '#E5E7EB',
