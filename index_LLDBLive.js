@@ -1793,6 +1793,8 @@ function setupEventListeners() {
     const attendedDates = Object.keys(userUserData.attendedLives || {});
     const isMedleyIncluded = document.getElementById('user-medley-toggle').checked;
     
+    let totalHitCount = 0; // 追加：聴いた回数の合計
+
     allLiveRecords.forEach(rec => {
       if (attendedDates.includes(rec.date)) {
           let isMatch = true;
@@ -1806,7 +1808,11 @@ function setupEventListeners() {
               const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
               if (clean === songName) count++;
             });
-            if (count === 0) isMatch = false;
+            if (count === 0) {
+                isMatch = false;
+            } else {
+                totalHitCount += count; // 追加：回数を加算
+            }
           }
 
           if (isMatch) {
@@ -1819,6 +1825,14 @@ function setupEventListeners() {
           }
       }
     });
+
+    // 追加：数字の更新処理
+    if (songName) {
+        document.getElementById('user-total-attended').textContent = totalHitCount;
+    } else {
+        // 曲が選択されていない場合は参戦公演数（元々のロジックと同じ数字）に戻す
+        document.getElementById('user-total-attended').textContent = attendedDates.length;
+    }
 
     document.getElementById('user-category-counts').innerHTML = `
         <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-base">
