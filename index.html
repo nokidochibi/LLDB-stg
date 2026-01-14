@@ -761,7 +761,7 @@
         .then(json => {
           if(json.status === 'success' && json.count) {
             const el = document.getElementById('active-user-count');
-            if(el) el.textContent = `(${json.count}ユーザが利用中)`;
+            if(el) el.textContent = `(${json.count}人が利用中)`;
           }
         })
         .catch(e => console.error(e));
