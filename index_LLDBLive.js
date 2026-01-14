@@ -2424,6 +2424,37 @@ function setupRandomTriggers() {
     songHeader.addEventListener('dblclick', handlers.dblclick);
   }
 
+  // 追加：記録タブのランダム選曲
+  const userSongHeader = document.getElementById('user-song-ranking-header');
+  if (userSongHeader) {
+    const handlers = createDoubleTapHandler(() => {
+        safeTrackEvent('select_content', { content_type: 'random_trigger', item_id: 'user_song_ranking_double_tap' });
+        
+        const icon = document.getElementById('user-song-ranking-icon');
+        if (icon) {
+            icon.classList.remove('spin-once');
+            void icon.offsetWidth;
+            icon.classList.add('spin-once');
+        }
+
+        // 表示中のランキング（聴いた曲リスト）からランダムに選ぶ
+        const stats = window.currentUserSongStats || {};
+        const songs = Object.keys(stats);
+        
+        if (songs.length === 0) return;
+        
+        const randomSong = songs[Math.floor(Math.random() * songs.length)];
+        
+        setTimeout(() => {
+            selectUserSong(randomSong);
+        }, 600);
+    });
+    
+    userSongHeader.addEventListener('touchstart', handlers.touchstart, {passive: false});
+    userSongHeader.addEventListener('touchend', handlers.touchend, {passive: false});
+    userSongHeader.addEventListener('dblclick', handlers.dblclick);
+  }
+
   ['venue-tab-header', 'region-tab-header'].forEach(id => {
       const el = document.getElementById(id);
       if(el) {
