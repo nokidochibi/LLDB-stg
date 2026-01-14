@@ -437,12 +437,30 @@ function renderLiveCountChart() {
   });
 }
 
-function renderTotalLiveCategorySummary() {
-  const totalCount = allLiveRecords.length;
+function renderTotalLiveCategorySummary(targetSong = null) {
+  let targetRecords = allLiveRecords;
+  
+  if (targetSong) {
+    const isMedleyIncluded = document.getElementById('medley-toggle').checked;
+    targetRecords = allLiveRecords.filter(rec => {
+      let count = 0;
+      let inMedley = false;
+      rec.setlist.forEach(s => {
+        if (s === '__MEDLEY_START__') { inMedley = true; return; }
+        if (s === '__MEDLEY_END__') { inMedley = false; return; }
+        if (!isMedleyIncluded && inMedley) return;
+        const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
+        if (clean === targetSong) count++;
+      });
+      return count > 0;
+    });
+  }
+
+  const totalCount = targetRecords.length;
   document.getElementById('total-held-lives').textContent = totalCount;
 
   const counts = { pop: 0, rock: 0, aloha: 0, other: 0 };
-  allLiveRecords.forEach(rec => {
+  targetRecords.forEach(rec => {
     const name = rec.tourName.toLowerCase();
     if (name.includes('pop')) counts.pop++;
     else if (name.includes('rock')) counts.rock++;
@@ -1117,6 +1135,7 @@ function selectSong(songName) {
   switchToTab('song'); 
   renderSongRanking();
   renderLiveCountChart();
+  renderTotalLiveCategorySummary(songName);
   document.getElementById('show-setlist-btn').style.display = 'inline-block';
 }
 
@@ -1759,17 +1778,43 @@ function setupEventListeners() {
     const userYearlyCounts = {};
     const catCounts = { pop: 0, rock: 0, aloha: 0, other: 0 };
     const attendedDates = Object.keys(userUserData.attendedLives || {});
+    const isMedleyIncluded = document.getElementById('user-medley-toggle').checked;
     
     allLiveRecords.forEach(rec => {
       if (attendedDates.includes(rec.date)) {
-          userYearlyCounts[rec.year] = (userYearlyCounts[rec.year] || 0) + 1;
-          const name = rec.tourName.toLowerCase();
-          if (name.includes('pop')) catCounts.pop++;
-          else if (name.includes('rock')) catCounts.rock++;
-          else if (name.includes('aloha')) catCounts.aloha++;
-          else catCounts.other++;
+          let isMatch = true;
+          if (songName) {
+            let count = 0;
+            let inMedley = false;
+            rec.setlist.forEach(s => {
+              if (s === '__MEDLEY_START__') { inMedley = true; return; }
+              if (s === '__MEDLEY_END__') { inMedley = false; return; }
+              if (!isMedleyIncluded && inMedley) return;
+              const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
+              if (clean === songName) count++;
+            });
+            if (count === 0) isMatch = false;
+          }
+
+          if (isMatch) {
+            userYearlyCounts[rec.year] = (userYearlyCounts[rec.year] || 0) + 1;
+            const name = rec.tourName.toLowerCase();
+            if (name.includes('pop')) catCounts.pop++;
+            else if (name.includes('rock')) catCounts.rock++;
+            else if (name.includes('aloha')) catCounts.aloha++;
+            else catCounts.other++;
+          }
       }
     });
+
+    document.getElementById('user-category-counts').innerHTML = `
+        <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-base">
+            <p class="text-pop truncate">・Pop: ${catCounts.pop}</p>
+            <p class="text-aloha truncate">・Aloha: ${catCounts.aloha}</p>
+            <p class="text-rock truncate">・Rock: ${catCounts.rock}</p>
+            <p class="text-event truncate">・Event: ${catCounts.other}</p>
+        </div>
+    `;
 
     renderUserCharts(allYearlyCounts, userYearlyCounts, catCounts, songName);
     document.getElementById('user-show-setlist-btn').style.display = 'inline-block';
