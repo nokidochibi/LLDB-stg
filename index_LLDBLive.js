@@ -160,18 +160,18 @@ function startLoadingAnimation(mode) {
     : [{ id: 'loading-text-1', delay: 1000 }, { id: 'loading-text-2', delay: 1900 }, { id: 'loading-text-3', delay: 2800 }, { id: 'loading-text-4', delay: 3800 }, { id: 'loading-text-5', delay: 4600 }];
   
   delays.forEach(item => {
-    setTimeout(() => {
-      const element = document.getElementById(item.id);
-      if (element) {
-          // 強制的に表示させるためのスタイルを複数適用
-          element.classList.remove('opacity-0');
-          element.classList.remove('hidden'); 
-          element.style.opacity = '1';
-          element.style.display = 'block'; 
-          element.style.visibility = 'visible';
-      }
-    }, item.delay);
-  });
+            setTimeout(() => {
+              const element = document.getElementById(item.id);
+              if (element) {
+                  // 強制的に表示させるためのスタイルを複数適用
+                  element.classList.remove('opacity-0');
+                  element.classList.remove('hidden'); 
+                  element.style.opacity = '1';
+                  element.style.display = 'inline'; // ← inlineに変更（これで横並びになります）
+                  element.style.visibility = 'visible';
+              }
+            }, item.delay);
+          });
 
   setTimeout(() => {
     finishLoading();
