@@ -1036,8 +1036,10 @@ function showLiveDetail(rec) {
       tweetHtml = `
         <div class="mt-10 pt-8 border-t border-dashed border-gray-200">
            <h3 class="font-bold text-gray-700 text-lg mb-4 flex items-center gap-2">
-             <i data-lucide="twitter" class="w-5 h-5" style="color: #1DA1F2;"></i>
-             <span style="color: #1DA1F2;">After Live</span>
+             <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" style="color: #000000;">
+               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+             </svg>
+             <span style="color: #000000;">After Live</span>
            </h3>
            <div class="flex justify-center" style="min-height: 200px;">
              <blockquote class="twitter-tweet" data-lang="ja" data-theme="light" data-align="center">
