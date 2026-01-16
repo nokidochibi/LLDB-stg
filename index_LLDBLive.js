@@ -1045,7 +1045,29 @@ function showLiveDetail(rec) {
     }
 
     const timeline = createTimelineHtml(cleanSong);
-    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${timeline}</div>`;
+
+    // --- ジャケット画像エリア生成 (Start) ---
+    let jacketsHtml = '';
+    if (songInfo) {
+      // 共通スタイル (スマホで見やすい24px)
+      const imgStyle = 'width:24px; height:24px; border-radius:3px; object-fit:cover; display:block; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background-color:#f1f5f9;';
+      const spacerStyle = 'width:24px; height:24px; display:block;';
+
+      // シングル画像 (青位置)
+      const sImg = songInfo.imgS ? `<img src="${songInfo.imgS}" style="${imgStyle}" loading="lazy" alt="S">` : `<span style="${spacerStyle}"></span>`;
+      
+      // アルバム画像 (赤位置)
+      const aImg = songInfo.imgA ? `<img src="${songInfo.imgA}" style="${imgStyle}" loading="lazy" alt="A">` : `<span style="${spacerStyle}"></span>`;
+
+      // 横並びコンテナ
+      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:6px; flex-shrink:0;">${sImg}${aImg}</div>`;
+    } else {
+      // songInfoがない場合のスペース確保
+      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:6px; flex-shrink:0;"><span style="width:24px;"></span><span style="width:24px;"></span></div>`;
+    }
+    // --- ジャケット画像エリア生成 (End) ---
+
+    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
   });
 
   const legendHtml = `<div class="flex flex-col items-end justify-end pb-1"><div class="text-[10px] text-gray-400 leading-none mb-1 text-center w-full">リリース年</div><div class="flex items-center text-[10px] text-gray-400 leading-none"><span class="mr-1">1998</span><div class="w-20 h-[1px] bg-gray-300 mx-1 relative flex items-center justify-center"><div class="w-2 h-2 rounded-full shadow-sm" style="background-color: var(--aiko-pink);"></div></div><span class="ml-1">${maxYear}</span></div></div>`;
