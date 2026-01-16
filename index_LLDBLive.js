@@ -996,17 +996,49 @@ function showLiveDetail(rec) {
 
   function createTimelineHtml(songName) {
     const songInfo = songData[songName];
-    if (!songInfo || !songInfo.year) return ''; 
+    if (!songInfo || !songInfo.year) return '';
     const songYear = songInfo.year;
+    
+    // 位置計算
     let percent = ((songYear - minYear) / (maxYear - minYear)) * 100;
-    percent = Math.max(0, Math.min(100, percent)); 
+    percent = Math.max(0, Math.min(100, percent));
+
+    // タイプ判定と行の決定 (0:表題, 1:CW, 2:アルバム)
     const type = normalizeType(songInfo.type);
-    let dotColor = '#D1D5DB'; 
-    if (type === '表題曲') dotColor = THEME_COLORS.PINK; 
-    else if (type === 'カップリング曲') dotColor = '#3B82F6'; 
-    else if (type === 'アルバム曲') dotColor = '#EAB308'; 
-    // 修正: widthを8pxから4pxに細くしました
-    return `<div class="timeline-container" onclick="this.querySelector('.timeline-dot').classList.toggle('active'); event.stopPropagation();"><div class="timeline-bar"><div class="timeline-dot" style="left: ${percent}%; background-color: ${dotColor}; width:4px; height:12px; border-radius:1px; border:none;"><div class="year-tooltip">${songYear}</div></div></div></div>`;
+    let row = 3; // デフォルト(その他)
+    let dotColor = '#D1D5DB';
+
+    if (type === '表題曲') {
+      row = 0;
+      dotColor = THEME_COLORS.PINK;
+    } else if (type === 'カップリング曲') {
+      row = 1;
+      dotColor = '#3B82F6';
+    } else if (type === 'アルバム曲') {
+      row = 2;
+      dotColor = '#EAB308';
+    }
+
+    if (row === 3) return ''; // その他は表示しない
+
+    // スタイル定義
+    const containerStyle = 'position:relative; width:100%; height:18px; display:flex; flex-direction:column; justify-content:space-between; margin-top:2px;';
+    const lineStyle = 'width:100%; height:5px; background-color:#f3f4f6; border-radius:1px;'; // 薄いグレーの背景線
+    
+    // マーカー (該当する行にだけ絶対配置で置く)
+    // top位置: 行の高さ(5px) + 隙間(1.5px) を考慮して計算
+    const topPos = row * 6.5; 
+    const markerStyle = `position:absolute; left:${percent}%; top:${topPos}px; width:6px; height:5px; background-color:${dotColor}; border-radius:1px; z-index:2;`;
+
+    return `
+      <div class="timeline-container" style="height:auto; padding:0; background:transparent;" onclick="alert('${songYear}年 ${type}'); event.stopPropagation();">
+        <div style="${containerStyle}">
+          <div style="${lineStyle}"></div>
+          <div style="${lineStyle}"></div>
+          <div style="${lineStyle}"></div>
+          <div style="${markerStyle}"></div>
+        </div>
+      </div>`;
   }
 
   let setlistHtml = '', songNum = 1, inMedley = false, medleyNum = 1, encoreNum = 0;
