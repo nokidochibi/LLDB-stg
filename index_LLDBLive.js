@@ -1068,8 +1068,8 @@ function showLiveDetail(rec) {
     }
     // --- ジャケット画像エリア生成 (End) ---
 
-    // ★修正: 曲名エリアの幅をデフォルトの60%から「50%」に強制変更。これにより画像が画面のちょうど真ん中から始まります。
-    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 50%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
+    // ★修正: 曲名エリアの幅を「54%」に変更して、画像を少し右へ移動させます。(数字を大きくするとさらに右へ行きます)
+    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 54%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
   });
 
   // 修正: 凡例の丸(rounded-full)を削除し、長方形スタイル(width:8px; height:12px; border-radius:1px;)を適用
