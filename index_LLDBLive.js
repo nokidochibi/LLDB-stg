@@ -976,8 +976,8 @@ function showLiveDetail(rec) {
   }
 
   let setlistHtml = '', songNum = 1, inMedley = false, medleyNum = 1, encoreNum = 0;
-  let typeCounts = { '表題曲': 0, 'カップリング曲': 0, 'アルバム曲': 0, 'その他': 0 };
-  
+  let yearCounts = {}; // 年ごとの集計用
+
   rec.setlist.forEach((s, idx) => {
     if (!s || !s.trim()) return;
     if (s === '__MEDLEY_END__') { inMedley = false; return; }
@@ -998,10 +998,16 @@ function showLiveDetail(rec) {
 
     const cleanSong = s.replace(/_アンコール(?: #\d+)?/g, '').trim();
     const songInfo = songData[cleanSong];
+    
+    // 年別・タイプ別集計処理
     if (songInfo) {
       const normalizedType = normalizeType(songInfo.type);
-      if (typeCounts[normalizedType] !== undefined) typeCounts[normalizedType]++;
-      else typeCounts['その他']++;
+      const y = songInfo.year;
+      if(y) {
+         if(!yearCounts[y]) yearCounts[y] = { '表題曲': 0, 'カップリング曲': 0, 'アルバム曲': 0, 'その他': 0 };
+         if(yearCounts[y][normalizedType] !== undefined) yearCounts[y][normalizedType]++;
+         else yearCounts[y]['その他']++;
+      }
     }
 
     let currentEncore = s.includes('_アンコール') ? (s.includes('#3') ? 3 : s.includes('#2') ? 2 : 1) : 0;
@@ -1014,9 +1020,34 @@ function showLiveDetail(rec) {
     setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${timeline}</div>`;
   });
 
+  // ヒートマップ（成分分布図）HTML生成
+  const sortedYears = Object.keys(yearCounts).sort((a,b) => a-b);
+  let heatmapHtml = '';
+  sortedYears.forEach(y => {
+      const d = yearCounts[y];
+      let bars = '';
+      // 色定義: 表題(Pink), CW(Blue), Album(Yellow), Other(Gray)
+      for(let i=0; i<d['表題曲']; i++) bars += `<div style="width:8px; height:12px; background:${THEME_COLORS.PINK}; margin-right:2px; border-radius:1px;"></div>`;
+      for(let i=0; i<d['カップリング曲']; i++) bars += `<div style="width:8px; height:12px; background:#3B82F6; margin-right:2px; border-radius:1px;"></div>`;
+      for(let i=0; i<d['アルバム曲']; i++) bars += `<div style="width:8px; height:12px; background:#EAB308; margin-right:2px; border-radius:1px;"></div>`;
+      for(let i=0; i<d['その他']; i++) bars += `<div style="width:8px; height:12px; background:#E5E7EB; margin-right:2px; border-radius:1px;"></div>`;
+
+      heatmapHtml += `<div class="flex items-center mb-1"><div class="text-[10px] text-gray-400 font-mono w-8 text-right mr-2 leading-none">${y}</div><div class="flex flex-wrap items-center">${bars}</div></div>`;
+  });
+
   const legendHtml = `<div class="flex flex-col items-end justify-end pb-1"><div class="text-[10px] text-gray-400 leading-none mb-1 text-center w-full">リリース年</div><div class="flex items-center text-[10px] text-gray-400 leading-none"><span class="mr-1">1998</span><div class="w-20 h-[1px] bg-gray-300 mx-1 relative flex items-center justify-center"><div class="w-2 h-2 rounded-full shadow-sm" style="background-color: var(--aiko-pink);"></div></div><span class="ml-1">${maxYear}</span></div></div>`;
 
-  const summaryHtml = `<div class="mt-6 p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between"><div class="flex-1"><div class="mb-2 text-sm font-bold text-gray-600">📊 このライブの成分表</div><div class="text-xs font-bold leading-relaxed"><div class="text-aiko-pink">● 表題曲: ${typeCounts['表題曲']}</div><div class="text-blue-500">● カップリング: ${typeCounts['カップリング曲']}</div><div class="text-yellow-500">● アルバム: ${typeCounts['アルバム曲']}</div></div></div><div style="width: 80px; height: 80px; flex-shrink: 0;"><canvas id="component-chart"></canvas></div></div>`;
+  const summaryHtml = `<div class="mt-6 p-3 bg-gray-50 rounded-lg border border-gray-100">
+    <div class="mb-3 text-sm font-bold text-gray-600 flex justify-between items-center">
+      <span>📊 成分表 (Release Year)</span>
+      <div class="flex gap-2 text-[10px] font-normal">
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-aiko-pink inline-block"></span>表題</span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-blue-500 inline-block"></span>C/W</span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-yellow-500 inline-block"></span>Alb</span>
+      </div>
+    </div>
+    <div class="pt-1">${heatmapHtml}</div>
+  </div>`;
 
   const setlistHeaderHtml = `<div class="flex justify-between items-end mt-8 mb-2"><h3 class="font-bold text-gray-700 text-lg cursor-pointer flex items-center gap-2" onclick="copySetlist()">🎵 セットリスト</h3>${legendHtml}</div>`;
 
@@ -1086,7 +1117,8 @@ function showLiveDetail(rec) {
       }
   }
 
-  setTimeout(() => renderComponentChart(typeCounts), 0);
+  // ヒートマップに変更したためグラフ描画は不要
+  // setTimeout(() => renderComponentChart(typeCounts), 0); 
 }
 
 function hideDetailView() {
@@ -1094,11 +1126,12 @@ function hideDetailView() {
   document.getElementById('live-detail').style.display = 'none';
   document.getElementById('back-button-fixed').style.display = 'none';
   document.querySelector('nav').style.display = 'flex';
-  
-  if (chartInstances.component) {
-    chartInstances.component.destroy();
-    chartInstances.component = null;
-  }
+   
+  // ヒートマップ化したためChart.jsの破棄処理は不要
+  // if (chartInstances.component) {
+  //   chartInstances.component.destroy();
+  //   chartInstances.component = null;
+  // }
 
   applyFilters();
 
