@@ -1022,14 +1022,18 @@ function showLiveDetail(rec) {
     if (row === 3) return ''; // その他は表示しない
 
     // スタイル定義
-    // 修正: 高さをジャケ写に合わせて24pxに拡大
+    // 修正: 高さは24pxのまま維持。
     const containerStyle = 'position:relative; width:100%; height:24px; display:flex; flex-direction:column; justify-content:space-between; margin-top:0px;'; 
-    const lineStyle = 'width:100%; height:5px; background-color:#f3f4f6; border-radius:1px;';
+    // 修正: ラインを7pxに太くしました
+    const lineStyle = 'width:100%; height:7px; background-color:#f3f4f6; border-radius:1px;';
     
     // マーカー (該当する行にだけ絶対配置で置く)
-    // 修正: 高さが広がった分、隙間も広がったので計算式を変更 (row * 9.5px)
-    const topPos = row * 9.5; 
-    const markerStyle = `position:absolute; left:${percent}%; top:${topPos}px; width:6px; height:5px; background-color:${dotColor}; border-radius:1px; z-index:2;`;
+    // 修正: ラインが太くなったので、マーカーのトップ位置の計算式を変更 (row * 8.5px)
+    // ※計算ロジック: 24pxの中に7pxの棒が3本入ると、残り隙間は3px(1.5pxずつ)。
+    // 0行目=0px, 1行目=8.5px, 2行目=17px となります。
+    const topPos = row * 8.5; 
+    // 修正: マーカーの高さもラインに合わせて7pxに変更
+    const markerStyle = `position:absolute; left:${percent}%; top:${topPos}px; width:6px; height:7px; background-color:${dotColor}; border-radius:1px; z-index:2;`;
     
     return `
       <div class="timeline-container" style="height:auto; padding:0; background:transparent;" onclick="alert('${songYear}年 ${type}'); event.stopPropagation();">
