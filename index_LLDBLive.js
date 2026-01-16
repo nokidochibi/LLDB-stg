@@ -1078,18 +1078,29 @@ function showLiveDetail(rec) {
   if (rec.afterLiveTweet) {
       // x.com を twitter.com に置換 (埋め込み表示の互換性確保のため)
       let tweetUrl = rec.afterLiveTweet.replace('x.com', 'twitter.com');
+      
       tweetHtml = `
         <div class="mt-10 pt-8 border-t border-dashed border-gray-200">
-           <h3 class="font-bold text-gray-700 text-lg mb-4 flex items-center gap-2">
-             <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" style="color: #000000;">
-               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
-             </svg>
-             <span style="color: #000000;">After Live</span>
-           </h3>
+           <a href="${tweetUrl}" target="_blank" rel="noopener noreferrer" class="block w-fit mx-auto mb-4 no-underline hover:opacity-70 transition">
+             <h3 class="font-bold text-gray-700 text-lg flex items-center gap-2 justify-center">
+               <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" style="color: #000000;">
+                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+               </svg>
+               <span style="color: #000000;">After Live</span>
+               <i data-lucide="external-link" class="w-4 h-4 text-gray-400 ml-1"></i>
+             </h3>
+           </a>
+
            <div class="flex justify-center" style="min-height: 200px;">
              <blockquote class="twitter-tweet" data-lang="ja" data-theme="light" data-align="center">
                <a href="${tweetUrl}"></a>
              </blockquote>
+           </div>
+           
+           <div class="text-center mt-2">
+             <a href="${tweetUrl}" target="_blank" rel="noopener noreferrer" class="text-xs text-gray-400 underline decoration-gray-300">
+               アプリで開く
+             </a>
            </div>
         </div>`;
   }
