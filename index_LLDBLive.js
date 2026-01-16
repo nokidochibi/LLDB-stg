@@ -586,6 +586,7 @@ function renderHeatmap(setlist) {
   const endYear = new Date().getFullYear();
   
   // ヒートマップ用のデータ集計
+  // counts[type][year] = count
   const counts = { '表題曲': {}, 'カップリング曲': {}, 'アルバム曲': {} };
   
   setlist.forEach(s => {
@@ -607,36 +608,51 @@ function renderHeatmap(setlist) {
   });
 
   // HTML生成 (Grid Layout)
-  let html = '<div class="flex items-end justify-between gap-[2px] pt-2 pb-2 overflow-x-auto select-none no-scrollbar" style="width:100%;">';
+  let html = '<div class="flex items-end gap-[1px] min-w-max pt-2">';
   
   for (let y = startYear; y <= endYear; y++) {
-     const isDecade = (y % 10 === 0);
-     const isStart = (y === startYear);
-     const isEnd = (y === endYear);
-     const showYear = isDecade || isStart || isEnd;
-
      const cTitle = counts['表題曲'][y] || 0;
      const cCW = counts['カップリング曲'][y] || 0;
      const cAlbum = counts['アルバム曲'][y] || 0;
 
-     html += `<div class="flex flex-col gap-[2px] items-center relative" style="flex:1; min-width:6px;">`;
+     // 濃さの計算 (1回:薄い ~ 3回以上:濃い)
+     const getOpacity = (c) => c >= 3 ? 1 : c === 2 ? 0.7 : c === 1 ? 0.4 : 0.05;
+     
+     // 色定義
+     const colorTitle = `rgba(255, 105, 180, ${getOpacity(cTitle)})`; // Pink
+     const colorCW    = `rgba(59, 130, 246, ${getOpacity(cCW)})`;    // Blue
+     const colorAlbum = `rgba(234, 179, 8, ${getOpacity(cAlbum)})`;   // Yellow
 
-     // 上段: 表題 (Pink)
-     html += `<div class="w-full h-[6px] rounded-[1px] ${cTitle > 0 ? '' : 'bg-gray-100'}" style="${cTitle > 0 ? 'background-color:'+THEME_COLORS.PINK : ''}" title="${y}年: 表題曲"></div>`;
-     // 中段: C/W (Blue)
-     html += `<div class="w-full h-[6px] rounded-[1px] ${cCW > 0 ? 'bg-blue-400' : 'bg-gray-100'}" title="${y}年: C/W"></div>`;
-     // 下段: Album (Yellow)
-     html += `<div class="w-full h-[6px] rounded-[1px] ${cAlbum > 0 ? 'bg-yellow-400' : 'bg-gray-100'}" title="${y}年: Album"></div>`;
+     // セルのスタイル
+     const cellBase = "w-6 h-6 flex items-center justify-center text-[10px] font-bold text-gray-700 leading-none select-none rounded-[1px]";
+     const emptyStyle = "background-color: #f3f4f6; color: transparent;"; // 空の場合
 
-     // 年ラベル (10年ごと、開始、終了のみ表示)
-     if (showYear) {
-         html += `<div class="absolute top-full mt-1 text-[8px] text-gray-400 whitespace-nowrap" style="left:50%; transform:translateX(-50%);">${y}</div>`;
-     }
+     html += `<div class="flex flex-col gap-[1px]">`;
+
+     // 上段: 表題
+     let styleTitle = cTitle > 0 ? `background-color:${colorTitle}; color:${cTitle >= 3 ? 'white' : 'inherit'}` : emptyStyle;
+     html += `<div class="${cellBase}" style="${styleTitle}">${cTitle > 0 ? cTitle : ''}</div>`;
+     
+     // 中段: カップリング
+     let styleCW = cCW > 0 ? `background-color:${colorCW}; color:${cCW >= 3 ? 'white' : 'inherit'}` : emptyStyle;
+     html += `<div class="${cellBase}" style="${styleCW}">${cCW > 0 ? cCW : ''}</div>`;
+     
+     // 下段: アルバム
+     let styleAlbum = cAlbum > 0 ? `background-color:${colorAlbum}; color:${cAlbum >= 3 ? 'white' : 'inherit'}` : emptyStyle;
+     html += `<div class="${cellBase}" style="${styleAlbum}">${cAlbum > 0 ? cAlbum : ''}</div>`;
+
+     // 年ラベル (90度回転)
+     html += `<div class="w-6 h-12 relative mt-1"><div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[10px] text-gray-400 font-mono whitespace-nowrap">${y}</div></div>`;
 
      html += `</div>`;
   }
   html += '</div>';
   container.innerHTML = html;
+  
+  // 右端（最新年）へスクロール
+  setTimeout(() => {
+      container.scrollLeft = container.scrollWidth;
+  }, 100);
 }
 
 // -----------------------------------------------------------
@@ -1033,7 +1049,18 @@ function showLiveDetail(rec) {
 
   const legendHtml = `<div class="flex flex-col items-end justify-end pb-1"><div class="text-[10px] text-gray-400 leading-none mb-1 text-center w-full">リリース年</div><div class="flex items-center text-[10px] text-gray-400 leading-none"><span class="mr-1">1998</span><div class="w-20 h-[1px] bg-gray-300 mx-1 relative flex items-center justify-center"><div class="w-2 h-2 rounded-full shadow-sm" style="background-color: var(--aiko-pink);"></div></div><span class="ml-1">${maxYear}</span></div></div>`;
 
-  const summaryHtml = `<div class="mt-6 p-3 bg-gray-50 rounded-lg border border-gray-100"><div class="flex items-center justify-between mb-3"><div class="text-sm font-bold text-gray-600">📊 このライブの成分表</div><div class="text-xs font-bold flex gap-3"><span class="text-aiko-pink">● 表題:${typeCounts['表題曲']}</span><span class="text-blue-500">● C/W:${typeCounts['カップリング曲']}</span><span class="text-yellow-500">● AL:${typeCounts['アルバム曲']}</span></div></div><div id="heatmap-container"></div></div>`;
+  const summaryHtml = `
+    <div class="mt-8 mb-4">
+      <div class="card-base bg-white p-4 border border-gray-100 shadow-sm">
+        <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2">📊 成分分布図</h3>
+        <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs font-bold mb-3">
+          <span class="text-aiko-pink">● 表題曲: ${typeCounts['表題曲']}</span>
+          <span class="text-blue-500">● カップリング: ${typeCounts['カップリング曲']}</span>
+          <span class="text-yellow-500">● アルバム: ${typeCounts['アルバム曲']}</span>
+        </div>
+        <div id="heatmap-container" class="w-full overflow-x-auto no-scrollbar pb-2"></div>
+      </div>
+    </div>`;
 
   const setlistHeaderHtml = `<div class="flex justify-between items-end mt-8 mb-2"><h3 class="font-bold text-gray-700 text-lg cursor-pointer flex items-center gap-2" onclick="copySetlist()">🎵 セットリスト</h3>${legendHtml}</div>`;
 
