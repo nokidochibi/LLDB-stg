@@ -162,14 +162,7 @@ function startLoadingAnimation(mode) {
   delays.forEach(item => {
     setTimeout(() => {
       const element = document.getElementById(item.id);
-      if (element) {
-          // 強制的に表示させるためのスタイルを複数適用
-          element.classList.remove('opacity-0');
-          element.classList.remove('hidden'); 
-          element.style.opacity = '1';
-          element.style.display = 'block'; 
-          element.style.visibility = 'visible';
-      }
+      if (element) element.classList.remove('opacity-0');
     }, item.delay);
   });
 
@@ -592,7 +585,7 @@ function renderHeatmap(setlist) {
   const startYear = 1998;
   const endYear = new Date().getFullYear();
   
-  // ヒートマップ用のデータ集計 (数だけでなく曲名も保持するように変更)
+  // ヒートマップ用のデータ集計
   const counts = { '表題曲': {}, 'カップリング曲': {}, 'アルバム曲': {} };
   
   setlist.forEach(s => {
@@ -603,16 +596,13 @@ function renderHeatmap(setlist) {
 
     let type = 'その他';
     if (info.type) {
-          if (info.type.includes('表題') || info.type.includes('シングル')) type = '表題曲';
-          else if (info.type.includes('カップリング') || info.type.includes('C/W') || info.type.includes('B面')) type = 'カップリング曲';
-          else if (info.type.includes('アルバム') || info.type.includes('Album')) type = 'アルバム曲';
+         if (info.type.includes('表題') || info.type.includes('シングル')) type = '表題曲';
+         else if (info.type.includes('カップリング') || info.type.includes('C/W') || info.type.includes('B面')) type = 'カップリング曲';
+         else if (info.type.includes('アルバム') || info.type.includes('Album')) type = 'アルバム曲';
     }
     
     if (counts[type]) {
-        // オブジェクト初期化 { count: 0, songs: [] }
-        if (!counts[type][info.year]) counts[type][info.year] = { count: 0, songs: [] };
-        counts[type][info.year].count++;
-        counts[type][info.year].songs.push(clean);
+        counts[type][info.year] = (counts[type][info.year] || 0) + 1;
     }
   });
 
@@ -623,49 +613,42 @@ function renderHeatmap(setlist) {
   let html = '<div class="flex items-end justify-between w-full pt-2 gap-px">';
   
   for (let y = startYear; y <= endYear; y++) {
-     const dTitle = counts['表題曲'][y] || { count: 0, songs: [] };
-     const dCW = counts['カップリング曲'][y] || { count: 0, songs: [] };
-     const dAlbum = counts['アルバム曲'][y] || { count: 0, songs: [] };
+     const cTitle = counts['表題曲'][y] || 0;
+     const cCW = counts['カップリング曲'][y] || 0;
+     const cAlbum = counts['アルバム曲'][y] || 0;
 
      // 濃さの計算
      const getOpacity = (c) => c >= 3 ? 1 : c === 2 ? 0.7 : c === 1 ? 0.4 : 0.05;
      
-     const colorTitle = `rgba(255, 105, 180, ${getOpacity(dTitle.count)})`;
-     const colorCW    = `rgba(59, 130, 246, ${getOpacity(dCW.count)})`;
-     const colorAlbum = `rgba(234, 179, 8, ${getOpacity(dAlbum.count)})`;
+     const colorTitle = `rgba(255, 105, 180, ${getOpacity(cTitle)})`;
+     const colorCW    = `rgba(59, 130, 246, ${getOpacity(cCW)})`;
+     const colorAlbum = `rgba(234, 179, 8, ${getOpacity(cAlbum)})`;
 
      // セルのスタイル
-     const cellBase = "w-full h-5 flex items-center justify-center text-[8px] font-bold text-gray-700 leading-none select-none rounded-[1px] overflow-hidden cursor-pointer";
+     const cellBase = "w-full h-5 flex items-center justify-center text-[8px] font-bold text-gray-700 leading-none select-none rounded-[1px] overflow-hidden";
      
+     // 未来（ライブ年より後）かどうかで空セルの色を変える
      const isFuture = y > liveYear;
      const emptyStyle = isFuture 
-        ? "background-color: #d1d5db; color: transparent; cursor: default;" 
-        : "background-color: #f3f4f6; color: transparent; cursor: default;";
+        ? "background-color: #d1d5db; color: transparent;" // 未来: 濃いグレー
+        : "background-color: #f3f4f6; color: transparent;"; // 過去・現在: 薄いグレー
 
      html += `<div class="flex flex-col gap-px flex-1">`;
 
-     // クリック時のアクション生成関数
-     const getOnClick = (year, type, data) => {
-        if (data.count === 0) return '';
-        const songList = data.songs.join('\\n・');
-        return `onclick="alert('${year}年 ${type}\\n・${songList}')"`;
-     };
-
      // 上段: 表題
-     let styleTitle = dTitle.count > 0 ? `background-color:${colorTitle}; color:${dTitle.count >= 3 ? 'white' : 'inherit'}` : emptyStyle;
-     html += `<div class="${cellBase}" style="${styleTitle}" ${getOnClick(y, '表題曲', dTitle)}>${dTitle.count > 0 ? dTitle.count : ''}</div>`;
+     let styleTitle = cTitle > 0 ? `background-color:${colorTitle}; color:${cTitle >= 3 ? 'white' : 'inherit'}` : emptyStyle;
+     html += `<div class="${cellBase}" style="${styleTitle}">${cTitle > 0 ? cTitle : ''}</div>`;
      
      // 中段: カップリング
-     let styleCW = dCW.count > 0 ? `background-color:${colorCW}; color:${dCW.count >= 3 ? 'white' : 'inherit'}` : emptyStyle;
-     html += `<div class="${cellBase}" style="${styleCW}" ${getOnClick(y, 'カップリング曲', dCW)}>${dCW.count > 0 ? dCW.count : ''}</div>`;
+     let styleCW = cCW > 0 ? `background-color:${colorCW}; color:${cCW >= 3 ? 'white' : 'inherit'}` : emptyStyle;
+     html += `<div class="${cellBase}" style="${styleCW}">${cCW > 0 ? cCW : ''}</div>`;
      
      // 下段: アルバム
-     let styleAlbum = dAlbum.count > 0 ? `background-color:${colorAlbum}; color:${dAlbum.count >= 3 ? 'white' : 'inherit'}` : emptyStyle;
-     html += `<div class="${cellBase}" style="${styleAlbum}" ${getOnClick(y, 'アルバム曲', dAlbum)}>${dAlbum.count > 0 ? dAlbum.count : ''}</div>`;
+     let styleAlbum = cAlbum > 0 ? `background-color:${colorAlbum}; color:${cAlbum >= 3 ? 'white' : 'inherit'}` : emptyStyle;
+     html += `<div class="${cellBase}" style="${styleAlbum}">${cAlbum > 0 ? cAlbum : ''}</div>`;
 
      // 年ラベル (修正: グラフに合わせてサイズ10px、色を濃く、フォントを標準に変更)
      html += `<div class="w-full h-10 relative mt-1"><div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[10px] text-gray-500 whitespace-nowrap">${y}</div></div>`;
-
      html += `</div>`;
   }
   html += '</div>';
@@ -1020,9 +1003,9 @@ function showLiveDetail(rec) {
     let percent = ((songYear - minYear) / (maxYear - minYear)) * 100;
     percent = Math.max(0, Math.min(100, percent));
 
-    // タイプ判定と行の決定
+    // タイプ判定と行の決定 (0:表題, 1:CW, 2:アルバム)
     const type = normalizeType(songInfo.type);
-    let row = 3; 
+    let row = 3; // デフォルト(その他)
     let dotColor = '#D1D5DB';
 
     // 修正: 色を成分分布図の「1回演奏(濃度0.4)」と同じ薄さに変更
@@ -1037,32 +1020,29 @@ function showLiveDetail(rec) {
       dotColor = 'rgba(234, 179, 8, 0.4)';
     }
 
-    if (row === 3) return ''; 
+    if (row === 3) return ''; // その他は表示しない
 
     // スタイル定義
-    // 修正: 高さは24pxのまま維持
-    const containerStyle = 'position:relative; width:100%; height:24px; display:flex; flex-direction:column; justify-content:space-between; margin-top:0px; cursor:pointer;'; 
-    // 修正: ライン7px
+    // 修正: 高さは24pxのまま維持。
+    const containerStyle = 'position:relative; width:100%; height:24px; display:flex; flex-direction:column; justify-content:space-between; margin-top:0px;'; 
+    // 修正: ラインを7pxに太くしました
     const lineStyle = 'width:100%; height:7px; background-color:#f3f4f6; border-radius:1px;';
     
-    // 修正: マーカー位置 (row * 8.5px)
+    // マーカー (該当する行にだけ絶対配置で置く)
+    // 修正: ラインが太くなったので、マーカーのトップ位置の計算式を変更 (row * 8.5px)
+    // ※計算ロジック: 24pxの中に7pxの棒が3本入ると、残り隙間は3px(1.5pxずつ)。
+    // 0行目=0px, 1行目=8.5px, 2行目=17px となります。
     const topPos = row * 8.5; 
-    // 修正: マーカー高さ7px
+    // 修正: マーカーの高さもラインに合わせて7pxに変更
     const markerStyle = `position:absolute; left:${percent}%; top:${topPos}px; width:6px; height:7px; background-color:${dotColor}; border-radius:1px; z-index:2;`;
-
-    // 吹き出し（ツールチップ）のスタイル
-    const tooltipStyle = 'position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:4px; padding:2px 6px; background:rgba(0,0,0,0.8); color:#fff; font-size:10px; border-radius:3px; white-space:nowrap; display:none; z-index:10; pointer-events:none;';
-
-    // クリックで吹き出し表示をトグルする
+    
     return `
-      <div class="timeline-container" style="height:auto; padding:0; background:transparent;" onclick="const t=this.querySelector('.tooltip'); t.style.display = (t.style.display==='none') ? 'block' : 'none'; event.stopPropagation();">
+      <div class="timeline-container" style="height:auto; padding:0; background:transparent;" onclick="alert('${songYear}年 ${type}'); event.stopPropagation();">
         <div style="${containerStyle}">
           <div style="${lineStyle}"></div>
           <div style="${lineStyle}"></div>
           <div style="${lineStyle}"></div>
-          <div style="${markerStyle}">
-             <div class="tooltip" style="${tooltipStyle}">${songYear}</div>
-          </div>
+          <div style="${markerStyle}"></div>
         </div>
       </div>`;
   }
@@ -1135,7 +1115,7 @@ function showLiveDetail(rec) {
     <div class="mt-8 mb-4">
       <div class="card-base bg-white p-4 border border-gray-100 shadow-sm">
         <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2">📊 成分分布図</h3>
-        <div class="flex flex-wrap gap-x-3 gap-y-1 text-sm font-bold mb-1">
+        <div class="flex flex-wrap gap-x-3 gap-y-1 text-sm font-bold mb-3">
           <span class="text-aiko-pink">● 表題曲: ${typeCounts['表題曲']}</span>
           <span class="text-blue-500">● カップリング曲: ${typeCounts['カップリング曲']}</span>
           <span class="text-yellow-500">● アルバム曲: ${typeCounts['アルバム曲']}</span>
@@ -1146,7 +1126,7 @@ function showLiveDetail(rec) {
 
   // 修正: 右側に表示していた凡例変数を削除してスッキリさせました
   const setlistHeaderHtml = `<div class="flex justify-between items-end mt-8 mb-2"><h3 class="font-bold text-gray-700 text-lg cursor-pointer flex items-center gap-2" onclick="copySetlist()">🎵 セットリスト</h3></div>`;
-
+  
   const setlistSection = setlistHtml.trim() 
     ? `${summaryHtml}${setlistHeaderHtml}<div class="card-base shadow-none border border-gray-100 pb-2 bg-white">${setlistHtml}</div>` 
     : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3>
@@ -1154,33 +1134,6 @@ function showLiveDetail(rec) {
          この日のセトリがわかる方は　<span class="text-blue-500 underline cursor-pointer font-bold" onclick="if(confirm('セトリ投稿フォームに移動しますか？')){ window.open('https://nokidochibi.github.io/LLDB_SetoriForm/', '_blank'); }">こちら</span>　から教えてください。<br>
          セットリストは　2026年3月4日以降に更新予定です。
        </div>`;
-
-  // ★復活: 終演後ツイートの表示用HTML生成
-  let tweetHtml = '';
-  if (rec.afterLiveTweet) {
-      let embedUrl = rec.afterLiveTweet.replace('x.com', 'twitter.com');
-      let linkUrl = rec.afterLiveTweet;
-
-      tweetHtml = `
-        <div class="mt-10 pt-8 border-t border-dashed border-gray-200">
-           <h3 class="font-bold text-gray-700 text-lg mb-4 flex items-center gap-2 justify-start">
-             <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" style="color: #000000;">
-               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
-             </svg>
-             <span style="color: #000000;">After Live</span>
-           </h3>
-
-           <div class="relative w-full flex justify-center" style="min-height: 200px;">
-             <blockquote class="twitter-tweet" data-lang="ja" data-theme="light" data-align="center">
-               <a href="${embedUrl}"></a>
-             </blockquote>
-             <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" 
-                class="absolute inset-0 z-20 w-full h-full cursor-pointer" 
-                style="background: transparent;">
-             </a>
-           </div>
-        </div>`;
-  }
 
   // ★追加: 終演後ツイートの表示用HTML生成
   let tweetHtml = '';
