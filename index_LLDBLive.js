@@ -647,9 +647,8 @@ function renderHeatmap(setlist) {
      let styleAlbum = cAlbum > 0 ? `background-color:${colorAlbum}; color:${cAlbum >= 3 ? 'white' : 'inherit'}` : emptyStyle;
      html += `<div class="${cellBase}" style="${styleAlbum}">${cAlbum > 0 ? cAlbum : ''}</div>`;
 
-     // 年ラベル
-     html += `<div class="w-full h-10 relative mt-1"><div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[8px] text-gray-400 font-mono whitespace-nowrap">${y}</div></div>`;
-
+     // 年ラベル (修正: グラフに合わせてサイズ10px、色を濃く、フォントを標準に変更)
+     html += `<div class="w-full h-10 relative mt-1"><div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[10px] text-gray-500 whitespace-nowrap">${y}</div></div>`;
      html += `</div>`;
   }
   html += '</div>';
@@ -1068,8 +1067,8 @@ function showLiveDetail(rec) {
     }
     // --- ジャケット画像エリア生成 (End) ---
 
-    // ★修正: 曲名エリアの幅を「54%」に変更して、画像を少し右へ移動させます。(数字を大きくするとさらに右へ行きます)
-    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 54%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
+    // ★修正: 曲名エリアの幅を「60%」に変更して、画像を少し右へ移動させます。(数字を大きくするとさらに右へ行きます)
+    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 60%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
   });
 
   // 修正: 凡例のスタイルもグラフに合わせて width:4px に変更
