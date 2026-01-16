@@ -585,8 +585,6 @@ function renderHeatmap(setlist) {
   const startYear = 1998;
   const endYear = new Date().getFullYear();
   
-  // ヒートマップ用のデータ集計
-  // counts[type][year] = count
   const counts = { '表題曲': {}, 'カップリング曲': {}, 'アルバム曲': {} };
   
   setlist.forEach(s => {
@@ -607,52 +605,47 @@ function renderHeatmap(setlist) {
     }
   });
 
-  // HTML生成 (Grid Layout)
-  let html = '<div class="flex items-end gap-[1px] min-w-max pt-2">';
+  // HTML生成 (画面内に収めるため w-full と gap-px を使用)
+  let html = '<div class="flex items-end justify-between w-full pt-2 gap-px">';
   
   for (let y = startYear; y <= endYear; y++) {
      const cTitle = counts['表題曲'][y] || 0;
      const cCW = counts['カップリング曲'][y] || 0;
      const cAlbum = counts['アルバム曲'][y] || 0;
 
-     // 濃さの計算 (1回:薄い ~ 3回以上:濃い)
+     // 濃さの計算
      const getOpacity = (c) => c >= 3 ? 1 : c === 2 ? 0.7 : c === 1 ? 0.4 : 0.05;
      
-     // 色定義
-     const colorTitle = `rgba(255, 105, 180, ${getOpacity(cTitle)})`; // Pink
-     const colorCW    = `rgba(59, 130, 246, ${getOpacity(cCW)})`;    // Blue
-     const colorAlbum = `rgba(234, 179, 8, ${getOpacity(cAlbum)})`;   // Yellow
+     const colorTitle = `rgba(255, 105, 180, ${getOpacity(cTitle)})`;
+     const colorCW    = `rgba(59, 130, 246, ${getOpacity(cCW)})`;
+     const colorAlbum = `rgba(234, 179, 8, ${getOpacity(cAlbum)})`;
 
-     // セルのスタイル
-     const cellBase = "w-6 h-6 flex items-center justify-center text-[10px] font-bold text-gray-700 leading-none select-none rounded-[1px]";
-     const emptyStyle = "background-color: #f3f4f6; color: transparent;"; // 空の場合
+     // セルのスタイル: 幅を可変(w-full)にし、高さを少し詰め、文字サイズを縮小
+     const cellBase = "w-full h-5 flex items-center justify-center text-[8px] font-bold text-gray-700 leading-none select-none rounded-[1px] overflow-hidden";
+     const emptyStyle = "background-color: #f3f4f6; color: transparent;";
 
-     html += `<div class="flex flex-col gap-[1px]">`;
+     // flex-1 で均等割り付け
+     html += `<div class="flex flex-col gap-px flex-1">`;
 
-     // 上段: 表題
+     // 上段
      let styleTitle = cTitle > 0 ? `background-color:${colorTitle}; color:${cTitle >= 3 ? 'white' : 'inherit'}` : emptyStyle;
      html += `<div class="${cellBase}" style="${styleTitle}">${cTitle > 0 ? cTitle : ''}</div>`;
      
-     // 中段: カップリング
+     // 中段
      let styleCW = cCW > 0 ? `background-color:${colorCW}; color:${cCW >= 3 ? 'white' : 'inherit'}` : emptyStyle;
      html += `<div class="${cellBase}" style="${styleCW}">${cCW > 0 ? cCW : ''}</div>`;
      
-     // 下段: アルバム
+     // 下段
      let styleAlbum = cAlbum > 0 ? `background-color:${colorAlbum}; color:${cAlbum >= 3 ? 'white' : 'inherit'}` : emptyStyle;
      html += `<div class="${cellBase}" style="${styleAlbum}">${cAlbum > 0 ? cAlbum : ''}</div>`;
 
-     // 年ラベル (90度回転)
-     html += `<div class="w-6 h-12 relative mt-1"><div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[10px] text-gray-400 font-mono whitespace-nowrap">${y}</div></div>`;
+     // 年ラベル: 90度回転、幅可変
+     html += `<div class="w-full h-10 relative mt-1"><div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[8px] text-gray-400 font-mono whitespace-nowrap">${y}</div></div>`;
 
      html += `</div>`;
   }
   html += '</div>';
   container.innerHTML = html;
-  
-  // 右端（最新年）へスクロール
-  setTimeout(() => {
-      container.scrollLeft = container.scrollWidth;
-  }, 100);
 }
 
 // -----------------------------------------------------------
