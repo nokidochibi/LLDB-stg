@@ -1185,12 +1185,42 @@ function showLiveDetail(rec) {
         </div>`;
   }
 
+  // --- 年齢計算ロジック (Start) ---
+  const eventDate = new Date(rec.date);
+  let aikoAge = eventDate.getFullYear() - AIKO_BIRTH.getFullYear();
+  if (eventDate.getMonth() < AIKO_BIRTH.getMonth() || (eventDate.getMonth() === AIKO_BIRTH.getMonth() && eventDate.getDate() < AIKO_BIRTH.getDate())) {
+    aikoAge--;
+  }
+
+  let userAgeInfo = '';
+  // ユーザーの生年月日設定がある場合のみ計算
+  if (userUserData.settings && userUserData.settings.birthDate) {
+    const userBirth = new Date(userUserData.settings.birthDate);
+    if (!isNaN(userBirth.getTime())) {
+      let userAge = eventDate.getFullYear() - userBirth.getFullYear();
+      if (eventDate.getMonth() < userBirth.getMonth() || (eventDate.getMonth() === userBirth.getMonth() && eventDate.getDate() < userBirth.getDate())) {
+        userAge--;
+      }
+      
+      if (userAge >= 0) {
+         userAgeInfo = ` <span class="text-gray-300">/</span> <span class="text-[10px]">あなた</span> ${userAge}歳`;
+      } else {
+         userAgeInfo = ` <span class="text-gray-300">/</span> <span class="text-[10px] text-gray-300">誕生前</span>`;
+      }
+    }
+  }
+  // --- 年齢計算ロジック (End) ---
+
   detailContainer.innerHTML = `
     <div id="detail-header-area" class="pt-2 -mt-2 cursor-pointer pl-[70px]">
       <h2 class="font-extrabold mb-2 text-aiko-pink text-2xl leading-tight">${rec.tourName}</h2>
     </div>
     <div class="card-base mb-6 bg-white">
-      <p class="text-gray-500 text-xs font-semibold mb-1">開催日</p><p class="font-bold text-lg text-gray-800">${rec.date} (${rec.dayOfWeek})</p>
+      <p class="text-gray-500 text-xs font-semibold mb-1">開催日</p>
+      <div class="flex items-baseline gap-2">
+        <p class="font-bold text-lg text-gray-800">${rec.date} (${rec.dayOfWeek})</p>
+        <span class="text-xs text-gray-500 font-medium">aiko ${aikoAge}歳${userAgeInfo}</span>
+      </div>
       <div class="border-t my-3 border-gray-100"></div>
       <p class="text-gray-500 text-xs font-semibold mb-1">会場</p><p class="font-bold text-lg text-gray-800">${rec.venue} (${rec.region})</p>
     </div>
