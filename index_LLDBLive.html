@@ -649,20 +649,14 @@ button { font-size: 13px !important; }
 </main>
 
 <div id="loading-container" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#0f172a; z-index:9000; display:flex; align-items:center; justify-content:center;">
-  <!-- overflow-hidden を削除して、万が一はみ出ても文字が切れないようにします -->
-  <div class="text-center py-20 font-bold select-none" style="color: white; text-shadow: 0 0 15px white;">
-    
-    <!-- 修正: styleに white-space: nowrap; を追加 -->
+  <div class="text-center py-20 font-bold select-none overflow-hidden" style="color: white; text-shadow: 0 0 15px white;">
+    <!-- 修正: styleに white-space: nowrap; を追加して改行を防止 -->
     <p class="m-0 transition-opacity duration-300" style="font-size:42px; line-height:1.2; white-space: nowrap;">
       <span id="loading-text-1" class="opacity-0">男子ー!!</span> <span id="loading-text-2" class="opacity-0">女子ー!!</span>
     </p>
-    
-    <!-- 修正: styleに white-space: nowrap; を追加 -->
     <p class="m-0 transition-opacity duration-300" style="font-size:42px; line-height:1.2; white-space: nowrap;">
       <span id="loading-text-3" class="opacity-0">そうでない人ー!!</span>
     </p>
-    
-    <!-- 修正: styleに white-space: nowrap; を追加 -->
     <p class="m-0 transition-opacity duration-300" style="font-size:56px; line-height:1.2; margin-top:16px; white-space: nowrap;">
       <span id="loading-text-4" class="opacity-0">ぜー</span><span id="loading-text-5" class="opacity-0">いんっ...!!!</span>
     </p>
