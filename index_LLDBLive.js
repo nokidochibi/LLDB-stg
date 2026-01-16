@@ -163,9 +163,12 @@ function startLoadingAnimation(mode) {
     setTimeout(() => {
       const element = document.getElementById(item.id);
       if (element) {
+          // 強制的に表示させるためのスタイルを複数適用
           element.classList.remove('opacity-0');
-          element.style.opacity = '1'; // 強制的に表示
-          element.style.visibility = 'visible'; // 念のため
+          element.classList.remove('hidden'); 
+          element.style.opacity = '1';
+          element.style.display = 'block'; 
+          element.style.visibility = 'visible';
       }
     }, item.delay);
   });
