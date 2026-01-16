@@ -645,11 +645,33 @@ function renderHeatmap(setlist) {
      html += `<div class="flex flex-col gap-px flex-1">`;
 
      // クリック時のアクション生成関数
-     const getOnClick = (year, type, data) => {
+      const getOnClick = (year, type, data) => {
         if (data.count === 0) return '';
-        const songList = data.songs.join('\\n・');
-        return `onclick="alert('${year}年 ${type}\\n・${songList}')"`;
-     };
+        
+        // 作品ごとに曲をグルーピング
+        const groups = {};
+        data.songs.forEach(song => {
+            const info = songData[song] || {};
+            // タイプに応じてアルバム名かシングル名を取得
+            let source = (type === 'アルバム曲') ? info.album : info.single;
+            if (!source) source = 'その他';
+            
+            if (!groups[source]) groups[source] = [];
+            groups[source].push(song);
+        });
+
+        let msg = `${year}年 ${type}：\\n`;
+        Object.keys(groups).forEach(src => {
+            if (src !== 'その他') {
+                msg += `『${src}』に収録の\\n`;
+            } else {
+                msg += `\\n`;
+            }
+            groups[src].forEach(s => msg += `・${s}\\n`);
+        });
+
+        return `onclick="alert('${msg}')"`;
+      };
 
      // 上段: 表題
      let styleTitle = dTitle.count > 0 ? `background-color:${colorTitle}; color:${dTitle.count >= 3 ? 'white' : 'inherit'}` : emptyStyle;
