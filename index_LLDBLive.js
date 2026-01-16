@@ -1194,14 +1194,18 @@ function showLiveDetail(rec) {
 
   let userAgeInfo = '';
   // ユーザーの生年月日設定がある場合のみ計算
-  if (userUserData.settings && userUserData.settings.birthDate) {
-    const userBirth = new Date(userUserData.settings.birthDate);
+  // ※index.htmlのUserDataManagerの構造に合わせて profile.birthday を参照
+  const userBirthday = userUserData.profile && userUserData.profile.birthday;
+  
+  if (userBirthday) {
+    const userBirth = new Date(userBirthday);
     if (!isNaN(userBirth.getTime())) {
       let userAge = eventDate.getFullYear() - userBirth.getFullYear();
       if (eventDate.getMonth() < userBirth.getMonth() || (eventDate.getMonth() === userBirth.getMonth() && eventDate.getDate() < userBirth.getDate())) {
         userAge--;
       }
       
+      // 生まれる前かどうかで分岐
       if (userAge >= 0) {
          userAgeInfo = ` <span class="text-gray-300">/</span> <span class="text-[10px]">あなた</span> ${userAge}歳`;
       } else {
