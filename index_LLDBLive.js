@@ -1076,12 +1076,14 @@ function showLiveDetail(rec) {
   // ★追加: 終演後ツイートの表示用HTML生成
   let tweetHtml = '';
   if (rec.afterLiveTweet) {
-      // x.com を twitter.com に置換 (埋め込み表示の互換性確保のため)
-      let tweetUrl = rec.afterLiveTweet.replace('x.com', 'twitter.com');
-      
+      // 埋め込み用は twitter.com に統一（widgets.jsの互換性のため）
+      let embedUrl = rec.afterLiveTweet.replace('x.com', 'twitter.com');
+      // リンク用は元のURLを使用（リダイレクトを避けてアプリ起動率を高める）
+      let linkUrl = rec.afterLiveTweet;
+
       tweetHtml = `
         <div class="mt-10 pt-8 border-t border-dashed border-gray-200">
-           <h3 class="font-bold text-gray-700 text-lg mb-4 flex items-center gap-2 justify-center">
+           <h3 class="font-bold text-gray-700 text-lg mb-4 flex items-center gap-2 justify-start">
              <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor" style="color: #000000;">
                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
              </svg>
@@ -1091,11 +1093,11 @@ function showLiveDetail(rec) {
            <div class="relative w-full flex justify-center" style="min-height: 200px;">
              
              <blockquote class="twitter-tweet" data-lang="ja" data-theme="light" data-align="center">
-               <a href="${tweetUrl}"></a>
+               <a href="${embedUrl}"></a>
              </blockquote>
 
-             <a href="${tweetUrl}" target="_blank" rel="noopener noreferrer" 
-                class="absolute inset-0 z-10 w-full h-full cursor-pointer" 
+             <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" 
+                class="absolute inset-0 z-20 w-full h-full cursor-pointer" 
                 style="background: transparent;">
              </a>
            </div>
