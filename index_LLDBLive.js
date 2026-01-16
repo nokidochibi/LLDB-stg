@@ -585,6 +585,7 @@ function renderHeatmap(setlist) {
   const startYear = 1998;
   const endYear = new Date().getFullYear();
   
+  // ヒートマップ用のデータ集計
   const counts = { '表題曲': {}, 'カップリング曲': {}, 'アルバム曲': {} };
   
   setlist.forEach(s => {
@@ -605,7 +606,10 @@ function renderHeatmap(setlist) {
     }
   });
 
-  // HTML生成 (画面内に収めるため w-full と gap-px を使用)
+  // ライブ開催年を取得（未来判定用）
+  const liveYear = currentDisplayingRecord && currentDisplayingRecord.year ? parseInt(currentDisplayingRecord.year) : endYear;
+
+  // HTML生成
   let html = '<div class="flex items-end justify-between w-full pt-2 gap-px">';
   
   for (let y = startYear; y <= endYear; y++) {
@@ -620,26 +624,30 @@ function renderHeatmap(setlist) {
      const colorCW    = `rgba(59, 130, 246, ${getOpacity(cCW)})`;
      const colorAlbum = `rgba(234, 179, 8, ${getOpacity(cAlbum)})`;
 
-     // セルのスタイル: 幅を可変(w-full)にし、高さを少し詰め、文字サイズを縮小
+     // セルのスタイル
      const cellBase = "w-full h-5 flex items-center justify-center text-[8px] font-bold text-gray-700 leading-none select-none rounded-[1px] overflow-hidden";
-     const emptyStyle = "background-color: #f3f4f6; color: transparent;";
+     
+     // 未来（ライブ年より後）かどうかで空セルの色を変える
+     const isFuture = y > liveYear;
+     const emptyStyle = isFuture 
+        ? "background-color: #d1d5db; color: transparent;" // 未来: 濃いグレー
+        : "background-color: #f3f4f6; color: transparent;"; // 過去・現在: 薄いグレー
 
-     // flex-1 で均等割り付け
      html += `<div class="flex flex-col gap-px flex-1">`;
 
-     // 上段
+     // 上段: 表題
      let styleTitle = cTitle > 0 ? `background-color:${colorTitle}; color:${cTitle >= 3 ? 'white' : 'inherit'}` : emptyStyle;
      html += `<div class="${cellBase}" style="${styleTitle}">${cTitle > 0 ? cTitle : ''}</div>`;
      
-     // 中段
+     // 中段: カップリング
      let styleCW = cCW > 0 ? `background-color:${colorCW}; color:${cCW >= 3 ? 'white' : 'inherit'}` : emptyStyle;
      html += `<div class="${cellBase}" style="${styleCW}">${cCW > 0 ? cCW : ''}</div>`;
      
-     // 下段
+     // 下段: アルバム
      let styleAlbum = cAlbum > 0 ? `background-color:${colorAlbum}; color:${cAlbum >= 3 ? 'white' : 'inherit'}` : emptyStyle;
      html += `<div class="${cellBase}" style="${styleAlbum}">${cAlbum > 0 ? cAlbum : ''}</div>`;
 
-     // 年ラベル: 90度回転、幅可変
+     // 年ラベル
      html += `<div class="w-full h-10 relative mt-1"><div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[8px] text-gray-400 font-mono whitespace-nowrap">${y}</div></div>`;
 
      html += `</div>`;
