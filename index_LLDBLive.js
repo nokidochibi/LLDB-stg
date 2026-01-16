@@ -1006,8 +1006,8 @@ function showLiveDetail(rec) {
     if (type === '表題曲') dotColor = THEME_COLORS.PINK; 
     else if (type === 'カップリング曲') dotColor = '#3B82F6'; 
     else if (type === 'アルバム曲') dotColor = '#EAB308'; 
-    // 修正: widthを8pxに太くし、凡例と合わせる
-    return `<div class="timeline-container" onclick="this.querySelector('.timeline-dot').classList.toggle('active'); event.stopPropagation();"><div class="timeline-bar"><div class="timeline-dot" style="left: ${percent}%; background-color: ${dotColor}; width:8px; height:12px; border-radius:1px;"><div class="year-tooltip">${songYear}</div></div></div></div>`;
+    // 修正: border:none; を追加して白枠を削除
+    return `<div class="timeline-container" onclick="this.querySelector('.timeline-dot').classList.toggle('active'); event.stopPropagation();"><div class="timeline-bar"><div class="timeline-dot" style="left: ${percent}%; background-color: ${dotColor}; width:8px; height:12px; border-radius:1px; border:none;"><div class="year-tooltip">${songYear}</div></div></div></div>`;
   }
 
   let setlistHtml = '', songNum = 1, inMedley = false, medleyNum = 1, encoreNum = 0;
