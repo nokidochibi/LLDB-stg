@@ -1880,6 +1880,9 @@ function setupEventListeners() {
   document.getElementById('medley-toggle').addEventListener('change', () => {
       renderSongRanking();
       renderLiveCountChart();
+      // メドレー切り替え時に、現在選択中の曲の演奏回数パネルも更新する
+      const currentSong = document.getElementById('song-search-input').value;
+      renderTotalLiveCategorySummary(currentSong);
   });
 
   document.getElementById('show-setlist-btn').addEventListener('click', () => {
