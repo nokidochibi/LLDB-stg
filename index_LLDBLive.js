@@ -1060,10 +1060,10 @@ function showLiveDetail(rec) {
       const aImg = songInfo.imgA ? `<img src="${songInfo.imgA}" style="${imgStyle}" loading="lazy" alt="A">` : `<span style="${spacerStyle}"></span>`;
 
       // 横並びコンテナ (左に寄せるために margin-right を増やし、左マージンを少し詰める調整も可能ですが、まずは右余白を増やして左に寄せる感覚を出します)
-      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:8px; margin-left:-2px; flex-shrink:0;">${sImg}${aImg}</div>`;
+      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:12px; margin-left:-2px; flex-shrink:0;">${sImg}${aImg}</div>`;
     } else {
       // songInfoがない場合のスペース確保
-      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:8px; margin-left:-2px; flex-shrink:0;"><span style="width:24px;"></span><span style="width:24px;"></span></div>`;
+      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:12px; margin-left:-6px; flex-shrink:0;"><span style="width:24px;"></span><span style="width:24px;"></span></div>`;
     }
     // --- ジャケット画像エリア生成 (End) ---
 
