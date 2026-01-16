@@ -1059,11 +1059,11 @@ function showLiveDetail(rec) {
       // アルバム画像 (赤位置)
       const aImg = songInfo.imgA ? `<img src="${songInfo.imgA}" style="${imgStyle}" loading="lazy" alt="A">` : `<span style="${spacerStyle}"></span>`;
 
-      // 横並びコンテナ (margin-rightを24pxまで増やして年表から離し、margin-leftを-6pxにして曲名に寄せます)
-      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:24px; margin-left:-6px; flex-shrink:0;">${sImg}${aImg}</div>`;
+      // 横並びコンテナ (右側に35%の余白を強制的に確保して、中央付近まで押し出す)
+      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:35%; margin-left:-6px; flex-shrink:0;">${sImg}${aImg}</div>`;
     } else {
-      // songInfoがない場合のスペース確保 (上のスタイルと数値を合わせました)
-      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:24px; margin-left:-6px; flex-shrink:0;"><span style="width:24px;"></span><span style="width:24px;"></span></div>`;
+      // songInfoがない場合のスペース確保
+      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:35%; margin-left:-6px; flex-shrink:0;"><span style="width:24px;"></span><span style="width:24px;"></span></div>`;
     }
     // --- ジャケット画像エリア生成 (End) ---
 
