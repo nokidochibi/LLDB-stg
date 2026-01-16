@@ -1082,8 +1082,8 @@ function showLiveDetail(rec) {
     // --- ジャケット画像エリア生成 (Start) ---
     let jacketsHtml = '';
     if (songInfo) {
-      // 共通スタイル (スマホで見やすい24px)
-      const imgStyle = 'width:24px; height:24px; border-radius:3px; object-fit:cover; display:block; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background-color:#f1f5f9;';
+      // 共通スタイル (長押し・選択・ドラッグを無効化するスタイルを追加)
+      const imgStyle = 'width:24px; height:24px; border-radius:3px; object-fit:cover; display:block; box-shadow: 0 1px 2px rgba(0,0,0,0.1); background-color:#f1f5f9; pointer-events: none; -webkit-touch-callout: none; user-select: none; -webkit-user-drag: none;';
       const spacerStyle = 'width:24px; height:24px; display:block;';
 
       // シングル画像 (青位置)
@@ -1115,7 +1115,7 @@ function showLiveDetail(rec) {
           <span class="text-blue-500">● カップリング: ${typeCounts['カップリング曲']}</span>
           <span class="text-yellow-500">● アルバム: ${typeCounts['アルバム曲']}</span>
         </div>
-        <div id="heatmap-container" class="w-full overflow-x-auto no-scrollbar pb-2"></div>
+        <div id="heatmap-container" class="w-full overflow-hidden pb-2"></div>
       </div>
     </div>`;
 
