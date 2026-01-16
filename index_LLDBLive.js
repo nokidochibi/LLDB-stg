@@ -1008,15 +1008,16 @@ function showLiveDetail(rec) {
     let row = 3; // デフォルト(その他)
     let dotColor = '#D1D5DB';
 
+    // 修正: 色を成分分布図の「1回演奏(濃度0.4)」と同じ薄さに変更
     if (type === '表題曲') {
       row = 0;
-      dotColor = THEME_COLORS.PINK;
+      dotColor = 'rgba(255, 105, 180, 0.4)';
     } else if (type === 'カップリング曲') {
       row = 1;
-      dotColor = '#3B82F6';
+      dotColor = 'rgba(59, 130, 246, 0.4)';
     } else if (type === 'アルバム曲') {
       row = 2;
-      dotColor = '#EAB308';
+      dotColor = 'rgba(234, 179, 8, 0.4)';
     }
 
     if (row === 3) return ''; // その他は表示しない
@@ -1114,10 +1115,10 @@ function showLiveDetail(rec) {
     <div class="mt-8 mb-4">
       <div class="card-base bg-white p-4 border border-gray-100 shadow-sm">
         <h3 class="font-bold text-gray-700 text-sm mb-2 flex items-center gap-2">📊 成分分布図</h3>
-        <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs font-bold mb-3">
+        <div class="flex flex-wrap gap-x-3 gap-y-1 text-sm font-bold mb-3">
           <span class="text-aiko-pink">● 表題曲: ${typeCounts['表題曲']}</span>
-          <span class="text-blue-500">● カップリング: ${typeCounts['カップリング曲']}</span>
-          <span class="text-yellow-500">● アルバム: ${typeCounts['アルバム曲']}</span>
+          <span class="text-blue-500">● カップリング曲: ${typeCounts['カップリング曲']}</span>
+          <span class="text-yellow-500">● アルバム曲: ${typeCounts['アルバム曲']}</span>
         </div>
         <div id="heatmap-container" class="w-full overflow-hidden pb-2"></div>
       </div>
