@@ -1135,7 +1135,7 @@ function showLiveDetail(rec) {
          セットリストは　2026年3月4日以降に更新予定です。
        </div>`;
 
-  // ★追加: 終演後ツイートの表示用HTML生成
+  // ★修正: 終演後ツイートの表示用HTML生成
   let tweetHtml = '';
   if (rec.afterLiveTweet) {
       // 埋め込み用は twitter.com に統一（widgets.jsの互換性のため）
@@ -1153,11 +1153,9 @@ function showLiveDetail(rec) {
            </h3>
 
            <div class="relative w-full flex justify-center" style="min-height: 200px;">
-             
              <blockquote class="twitter-tweet" data-lang="ja" data-theme="light" data-align="center">
                <a href="${embedUrl}"></a>
              </blockquote>
-
              <a href="${linkUrl}" target="_blank" rel="noopener noreferrer" 
                 class="absolute inset-0 z-20 w-full h-full cursor-pointer" 
                 style="background: transparent;">
