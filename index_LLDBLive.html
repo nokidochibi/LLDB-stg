@@ -57,7 +57,6 @@
 .bg-event   { background-color: var(--color-event) !important; }
 
 .text-aiko-pink { color: var(--aiko-pink); }
-.bg-aiko-pink   { background-color: var(--aiko-pink) !important; }
 .text-aiko-red  { color: var(--aiko-red); }
 
 /* =========================================
@@ -94,6 +93,10 @@ body {
   -webkit-overflow-scrolling: touch; 
   padding-bottom: calc(var(--nav-height) + 20px + env(safe-area-inset-bottom));
 }
+
+/* Hide Scrollbar for Heatmap */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Detail View Modifications */
 body.detail-view nav { display: none !important; }
