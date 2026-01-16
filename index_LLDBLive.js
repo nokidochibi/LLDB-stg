@@ -1006,8 +1006,8 @@ function showLiveDetail(rec) {
     if (type === '表題曲') dotColor = THEME_COLORS.PINK; 
     else if (type === 'カップリング曲') dotColor = '#3B82F6'; 
     else if (type === 'アルバム曲') dotColor = '#EAB308'; 
-    // 修正: border:none; を追加して白枠を削除
-    return `<div class="timeline-container" onclick="this.querySelector('.timeline-dot').classList.toggle('active'); event.stopPropagation();"><div class="timeline-bar"><div class="timeline-dot" style="left: ${percent}%; background-color: ${dotColor}; width:8px; height:12px; border-radius:1px; border:none;"><div class="year-tooltip">${songYear}</div></div></div></div>`;
+    // 修正: widthを8pxから4pxに細くしました
+    return `<div class="timeline-container" onclick="this.querySelector('.timeline-dot').classList.toggle('active'); event.stopPropagation();"><div class="timeline-bar"><div class="timeline-dot" style="left: ${percent}%; background-color: ${dotColor}; width:4px; height:12px; border-radius:1px; border:none;"><div class="year-tooltip">${songYear}</div></div></div></div>`;
   }
 
   let setlistHtml = '', songNum = 1, inMedley = false, medleyNum = 1, encoreNum = 0;
@@ -1072,8 +1072,8 @@ function showLiveDetail(rec) {
     setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 54%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
   });
 
-  // 修正: 凡例の丸(rounded-full)を削除し、長方形スタイル(width:8px; height:12px; border-radius:1px;)を適用
-  const legendHtml = `<div class="flex flex-col items-end justify-end pb-1"><div class="text-[10px] text-gray-400 leading-none mb-1 text-center w-full">リリース年</div><div class="flex items-center text-[10px] text-gray-400 leading-none"><span class="mr-1">1998</span><div class="w-20 h-[1px] bg-gray-300 mx-1 relative flex items-center justify-center"><div class="shadow-sm" style="width:8px; height:12px; border-radius:1px; background-color: var(--aiko-pink);"></div></div><span class="ml-1">${maxYear}</span></div></div>`;
+  // 修正: 凡例のスタイルもグラフに合わせて width:4px に変更
+  const legendHtml = `<div class="flex flex-col items-end justify-end pb-1"><div class="text-[10px] text-gray-400 leading-none mb-1 text-center w-full">リリース年</div><div class="flex items-center text-[10px] text-gray-400 leading-none"><span class="mr-1">1998</span><div class="w-20 h-[1px] bg-gray-300 mx-1 relative flex items-center justify-center"><div class="shadow-sm" style="width:4px; height:12px; border-radius:1px; background-color: var(--aiko-pink);"></div></div><span class="ml-1">${maxYear}</span></div></div>`;
 
   const summaryHtml = `
     <div class="mt-8 mb-4">
