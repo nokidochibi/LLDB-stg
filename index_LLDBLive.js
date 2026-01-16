@@ -1059,15 +1059,16 @@ function showLiveDetail(rec) {
       // アルバム画像 (赤位置)
       const aImg = songInfo.imgA ? `<img src="${songInfo.imgA}" style="${imgStyle}" loading="lazy" alt="A">` : `<span style="${spacerStyle}"></span>`;
 
-      // 横並びコンテナ (右側に35%の余白を強制的に確保して、中央付近まで押し出す)
-      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:35%; margin-left:-6px; flex-shrink:0;">${sImg}${aImg}</div>`;
+      // 横並びコンテナ (余計なマージンを削除)
+      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:8px; flex-shrink:0;">${sImg}${aImg}</div>`;
     } else {
       // songInfoがない場合のスペース確保
-      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:35%; margin-left:-6px; flex-shrink:0;"><span style="width:24px;"></span><span style="width:24px;"></span></div>`;
+      jacketsHtml = `<div style="display:flex; gap:4px; margin-right:8px; flex-shrink:0;"><span style="width:24px;"></span><span style="width:24px;"></span></div>`;
     }
     // --- ジャケット画像エリア生成 (End) ---
 
-    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
+    // ★修正: 曲名エリアの幅をデフォルトの60%から「50%」に強制変更。これにより画像が画面のちょうど真ん中から始まります。
+    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 50%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
   });
 
   const legendHtml = `<div class="flex flex-col items-end justify-end pb-1"><div class="text-[10px] text-gray-400 leading-none mb-1 text-center w-full">リリース年</div><div class="flex items-center text-[10px] text-gray-400 leading-none"><span class="mr-1">1998</span><div class="w-20 h-[1px] bg-gray-300 mx-1 relative flex items-center justify-center"><div class="w-2 h-2 rounded-full shadow-sm" style="background-color: var(--aiko-pink);"></div></div><span class="ml-1">${maxYear}</span></div></div>`;
