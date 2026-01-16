@@ -1028,6 +1028,25 @@ function showLiveDetail(rec) {
          セットリストは　2026年3月4日以降に更新予定です。
        </div>`;
 
+  // ★追加: 終演後ツイートの表示用HTML生成
+  let tweetHtml = '';
+  if (rec.afterLiveTweet) {
+      // x.com を twitter.com に置換 (埋め込み表示の互換性確保のため)
+      let tweetUrl = rec.afterLiveTweet.replace('x.com', 'twitter.com');
+      tweetHtml = `
+        <div class="mt-10 pt-8 border-t border-dashed border-gray-200">
+           <h3 class="font-bold text-gray-700 text-lg mb-4 flex items-center gap-2">
+             <i data-lucide="twitter" class="w-5 h-5" style="color: #1DA1F2;"></i>
+             <span style="color: #1DA1F2;">After Live</span>
+           </h3>
+           <div class="flex justify-center" style="min-height: 200px;">
+             <blockquote class="twitter-tweet" data-lang="ja" data-theme="light" data-align="center">
+               <a href="${tweetUrl}"></a>
+             </blockquote>
+           </div>
+        </div>`;
+  }
+
   detailContainer.innerHTML = `
     <div id="detail-header-area" class="pt-2 -mt-2 cursor-pointer pl-[70px]">
       <h2 class="font-extrabold mb-2 text-aiko-pink text-2xl leading-tight">${rec.tourName}</h2>
@@ -1040,11 +1059,30 @@ function showLiveDetail(rec) {
     ${attendanceHtml}
     
     ${setlistSection}
+    ${tweetHtml}
     <p class="text-center text-gray-400 mt-8 text-xs">※注:今まさにあなたが見ているセトリ 間違いじゃないとは言い切れない🌸</p>`;
 
   document.getElementById('detail-header-area').onclick = hideDetailView;
   document.getElementById('app').scrollTop = 0;
   lucide.createIcons(); 
+
+  // ★追加: Twitter埋め込みウィジェットのロード処理
+  if (rec.afterLiveTweet) {
+      if (window.twttr && window.twttr.widgets) {
+          // すでにロード済みの場合は再スキャン
+          window.twttr.widgets.load(document.getElementById('live-detail'));
+      } else {
+          // まだスクリプトがない場合はロード
+          if (!document.getElementById('twitter-wjs')) {
+              const script = document.createElement('script');
+              script.id = 'twitter-wjs';
+              script.src = "https://platform.twitter.com/widgets.js";
+              script.charset = "utf-8";
+              script.async = true;
+              document.body.appendChild(script);
+          }
+      }
+  }
 
   setTimeout(() => renderComponentChart(typeCounts), 0);
 }
