@@ -1022,14 +1022,15 @@ function showLiveDetail(rec) {
     if (row === 3) return ''; // その他は表示しない
 
     // スタイル定義
-    const containerStyle = 'position:relative; width:100%; height:18px; display:flex; flex-direction:column; justify-content:space-between; margin-top:2px;';
-    const lineStyle = 'width:100%; height:5px; background-color:#f3f4f6; border-radius:1px;'; // 薄いグレーの背景線
+    // 修正: 高さをジャケ写に合わせて24pxに拡大
+    const containerStyle = 'position:relative; width:100%; height:24px; display:flex; flex-direction:column; justify-content:space-between; margin-top:0px;'; 
+    const lineStyle = 'width:100%; height:5px; background-color:#f3f4f6; border-radius:1px;';
     
     // マーカー (該当する行にだけ絶対配置で置く)
-    // top位置: 行の高さ(5px) + 隙間(1.5px) を考慮して計算
-    const topPos = row * 6.5; 
+    // 修正: 高さが広がった分、隙間も広がったので計算式を変更 (row * 9.5px)
+    const topPos = row * 9.5; 
     const markerStyle = `position:absolute; left:${percent}%; top:${topPos}px; width:6px; height:5px; background-color:${dotColor}; border-radius:1px; z-index:2;`;
-
+    
     return `
       <div class="timeline-container" style="height:auto; padding:0; background:transparent;" onclick="alert('${songYear}年 ${type}'); event.stopPropagation();">
         <div style="${containerStyle}">
@@ -1103,8 +1104,7 @@ function showLiveDetail(rec) {
     setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 60%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
   });
 
-  // 修正: 凡例のスタイルもグラフに合わせて width:4px に変更
-  const legendHtml = `<div class="flex flex-col items-end justify-end pb-1"><div class="text-[10px] text-gray-400 leading-none mb-1 text-center w-full">リリース年</div><div class="flex items-center text-[10px] text-gray-400 leading-none"><span class="mr-1">1998</span><div class="w-20 h-[1px] bg-gray-300 mx-1 relative flex items-center justify-center"><div class="shadow-sm" style="width:4px; height:12px; border-radius:1px; background-color: var(--aiko-pink);"></div></div><span class="ml-1">${maxYear}</span></div></div>`;
+  // 凡例(legendHtml)は削除しました。
 
   const summaryHtml = `
     <div class="mt-8 mb-4">
@@ -1119,8 +1119,9 @@ function showLiveDetail(rec) {
       </div>
     </div>`;
 
-  const setlistHeaderHtml = `<div class="flex justify-between items-end mt-8 mb-2"><h3 class="font-bold text-gray-700 text-lg cursor-pointer flex items-center gap-2" onclick="copySetlist()">🎵 セットリスト</h3>${legendHtml}</div>`;
-
+  // 修正: 右側に表示していた凡例変数を削除してスッキリさせました
+  const setlistHeaderHtml = `<div class="flex justify-between items-end mt-8 mb-2"><h3 class="font-bold text-gray-700 text-lg cursor-pointer flex items-center gap-2" onclick="copySetlist()">🎵 セットリスト</h3></div>`;
+  
   const setlistSection = setlistHtml.trim() 
     ? `${summaryHtml}${setlistHeaderHtml}<div class="card-base shadow-none border border-gray-100 pb-2 bg-white">${setlistHtml}</div>` 
     : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3>
