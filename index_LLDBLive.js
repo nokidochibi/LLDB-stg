@@ -1163,8 +1163,8 @@ function showLiveDetail(rec) {
     }
     // --- ジャケット画像エリア生成 (End) ---
 
-    // ★修正: 曲名エリアの幅を「60%」に変更して、画像を少し右へ移動させます。(数字を大きくするとさらに右へ行きます)
-    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 60%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
+    // ★修正: 曲名エリアの幅を「65%」に変更して、画像を少し右へ移動させます。(数字を大きくするとさらに右へ行きます)
+    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 65%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
   });
 
   // 凡例(legendHtml)は削除しました。
