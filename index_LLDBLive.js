@@ -648,49 +648,41 @@ function renderHeatmap(setlist) {
       const getOnClick = (year, type, data) => {
         if (data.count === 0) return '';
         
+        // 1行目: XXXX年 [タイプ]
         let msg = `${year}年 ${type}`;
 
-        // カップリングまたはアルバム曲の場合、収録元でグループ化して表示
+        // カップリング曲またはアルバム曲の場合、収録元ごとにグループ化
         if (type === 'カップリング曲' || type === 'アルバム曲') {
-           const groups = {};
-           const others = [];
+           const groups = {}; // { 'タイトル': [曲名, 曲名...] }
 
            data.songs.forEach(song => {
              const info = songData[song];
-             let source = '';
-             // GASから渡された singleTitle / albumTitle を使用
+             let sourceTitle = '';
+             
+             // シングル/アルバムタイトルを取得
              if (info) {
-                if (type === 'カップリング曲') source = info.singleTitle;
-                else if (type === 'アルバム曲') source = info.albumTitle;
+                if (type === 'カップリング曲') sourceTitle = info.singleTitle;
+                else if (type === 'アルバム曲') sourceTitle = info.albumTitle;
              }
              
-             // 収録元があり、かつ「未収録」でない場合
-             if (source && source !== '未収録') {
-               if (!groups[source]) groups[source] = [];
-               groups[source].push(song);
-             } else {
-               others.push(song);
-             }
+             // タイトルがない場合は「不明」などにせず空文字扱いでグループ化
+             const key = sourceTitle || 'その他';
+             if (!groups[key]) groups[key] = [];
+             groups[key].push(song);
            });
 
-           // グループ化されたものを追加（例: 『戻れない明日』に収録の...）
+           // フォーマットに従ってメッセージを作成
            Object.keys(groups).forEach(src => {
-              msg += `\\n\\n『${src}』に収録の\\n`;
+              msg += `\\n\\n`;
+              // タイトルがある場合は『』で囲んで表示
+              if (src !== 'その他') {
+                  msg += `『${src}』に収録の\\n`;
+              }
               msg += groups[src].map(s => `・${s}`).join('\\n');
            });
 
-           // 収録元情報がない、または未収録の曲
-           if (others.length > 0) {
-              // 他にグループが表示されている場合は区切りを入れる
-              if (Object.keys(groups).length > 0) msg += `\\n\\nその他`;
-              else msg += `\\n`; // グループがない場合は単純な改行のみ
-              
-              if (!msg.endsWith('\\n')) msg += `\\n`;
-              msg += others.map(s => `・${s}`).join('\\n');
-           }
-
         } else {
-           // 表題曲などは今まで通りの単純リスト表示
+           // 表題曲などは今まで通り単純リスト
            msg += `\\n` + data.songs.map(s => `・${s}`).join('\\n');
         }
 
