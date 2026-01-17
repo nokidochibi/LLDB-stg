@@ -647,8 +647,54 @@ function renderHeatmap(setlist) {
      // クリック時のアクション生成関数
       const getOnClick = (year, type, data) => {
         if (data.count === 0) return '';
-        const songList = data.songs.join('\\n・');
-        return `onclick="alert('${year}年 ${type}\\n・${songList}')"`;
+        
+        let msg = `${year}年 ${type}`;
+
+        // カップリングまたはアルバム曲の場合、収録元でグループ化して表示
+        if (type === 'カップリング曲' || type === 'アルバム曲') {
+           const groups = {};
+           const others = [];
+
+           data.songs.forEach(song => {
+             const info = songData[song];
+             let source = '';
+             // GASから渡された singleTitle / albumTitle を使用
+             if (info) {
+                if (type === 'カップリング曲') source = info.singleTitle;
+                else if (type === 'アルバム曲') source = info.albumTitle;
+             }
+             
+             // 収録元があり、かつ「未収録」でない場合
+             if (source && source !== '未収録') {
+               if (!groups[source]) groups[source] = [];
+               groups[source].push(song);
+             } else {
+               others.push(song);
+             }
+           });
+
+           // グループ化されたものを追加（例: 『戻れない明日』に収録の...）
+           Object.keys(groups).forEach(src => {
+              msg += `\\n\\n『${src}』に収録の\\n`;
+              msg += groups[src].map(s => `・${s}`).join('\\n');
+           });
+
+           // 収録元情報がない、または未収録の曲
+           if (others.length > 0) {
+              // 他にグループが表示されている場合は区切りを入れる
+              if (Object.keys(groups).length > 0) msg += `\\n\\nその他`;
+              else msg += `\\n`; // グループがない場合は単純な改行のみ
+              
+              if (!msg.endsWith('\\n')) msg += `\\n`;
+              msg += others.map(s => `・${s}`).join('\\n');
+           }
+
+        } else {
+           // 表題曲などは今まで通りの単純リスト表示
+           msg += `\\n` + data.songs.map(s => `・${s}`).join('\\n');
+        }
+
+        return `onclick="alert('${msg}')"`;
       };
 
      // 上段: 表題
