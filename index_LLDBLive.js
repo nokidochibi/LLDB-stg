@@ -121,13 +121,15 @@ function saveToCache(data) {
 }
 
 async function loadAllData(useCache = false) {
+  // キャッシュがあればそれを最優先（最速）
   if (useCache) {
       try {
           const cachedRaw = localStorage.getItem(CACHE_KEY);
           if (cachedRaw) {
               const cachedData = JSON.parse(cachedRaw);
               console.log("Loaded from cache.");
-              initializeApp(cachedData);
+              // キャッシュデータは「完全版」とみなしてフル描画
+              initializeApp(cachedData, true);
               return; 
           }
       } catch (e) {
@@ -135,17 +137,31 @@ async function loadAllData(useCache = false) {
       }
   }
 
+  // キャッシュがない場合: 2段階読み込みを実行
   try {
-    const response = await fetch(`${API_URL}?action=getAllData`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
+    // 【Step 1】まずは軽いデータ(Basic)だけ取ってくる
+    const basicResponse = await fetch(`${API_URL}?action=getLiveBasicData`);
+    if (!basicResponse.ok) throw new Error(`HTTP error! status: ${basicResponse.status}`);
+    const basicData = await basicResponse.json();
 
-    if (data.status === 'error') {
-        throw new Error(data.message);
-    }
+    if (basicData.status === 'error') throw new Error(basicData.message);
 
-    saveToCache(data);
-    initializeApp(data);
+    // 軽いデータでとりあえず画面を表示（グラフなどはまだ描画しない = false）
+    initializeApp(basicData, false);
+    
+    // ロード画面を消す（ユーザーはここで操作可能になる）
+    finishLoading();
+
+    // 【Step 2】裏側で重い全データ(All)を取りに行く
+    console.log("Fetching full data in background...");
+    const fullResponse = await fetch(`${API_URL}?action=getAllData`);
+    if (!fullResponse.ok) throw new Error(`HTTP error! status: ${fullResponse.status}`);
+    const fullData = await fullResponse.json();
+
+    // 全データが届いたらキャッシュ保存＆画面を完全版に更新（true）
+    saveToCache(fullData);
+    initializeApp(fullData, true);
+    console.log("Full data loaded and merged.");
 
   } catch (error) {
       handleError(error); 
@@ -197,8 +213,10 @@ function finishLoading() {
   if (animationFinishedResolver) animationFinishedResolver();
 }
 
-function initializeApp(data) {
+// isFullLoad引数を追加: trueなら全機能有効化、falseならリスト表示のみ
+function initializeApp(data, isFullLoad = true) {
   allLiveRecords = data.liveRecords || [];
+  // 以下のデータはStep1では空の可能性があるため安全策をとる
   albumData = data.albumData || [];
   songData = data.songData || {};
   historyData = data.historyData || []; 
@@ -222,14 +240,9 @@ function initializeApp(data) {
     }
   }
 
-  analyzeSongStats(allLiveRecords);
-  analyzePatterns(allLiveRecords);
+  // フィルタの準備とリスト表示はStep1でも必ず行う
   populateFilters(allLiveRecords);
   
-  if (historyData.length > 0) {
-      renderHistoryTab();
-  }
-
   const searchInput = document.getElementById('search-input');
   if (searchInput && !searchInput.hasAttribute('data-listener-attached')) {
     setupEventListeners();
@@ -240,17 +253,28 @@ function initializeApp(data) {
   checkOrientation();
   window.addEventListener('resize', checkOrientation);
 
-  renderLiveCountChart();
-  renderTotalLiveCategorySummary();
-  renderAlbumChart();
-  renderSongRanking(); 
-  renderPatternStats();
-  renderVenueRanking();
-  renderVenueLiveCountChart();
+  // 【重要】以下の重い処理は、全データが揃っている時(isFullLoad=true)のみ実行
+  if (isFullLoad) {
+      analyzeSongStats(allLiveRecords);
+      analyzePatterns(allLiveRecords);
+      
+      if (historyData.length > 0) {
+          renderHistoryTab();
+      }
 
-  const loadingDiv = document.getElementById('loading-container');
-  if (loadingDiv && loadingDiv.style.display === 'none') {
-      checkTodayEvents();
+      renderLiveCountChart();
+      renderTotalLiveCategorySummary();
+      renderAlbumChart();
+      renderSongRanking(); 
+      renderPatternStats();
+      renderVenueRanking();
+      renderVenueLiveCountChart();
+
+      // 今日は何の日チェック
+      const loadingDiv = document.getElementById('loading-container');
+      if (loadingDiv && loadingDiv.style.display === 'none') {
+          checkTodayEvents();
+      }
   }
   
   if (appInitializedResolver) appInitializedResolver();
@@ -968,6 +992,12 @@ function renderLiveList(records) {
 // -----------------------------------------------------------
 
 function showLiveDetail(rec) {
+  // ガード処理: セトリデータがまだ読み込まれていない場合はアラートを出して中断
+  if (!rec.setlist) {
+      alert("詳細データを読み込み中です...\nあと数秒待ってから再度タップしてね🏃‍♂️");
+      return;
+  }
+
   safeTrackEvent('select_content', { content_type: 'live_detail', item_id: rec.date, item_name: rec.tourName });
 
   lastScrollPosition = document.getElementById('app').scrollTop;
