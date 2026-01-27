@@ -158,9 +158,29 @@ async function loadAllData(useCache = false) {
     if (!fullResponse.ok) throw new Error(`HTTP error! status: ${fullResponse.status}`);
     const fullData = await fullResponse.json();
 
-    // 全データが届いたらキャッシュ保存＆画面を完全版に更新（true）
+    // 全データが届いたらキャッシュ保存
     saveToCache(fullData);
+
+    // ★追加: データ更新前に、現在開いている詳細画面があるかチェック
+    const currentDetailDate = currentDisplayingRecord ? currentDisplayingRecord.date : null;
+    const currentDetailTour = currentDisplayingRecord ? currentDisplayingRecord.tourName : null;
+
+    // アプリ全体を初期化（完全版データで上書き）
     initializeApp(fullData, true);
+    
+    // ★追加: もし詳細画面を開いたまま待っていた場合、新しいデータで再描画してあげる
+    if (currentDetailDate) {
+        const newRecord = allLiveRecords.find(r => r.date === currentDetailDate && r.tourName === currentDetailTour);
+        if (newRecord) {
+            console.log("Refreshing detail view with full data...");
+            showLiveDetail(newRecord);
+        }
+    }
+    // ★追加: もし楽曲タブや会場タブを開いていた場合も再描画
+    const currentTab = document.querySelector('.tab-item.active')?.dataset.tab;
+    if (currentTab === 'song') renderSongRanking();
+    if (currentTab === 'venue') renderVenueRanking();
+
     console.log("Full data loaded and merged.");
 
   } catch (error) {
@@ -992,11 +1012,7 @@ function renderLiveList(records) {
 // -----------------------------------------------------------
 
 function showLiveDetail(rec) {
-  // ガード処理: セトリデータがまだ読み込まれていない場合はアラートを出して中断
-  if (!rec.setlist) {
-      alert("詳細データを読み込み中です...\nあと数秒待ってから再度タップしてね🏃‍♂️");
-      return;
-  }
+  // ★アラート削除。そのまま処理を進めます。
 
   safeTrackEvent('select_content', { content_type: 'live_detail', item_id: rec.date, item_name: rec.tourName });
 
@@ -1020,6 +1036,49 @@ function showLiveDetail(rec) {
 
   const detailContainer = document.getElementById('live-detail');
   detailContainer.style.display = 'block';
+
+  // --- ★ここから: データがあるかどうかのチェック ---
+  const hasFullData = rec.setlist && rec.setlist.length > 0;
+
+  // 基本情報は常に表示できる（Step1の時点で持っているから）
+  const eventDate = new Date(rec.date);
+  let aikoAge = eventDate.getFullYear() - AIKO_BIRTH.getFullYear();
+  if (eventDate.getMonth() < AIKO_BIRTH.getMonth() || (eventDate.getMonth() === AIKO_BIRTH.getMonth() && eventDate.getDate() < AIKO_BIRTH.getDate())) {
+    aikoAge--;
+  }
+
+  // ヘッダー部分（タイトル・日付・会場）のHTML
+  const headerHtml = `
+    <div id="detail-header-area" class="pt-2 -mt-2 cursor-pointer pl-[70px]">
+      <h2 class="font-extrabold mb-2 text-aiko-pink text-2xl leading-tight">${rec.tourName}</h2>
+    </div>
+    <div class="card-base mb-6 bg-white">
+      <p class="text-gray-500 text-xs font-semibold mb-1">開催日</p>
+      <div class="flex items-baseline gap-2">
+        <p class="font-bold text-lg text-gray-800">${rec.date} (${rec.dayOfWeek})</p>
+        <span class="text-xs text-gray-500 font-medium">aiko ${aikoAge}歳</span>
+      </div>
+      <div class="border-t my-3 border-gray-100"></div>
+      <p class="text-gray-500 text-xs font-semibold mb-1">会場</p><p class="font-bold text-lg text-gray-800">${rec.venue} (${rec.region})</p>
+    </div>`;
+
+  // データがまだない場合の「読み込み中」表示
+  if (!hasFullData) {
+      detailContainer.innerHTML = `
+        ${headerHtml}
+        <div class="card-base bg-white p-8 text-center">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-aiko-pink mb-4"></div>
+            <p class="text-gray-500 font-bold">詳細データを準備中...</p>
+            <p class="text-xs text-gray-400 mt-2">画面そのままでお待ちください<br>データが届き次第、自動で表示されます✨</p>
+        </div>
+      `;
+      // 戻るボタンの設定だけして終了
+      document.getElementById('detail-header-area').onclick = hideDetailView;
+      document.getElementById('app').scrollTop = 0;
+      lucide.createIcons();
+      return; 
+  }
+  // --- ★ここまで: データチェック終了 ---
 
   const userData = (userUserData.attendedLives && userUserData.attendedLives[rec.date]) || null;
   const isAttended = !!userData;
@@ -1802,18 +1861,20 @@ function renderSongRanking() {
 
   const sortedSongs = Object.entries(targetStats)
     .filter(([song]) => song.toLowerCase().startsWith(searchTerm))
-    .map(([song, count]) => ({ song, count, year: targetYears[song] || 0 }))
-    .sort((a, b) => {
-    if (sortOrder === 'count-desc') return b.count - a.count || b.year - a.year;
-    if (sortOrder === 'count-asc') return a.count - b.count || a.year - b.year;
-    if (sortOrder === 'year-desc') return b.year - a.year || b.count - a.count;
-    if (sortOrder === 'year-asc') {
-    if (a.year === 0) return 1;
-    if (b.year === 0) return -1;
-    return a.year - b.year || b.count - a.count;
-    }
+    // ... (省略) ...
     return 0;
     });
+
+  // ★追加: データがまだ空っぽの場合の表示
+  if (Object.keys(targetStats).length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-10">
+            <div class="inline-block animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-400 mb-2"></div>
+            <p class="text-gray-500 text-sm">全データを集計中...</p>
+        </div>`;
+      document.getElementById('total-songs').textContent = '-';
+      return;
+  }
 
   document.getElementById('total-songs').textContent = Object.keys(songStats).length;
 
