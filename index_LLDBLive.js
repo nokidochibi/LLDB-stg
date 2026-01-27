@@ -52,6 +52,7 @@ let currentDisplayingRecord = null;
 let lastScrollPosition = 0;
 let isLoadingFinished = false;
 let isFullDataLoaded = false; // 全データの読み込み完了を管理するフラグ
+let loadingEmojiInterval = null; // ★追加: 読み込みアニメーション用タイマー
 
 // --- Initialization ---
 
@@ -224,7 +225,14 @@ function finishLoading() {
 
 // isFullLoad引数を追加: trueなら全機能有効化、falseならリスト表示のみ
 function initializeApp(data, isFullLoad = true) {
-  if (isFullLoad) isFullDataLoaded = true; // 全データ読み込み時のみフラグを立てる
+  if (isFullLoad) {
+      isFullDataLoaded = true; // 全データ読み込み時のみフラグを立てる
+      // ★追加: 読み込み完了したらアニメーションタイマーを停止
+      if (loadingEmojiInterval) {
+          clearInterval(loadingEmojiInterval);
+          loadingEmojiInterval = null;
+      }
+  }
   allLiveRecords = data.liveRecords || [];
   // 以下のデータはStep1では空の可能性があるため安全策をとる
   albumData = data.albumData || [];
@@ -1222,13 +1230,13 @@ function showLiveDetail(rec) {
   // 修正: 右側に表示していた凡例変数を削除してスッキリさせました
   const setlistHeaderHtml = `<div class="flex justify-between items-end mt-8 mb-2"><h3 class="font-bold text-gray-700 text-lg cursor-pointer flex items-center gap-2" onclick="copySetlist()">🎵 セットリスト</h3></div>`;
 
-  // 修正：セトリデータがない場合、読み込み完了前なら「読み込み中」を表示、完了後なら「情報提供のお願い」を表示
+  // 修正：セトリデータがない場合、読み込み完了前なら「読み込み中(植物)」を表示、完了後なら「情報提供のお願い(左寄せ)」を表示
   const setlistSection = setlistHtml.trim() 
     ? `${summaryHtml}${setlistHeaderHtml}<div class="card-base shadow-none border border-gray-100 pb-2 bg-white">${setlistHtml}</div>` 
     : (!isFullDataLoaded ? 
-        `<div class="py-10 text-center"><div class="inline-block animate-spin mb-2">🌸</div><p class="text-gray-400 text-sm">セトリ読み込み中...</p></div>` 
+        `<div class="py-10 text-center"><div id="loading-emoji" class="text-2xl mb-2">🌱</div><p class="text-gray-400 text-sm">セトリ読み込み中...</p></div>` 
         : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3>
-       <div class="card-base text-gray-500 text-sm leading-relaxed bg-white">
+       <div class="card-base text-gray-500 text-sm leading-relaxed bg-white text-left">
          この日のセトリがわかる方は　<span class="text-blue-500 underline cursor-pointer font-bold" onclick="if(confirm('セトリ投稿フォームに移動しますか？')){ window.open('https://nokidochibi.github.io/LLDB_SetoriForm/', '_blank'); }">こちら</span>　から教えてください。<br>
          セットリストは　2026年3月4日以降に更新予定です。
        </div>`);
@@ -1315,6 +1323,22 @@ function showLiveDetail(rec) {
   document.getElementById('app').scrollTop = 0;
   lucide.createIcons(); 
 
+  // ★追加: 読み込み中アニメーション（🌱→🌿→🌳）の開始
+  if (!isFullDataLoaded) {
+      if (loadingEmojiInterval) clearInterval(loadingEmojiInterval);
+      const emojis = ['🌱', '🌿', '🌳'];
+      let idx = 0;
+      const el = document.getElementById('loading-emoji');
+      if(el) {
+          loadingEmojiInterval = setInterval(() => {
+              idx = (idx + 1) % emojis.length;
+              const target = document.getElementById('loading-emoji');
+              if(target) target.textContent = emojis[idx];
+              else clearInterval(loadingEmojiInterval);
+          }, 1000);
+      }
+  }
+
   // ★追加: Twitter埋め込みウィジェットのロード処理
   if (rec.afterLiveTweet) {
       if (window.twttr && window.twttr.widgets) {
@@ -1337,6 +1361,12 @@ function showLiveDetail(rec) {
 }
 
 function hideDetailView() {
+  // ★追加: 画面を閉じる時にアニメーション停止
+  if (loadingEmojiInterval) {
+      clearInterval(loadingEmojiInterval);
+      loadingEmojiInterval = null;
+  }
+
   document.body.classList.remove('detail-view');
   document.getElementById('live-detail').style.display = 'none';
   document.getElementById('back-button-fixed').style.display = 'none';
@@ -1459,7 +1489,7 @@ function switchToTab(tabId) {
     // 楽曲・場所・統計・記録タブは、全データが揃うまでガードする
     const needsFullData = ['song', 'venue', 'pattern', 'records'];
     if (needsFullData.includes(tabId) && !isFullDataLoaded) {
-        alert("詳細データを読み込み中です...\nあと数秒待ってから切り替えてください🙇‍♀️");
+        alert("詳細データを読み込み中...\nあと数秒待ってから切り替えてください🏃‍♂️");
         return;
     }
 
