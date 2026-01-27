@@ -1236,10 +1236,10 @@ function showLiveDetail(rec) {
     : (!isFullDataLoaded ? 
         `<div class="py-10 text-center"><div id="loading-emoji" class="text-2xl mb-2">🌱</div><p class="text-gray-400 text-sm">セトリ読み込み中...</p></div>` 
         : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3>
-       <div class="card-base text-gray-500 text-sm leading-relaxed bg-white text-left">
-         この日のセトリがわかる方は　<span class="text-blue-500 underline cursor-pointer font-bold" onclick="if(confirm('セトリ投稿フォームに移動しますか？')){ window.open('https://nokidochibi.github.io/LLDB_SetoriForm/', '_blank'); }">こちら</span>　から教えてください。<br>
-         セットリストは　2026年3月4日以降に更新予定です。
-       </div>`);
+<div class="card-base text-gray-500 text-sm leading-relaxed bg-white text-left">
+  この日のセトリがわかる方は <span class="text-blue-500 underline cursor-pointer font-bold" onclick="if(confirm('セトリ投稿フォームに移動しますか？')){ window.open('https://nokidochibi.github.io/LLDB_SetoriForm/', '_blank'); }">こちら</span> から教えてください。<br>
+  セットリストは 2026年3月4日以降に更新予定です。
+</div>`);
 
   // ★修正: 終演後ツイートの表示用HTML生成
   let tweetHtml = '';
