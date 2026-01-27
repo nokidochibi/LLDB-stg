@@ -34,7 +34,7 @@ const animationFinishedPromise = new Promise(resolve => {
 
 let hasCheckedTodayEvents = false;
 let allLiveRecords = [], 
-    songStats = {},                      
+    songStats = {},                       
     songStatsNoMedley = {},
     songLastYears = {},
     songLastYearsNoMedley = {},
@@ -683,8 +683,8 @@ function renderHeatmap(setlist) {
      
      const isFuture = y > liveYear;
      const emptyStyle = isFuture 
-        ? "background-color: #d1d5db; color: transparent; cursor: default;" 
-        : "background-color: #f3f4f6; color: transparent; cursor: default;";
+       ? "background-color: #d1d5db; color: transparent; cursor: default;" 
+       : "background-color: #f3f4f6; color: transparent; cursor: default;";
 
      html += `<div class="flex flex-col gap-px flex-1">`;
 
@@ -1188,7 +1188,7 @@ function showLiveDetail(rec) {
           <div style="${lineStyle}"></div>
           <div style="${lineStyle}"></div>
           <div style="${markerStyle}">
-             <div class="tooltip" style="${tooltipStyle}">${songYear}</div>
+              <div class="tooltip" style="${tooltipStyle}">${songYear}</div>
           </div>
         </div>
       </div>`;
@@ -1861,7 +1861,16 @@ function renderSongRanking() {
 
   const sortedSongs = Object.entries(targetStats)
     .filter(([song]) => song.toLowerCase().startsWith(searchTerm))
-    // ... (省略) ...
+    .map(([song, count]) => ({ song, count, year: targetYears[song] || 0 }))
+    .sort((a, b) => {
+    if (sortOrder === 'count-desc') return b.count - a.count || b.year - a.year;
+    if (sortOrder === 'count-asc') return a.count - b.count || a.year - b.year;
+    if (sortOrder === 'year-desc') return b.year - a.year || b.count - a.count;
+    if (sortOrder === 'year-asc') {
+    if (a.year === 0) return 1;
+    if (b.year === 0) return -1;
+    return a.year - b.year || b.count - a.count;
+    }
     return 0;
     });
 
@@ -2054,9 +2063,9 @@ function setupEventListeners() {
       const songInput = document.getElementById('song-filter-input');
       const isMedleyIncluded = document.getElementById('medley-toggle').checked;
       if (isMedleyIncluded) {
-          songInput.value = `${songName}　※楽曲タブから選択`;
+            songInput.value = `${songName}　※楽曲タブから選択`;
       } else {
-          songInput.value = `${songName}(メドレー除外)　※楽曲タブから選択`;
+            songInput.value = `${songName}(メドレー除外)　※楽曲タブから選択`;
       }
       switchToTab('search');
       applyFilters();
