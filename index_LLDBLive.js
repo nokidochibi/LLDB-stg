@@ -51,7 +51,7 @@ let selectedVenueInfo = null;
 let currentDisplayingRecord = null;
 let lastScrollPosition = 0;
 let isLoadingFinished = false;
-let isFullDataLoaded = false; // ★追加: 完全なデータ(セトリ等)が読み込まれているか判定するフラグ
+let isFullDataLoaded = false; // 全データの読み込み完了を管理するフラグ
 
 // --- Initialization ---
 
@@ -122,13 +122,15 @@ function saveToCache(data) {
 }
 
 async function loadAllData(useCache = false) {
+  // キャッシュがあればそれを最優先（最速）
   if (useCache) {
       try {
           const cachedRaw = localStorage.getItem(CACHE_KEY);
           if (cachedRaw) {
               const cachedData = JSON.parse(cachedRaw);
               console.log("Loaded from cache.");
-              initializeApp(cachedData);
+              // キャッシュデータは「完全版」とみなしてフル描画
+              initializeApp(cachedData, true);
               return; 
           }
       } catch (e) {
@@ -136,17 +138,31 @@ async function loadAllData(useCache = false) {
       }
   }
 
+  // キャッシュがない場合: 2段階読み込みを実行
   try {
-    const response = await fetch(`${API_URL}?action=getAllData`);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
+    // 【Step 1】まずは軽いデータ(Basic)だけ取ってくる
+    const basicResponse = await fetch(`${API_URL}?action=getLiveBasicData`);
+    if (!basicResponse.ok) throw new Error(`HTTP error! status: ${basicResponse.status}`);
+    const basicData = await basicResponse.json();
 
-    if (data.status === 'error') {
-        throw new Error(data.message);
-    }
+    if (basicData.status === 'error') throw new Error(basicData.message);
 
-    saveToCache(data);
-    initializeApp(data);
+    // 軽いデータでとりあえず画面を表示（グラフなどはまだ描画しない = false）
+    initializeApp(basicData, false);
+    
+    // ロード画面を消す（ユーザーはここで操作可能になる）
+    finishLoading();
+
+    // 【Step 2】裏側で重い全データ(All)を取りに行く
+    console.log("Fetching full data in background...");
+    const fullResponse = await fetch(`${API_URL}?action=getAllData`);
+    if (!fullResponse.ok) throw new Error(`HTTP error! status: ${fullResponse.status}`);
+    const fullData = await fullResponse.json();
+
+    // 全データが届いたらキャッシュ保存＆画面を完全版に更新（true）
+    saveToCache(fullData);
+    initializeApp(fullData, true);
+    console.log("Full data loaded and merged.");
 
   } catch (error) {
       handleError(error); 
@@ -198,17 +214,11 @@ function finishLoading() {
   if (animationFinishedResolver) animationFinishedResolver();
 }
 
-function initializeApp(data) {
-  allLiveRecords = data.liveRecords || [];
-  
-  // ★追加: データが「完全版（セトリ入り）」か「軽量版（リストのみ）」かを判定
-  // 配列があり、かつ最初の要素にsetlistが存在し、中身がある場合に「完全」とみなす
-  if (allLiveRecords.length > 0 && allLiveRecords[0].setlist && allLiveRecords[0].setlist.length > 0) {
-      isFullDataLoaded = true;
-  } else {
-      isFullDataLoaded = false;
-  }
-
+// isFullLoad引数を追加: trueなら全機能有効化、falseならリスト表示のみ
+function initializeApp(data, isFullLoad = true) {
+  if (isFullLoad) isFullDataLoaded = true; // 全データ読み込み時のみフラグを立てる
+  allLiveRecords = data.liveRecords || [];
+  // 以下のデータはStep1では空の可能性があるため安全策をとる
   albumData = data.albumData || [];
   songData = data.songData || {};
   historyData = data.historyData || []; 
@@ -232,14 +242,9 @@ function initializeApp(data) {
     }
   }
 
-  analyzeSongStats(allLiveRecords);
-  analyzePatterns(allLiveRecords);
+  // フィルタの準備とリスト表示はStep1でも必ず行う
   populateFilters(allLiveRecords);
   
-  if (historyData.length > 0) {
-      renderHistoryTab();
-  }
-
   const searchInput = document.getElementById('search-input');
   if (searchInput && !searchInput.hasAttribute('data-listener-attached')) {
     setupEventListeners();
@@ -250,17 +255,28 @@ function initializeApp(data) {
   checkOrientation();
   window.addEventListener('resize', checkOrientation);
 
-  renderLiveCountChart();
-  renderTotalLiveCategorySummary();
-  renderAlbumChart();
-  renderSongRanking(); 
-  renderPatternStats();
-  renderVenueRanking();
-  renderVenueLiveCountChart();
+  // 【重要】以下の重い処理は、全データが揃っている時(isFullLoad=true)のみ実行
+  if (isFullLoad) {
+      analyzeSongStats(allLiveRecords);
+      analyzePatterns(allLiveRecords);
+      
+      if (historyData.length > 0) {
+          renderHistoryTab();
+      }
 
-  const loadingDiv = document.getElementById('loading-container');
-  if (loadingDiv && loadingDiv.style.display === 'none') {
-      checkTodayEvents();
+      renderLiveCountChart();
+      renderTotalLiveCategorySummary();
+      renderAlbumChart();
+      renderSongRanking(); 
+      renderPatternStats();
+      renderVenueRanking();
+      renderVenueLiveCountChart();
+
+      // 今日は何の日チェック
+      const loadingDiv = document.getElementById('loading-container');
+      if (loadingDiv && loadingDiv.style.display === 'none') {
+          checkTodayEvents();
+      }
   }
   
   if (appInitializedResolver) appInitializedResolver();
@@ -282,48 +298,6 @@ function formatTourName(name) {
       n = n.replace(/\s+/g, '');
   }
   return n.trim();
-}
-
-// ★追加: トーストメッセージ表示用関数
-function showToastMessage(msg) {
-  // 既存のトーストがあれば削除
-  const existing = document.getElementById('toast-message');
-  if (existing) existing.remove();
-
-  const toast = document.createElement('div');
-  toast.id = 'toast-message';
-  toast.textContent = msg;
-  
-  // スタイル定義 (Tailwindが効かない動的生成のためインラインで指定)
-  Object.assign(toast.style, {
-    position: 'fixed',
-    bottom: '80px', // タブバーの上あたり
-    left: '50%',
-    transform: 'translateX(-50%)',
-    backgroundColor: 'rgba(50, 50, 50, 0.9)',
-    color: '#fff',
-    padding: '10px 20px',
-    borderRadius: '20px',
-    fontSize: '14px',
-    fontWeight: 'bold',
-    zIndex: '9999',
-    opacity: '0',
-    transition: 'opacity 0.3s ease',
-    pointerEvents: 'none', // クリックを邪魔しない
-    whiteSpace: 'nowrap',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-  });
-
-  document.body.appendChild(toast);
-
-  // フェードイン
-  requestAnimationFrame(() => { toast.style.opacity = '1'; });
-
-  // 2秒後にフェードアウトして削除
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    setTimeout(() => toast.remove(), 300);
-  }, 2000);
 }
 
 // -----------------------------------------------------------
@@ -1020,10 +994,9 @@ function renderLiveList(records) {
 // -----------------------------------------------------------
 
 function showLiveDetail(rec) {
-  // ★追加: タップガード (データ準備中の場合はトーストを出して詳細へ遷移させない)
-  // フラグがfalse、かつ 対象データのセトリが空の場合は「まだ読み込めていない」と判断
-  if (!isFullDataLoaded && (!rec.setlist || rec.setlist.length === 0)) {
-      showToastMessage("詳細データ準備中です... 少々お待ちください 🙇‍♂️");
+  // ガード処理: セトリデータがまだ読み込まれていない場合はアラートを出して中断
+  if (!rec.setlist) {
+      alert("詳細データを読み込み中です...\nあと数秒待ってから再度タップしてください🙇‍♀️");
       return;
   }
 
@@ -1476,7 +1449,14 @@ function selectRegion(regionName) {
 }
 
 function switchToTab(tabId) {
-    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    // 楽曲・場所・統計・記録タブは、全データが揃うまでガードする
+    const needsFullData = ['song', 'venue', 'pattern', 'records'];
+    if (needsFullData.includes(tabId) && !isFullDataLoaded) {
+        alert("詳細データを読み込み中です...\nあと数秒待ってから切り替えてください🙇‍♀️");
+        return;
+    }
+
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
     const targetTabItem = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
     if (targetTabItem) targetTabItem.classList.add('active');
 
