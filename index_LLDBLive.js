@@ -160,9 +160,17 @@ async function loadAllData(useCache = false) {
     const fullData = await fullResponse.json();
 
     // 全データが届いたらキャッシュ保存＆画面を完全版に更新（true）
-    saveToCache(fullData);
-    initializeApp(fullData, true);
-    console.log("Full data loaded and merged.");
+    saveToCache(fullData);
+    initializeApp(fullData, true);
+    
+    // 追加：もし詳細画面を開きっぱなしなら、最新データ（セトリ）で再表示する
+    if (document.body.classList.contains('detail-view') && currentDisplayingRecord) {
+        const latestRec = allLiveRecords.find(r => r.date === currentDisplayingRecord.date);
+        if (latestRec) {
+            showLiveDetail(latestRec);
+        }
+    }
+    console.log("Full data loaded and merged.");
 
   } catch (error) {
       handleError(error); 
@@ -994,13 +1002,9 @@ function renderLiveList(records) {
 // -----------------------------------------------------------
 
 function showLiveDetail(rec) {
-  // ガード処理: セトリデータがまだ読み込まれていない場合はアラートを出して中断
-  if (!rec.setlist) {
-      alert("詳細データを読み込み中です...\nあと数秒待ってから再度タップしてください🙇‍♀️");
-      return;
-  }
-
-  safeTrackEvent('select_content', { content_type: 'live_detail', item_id: rec.date, item_name: rec.tourName });
+  // 修正：データがなくても中断せず、そのまま進む（読み込み完了後に自動更新されるため）
+  
+  safeTrackEvent('select_content', { content_type: 'live_detail', item_id: rec.date, item_name: rec.tourName });
 
   lastScrollPosition = document.getElementById('app').scrollTop;
 
@@ -1218,13 +1222,16 @@ function showLiveDetail(rec) {
   // 修正: 右側に表示していた凡例変数を削除してスッキリさせました
   const setlistHeaderHtml = `<div class="flex justify-between items-end mt-8 mb-2"><h3 class="font-bold text-gray-700 text-lg cursor-pointer flex items-center gap-2" onclick="copySetlist()">🎵 セットリスト</h3></div>`;
 
-  const setlistSection = setlistHtml.trim() 
-    ? `${summaryHtml}${setlistHeaderHtml}<div class="card-base shadow-none border border-gray-100 pb-2 bg-white">${setlistHtml}</div>` 
-    : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3>
-       <div class="card-base text-gray-500 text-sm leading-relaxed bg-white">
-         この日のセトリがわかる方は　<span class="text-blue-500 underline cursor-pointer font-bold" onclick="if(confirm('セトリ投稿フォームに移動しますか？')){ window.open('https://nokidochibi.github.io/LLDB_SetoriForm/', '_blank'); }">こちら</span>　から教えてください。<br>
-         セットリストは　2026年3月4日以降に更新予定です。
-       </div>`;
+  // 修正：セトリデータがない場合、読み込み完了前なら「読み込み中」を表示、完了後なら「情報提供のお願い」を表示
+  const setlistSection = setlistHtml.trim() 
+    ? `${summaryHtml}${setlistHeaderHtml}<div class="card-base shadow-none border border-gray-100 pb-2 bg-white">${setlistHtml}</div>` 
+    : (!isFullDataLoaded ? 
+        `<div class="py-10 text-center"><div class="inline-block animate-spin mb-2">🌸</div><p class="text-gray-400 text-sm">セトリ読み込み中...</p></div>` 
+        : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3>
+       <div class="card-base text-gray-500 text-sm leading-relaxed bg-white">
+         この日のセトリがわかる方は　<span class="text-blue-500 underline cursor-pointer font-bold" onclick="if(confirm('セトリ投稿フォームに移動しますか？')){ window.open('https://nokidochibi.github.io/LLDB_SetoriForm/', '_blank'); }">こちら</span>　から教えてください。<br>
+         セットリストは　2026年3月4日以降に更新予定です。
+       </div>`);
 
   // ★修正: 終演後ツイートの表示用HTML生成
   let tweetHtml = '';
