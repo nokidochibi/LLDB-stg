@@ -149,8 +149,8 @@ async function loadAllData(useCache = false) {
     // 軽いデータでとりあえず画面を表示（グラフなどはまだ描画しない = false）
     initializeApp(basicData, false);
     
-    // ロード画面を消す（ユーザーはここで操作可能になる）
-    finishLoading();
+    // ★削除: finishLoading(); を消しました
+    // これでアニメーションが終わるまで待ってくれるようになります
 
     // 【Step 2】裏側で重い全データ(All)を取りに行く
     console.log("Fetching full data in background...");
