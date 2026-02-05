@@ -289,23 +289,30 @@ function initializeApp(data, isFullLoad = true) {
           renderHistoryTab();
       }
 
-      renderLiveCountChart();
-      renderTotalLiveCategorySummary();
-      renderAlbumChart();
-      renderSongRanking(); 
-      renderPatternStats();
-      renderVenueRanking();
-      renderVenueLiveCountChart();
-      
-      // ★追加: 現在開いているタブを再描画して、ローディング表示を消す
+      // 修正①: 無条件な全チャート描画を廃止し、現在開いているタブのみ再描画する
       const activeTab = document.querySelector('.tab-item.active');
       if (activeTab) {
           const tabId = activeTab.dataset.tab;
-          if (tabId === 'song') renderSongRanking();
-          if (tabId === 'venue') { renderVenueRanking(); renderVenueLiveCountChart(); }
-          if (tabId === 'pattern') renderPatternStats();
-          if (tabId === 'records') renderRecordsTab();
+          if (tabId === 'song') {
+              renderSongRanking();
+              renderLiveCountChart();
+              renderTotalLiveCategorySummary();
+          }
+          if (tabId === 'venue') {
+              renderVenueRanking();
+              renderVenueLiveCountChart();
+          }
+          if (tabId === 'pattern') {
+              renderPatternStats();
+              renderAlbumChart();
+          }
+          if (tabId === 'records') {
+              renderRecordsTab();
+          }
       }
+      
+      // 修正②: 全データ読み込み完了後にも「今日は何の日」をチェック（Step1でデータ不足だった場合のため）
+      setTimeout(checkTodayEvents, 1000);
   }
   
   if (appInitializedResolver) appInitializedResolver();
