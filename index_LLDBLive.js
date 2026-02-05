@@ -220,7 +220,7 @@ function finishLoading() {
   if (mainContent) {
       mainContent.style.opacity = '1';
   }
-  setTimeout(checkTodayEvents, 800);
+  // ここにあった setTimeout(checkTodayEvents, 800); を削除しました
   
   if (animationFinishedResolver) animationFinishedResolver();
 }
@@ -313,9 +313,8 @@ function initializeApp(data, isFullLoad = true) {
           }
       }
       
-      // 修正②: 全データ読み込み完了後にも「今日は何の日」をチェック（Step1でデータ不足だった場合のため）
-      // 引数 true を渡して「フルチェック完了」として実行。遅延も少し短縮します。
-      setTimeout(() => checkTodayEvents(true), 500);
+      // 修正②: 全データ（CD発売日など含む）が揃ったこのタイミングで1回だけチェックする
+      setTimeout(checkTodayEvents, 500);
   }
   
   if (appInitializedResolver) appInitializedResolver();
