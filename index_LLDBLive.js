@@ -303,11 +303,13 @@ function initializeApp(data, isFullLoad = true) {
           if (tabId === 'pattern') renderPatternStats();
           if (tabId === 'records') renderRecordsTab();
       }
+
+      // ★追加: データが揃ったので、CD発売日なども含めて再度チェック
+      checkTodayEvents();
   }
   
   if (appInitializedResolver) appInitializedResolver();
 }
-
 // --- Helper Functions ---
 
 function formatTourName(name) {
@@ -1513,13 +1515,22 @@ function switchToTab(tabId) {
     }
 
     if (tabId === 'song') {
+        // ★追加: タブ切り替え時に必ず再描画する
+        renderSongRanking();
+        renderLiveCountChart();
+        // 既存のリサイズ処理
         if(chartInstances.liveCount) chartInstances.liveCount.resize();
     }
     if (tabId === 'pattern') {
+        // ★追加: タブ切り替え時に必ず再描画する
+        renderPatternStats();
         renderAlbumChart();
     }
-    if (tabId === 'venue' && chartInstances.venueLiveCount) {
-        chartInstances.venueLiveCount.resize();
+    if (tabId === 'venue') {
+        // ★追加: タブ切り替え時に必ず再描画する
+        renderVenueRanking();
+        renderVenueLiveCountChart();
+        if(chartInstances.venueLiveCount) chartInstances.venueLiveCount.resize();
     }
 }
 
