@@ -220,7 +220,7 @@ function finishLoading() {
   if (mainContent) {
       mainContent.style.opacity = '1';
   }
-  // ここにあった setTimeout(checkTodayEvents, 800); を削除しました
+  // 起動直後の重複チェックを削除
   
   if (animationFinishedResolver) animationFinishedResolver();
 }
@@ -314,7 +314,7 @@ function initializeApp(data, isFullLoad = true) {
       }
       
       // 修正②: 全データ（CD発売日など含む）が揃ったこのタイミングで1回だけチェックする
-      setTimeout(checkTodayEvents, 500);
+      setTimeout(() => checkTodayEvents(true), 500);
   }
   
   if (appInitializedResolver) appInitializedResolver();
@@ -2432,10 +2432,11 @@ function checkTodayEvents(isFullCheck = false) {
 
     if (anniversaryQueue.length > 0) {
         processNextAnniversary();
-        // 全データ（Step2）でのチェック完了時のみ、今日はおしまい！と記録する
-        if (isFullCheck) {
-            localStorage.setItem('lldb_last_greeting_date', todayKey);
-        }
+    }
+    // 表示するものがある・ないに関わらず、Step2（全データ）のチェックが完了したら
+    // 「今日の分は完璧にチェック済み」として記録する
+    if (isFullCheck) {
+        localStorage.setItem('lldb_last_greeting_date', todayKey);
     }
 }
 
