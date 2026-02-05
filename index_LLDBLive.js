@@ -287,12 +287,6 @@ function initializeApp(data, isFullLoad = true) {
       renderPatternStats();
       renderVenueRanking();
       renderVenueLiveCountChart();
-
-      // 今日は何の日チェック
-      const loadingDiv = document.getElementById('loading-container');
-      if (loadingDiv && loadingDiv.style.display === 'none') {
-          checkTodayEvents();
-      }
   }
   
   if (appInitializedResolver) appInitializedResolver();
