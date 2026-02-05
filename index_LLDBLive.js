@@ -291,29 +291,28 @@ function initializeApp(data, isFullLoad = true) {
           renderHistoryTab();
       }
 
-      // 修正①: 無条件な全チャート描画を廃止し、現在開いているタブのみ再描画する
+      // 修正①: 今見ているタブのグラフだけを最優先で描画する
       const activeTab = document.querySelector('.tab-item.active');
       if (activeTab) {
           const tabId = activeTab.dataset.tab;
+          // 各描画関数の中で「データ読み込み中なら中断」というガードを入れているので、
+          // ここではシンプルに必要なものだけを呼び出します。
           if (tabId === 'song') {
               renderSongRanking();
               renderLiveCountChart();
               renderTotalLiveCategorySummary();
-          }
-          if (tabId === 'venue') {
+          } else if (tabId === 'venue') {
               renderVenueRanking();
               renderVenueLiveCountChart();
-          }
-          if (tabId === 'pattern') {
+          } else if (tabId === 'pattern') {
               renderPatternStats();
               renderAlbumChart();
-          }
-          if (tabId === 'records') {
+          } else if (tabId === 'records') {
               renderRecordsTab();
           }
       }
       
-      // 修正②: 全データ（CD発売日など含む）が揃ったこのタイミングで1回だけチェックする
+      // 修正②: 「今日は何の日」を表示
       setTimeout(() => checkTodayEvents(true), 500);
   }
   
@@ -354,6 +353,9 @@ const chartCommonOptions = {
 function renderAlbumChart() {
   const canvas = document.getElementById('album-chart');
   if (!canvas || !albumData.length) return;
+  // すでにStep2のデータでグラフ作成済みなら何もしない
+  if (isFullDataLoaded && chartInstances.album && !canvas.dataset.needsUpdate) return;
+  canvas.removeAttribute('data-needs-update');
   if (chartInstances.album) {
     chartInstances.album.destroy();
     chartInstances.album = null;
@@ -397,6 +399,9 @@ function renderAlbumChart() {
 function renderLiveCountChart() {
   const canvas = document.getElementById('live-count-chart');
   if (!canvas) return;
+  // すでに完成済みなら何もしない
+  if (isFullDataLoaded && chartInstances.liveCount && !canvas.dataset.needsUpdate) return;
+  canvas.removeAttribute('data-needs-update');
   if (chartInstances.liveCount) chartInstances.liveCount.destroy();
 
   const songToSearch = document.getElementById('song-search-input').value.trim();
