@@ -265,11 +265,13 @@ function initializeApp(data, isFullLoad = true) {
   checkOrientation();
   window.addEventListener('resize', checkOrientation);
 
-  // ★追加: 読み込み中表示を出すために、最初にも一度呼び出す
-  renderSongRanking();
-  renderPatternStats();
-  renderVenueRanking();
-  renderRecordsTab();
+  // ★追加: 読み込み中表示を出す（Step1のときのみ実行）
+  if (!isFullLoad) {
+      renderSongRanking();
+      renderPatternStats();
+      renderVenueRanking();
+      renderRecordsTab();
+  }
 
   // 【重要】以下の重い処理は、全データが揃っている時(isFullLoad=true)のみ実行
   if (isFullLoad) {
@@ -304,9 +306,6 @@ function initializeApp(data, isFullLoad = true) {
           if (tabId === 'pattern') renderPatternStats();
           if (tabId === 'records') renderRecordsTab();
       }
-
-      // ★追加: データが揃ったので、CD発売日なども含めて再度チェック
-      checkTodayEvents();
   }
   
   if (appInitializedResolver) appInitializedResolver();
@@ -3084,4 +3083,77 @@ function deleteMemo() {
     if(!confirm('メモを削除しますか？')) return;
     document.getElementById('memo-textarea').value = '';
     saveMemo();
+}
+
+// ★追加: 傾向タブの詳細モーダル表示
+function showModal(songName, type) {
+    if (!songName) return;
+    
+    // タイトルの決定
+    let title = '';
+    if (type === 'opening') title = `「${songName}」<br>オープニング曲の実績`;
+    else if (type === 'encore') title = `「${songName}」<br>アンコール曲の実績`;
+    else if (type === 'last') title = `「${songName}」<br>ラストソングの実績`;
+
+    // 該当するライブを検索
+    const hits = [];
+    allLiveRecords.forEach(rec => {
+        let isMatch = false;
+        
+        // メドレーなどを除いたクリーンなリストを作成して判定
+        const cleanSetlist = [];
+        let inMedley = false;
+        rec.setlist.forEach(s => {
+            if (s === '__MEDLEY_START__') { inMedley = true; return; }
+            if (s === '__MEDLEY_END__') { inMedley = false; return; }
+            if (inMedley) return;
+            const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
+            if (clean && clean !== 'メドレー' && !clean.includes('[') && !clean.includes(']')) {
+                cleanSetlist.push(clean);
+            }
+        });
+
+        if (type === 'opening') {
+            if (cleanSetlist.length > 0 && cleanSetlist[0] === songName) isMatch = true;
+        } else if (type === 'last') {
+            if (cleanSetlist.length > 0 && cleanSetlist[cleanSetlist.length - 1] === songName) isMatch = true;
+        } else if (type === 'encore') {
+            // アンコールは元のセットリストから判定
+            let inMedleyEncore = false;
+            rec.setlist.forEach(s => {
+                if (s === '__MEDLEY_START__') { inMedleyEncore = true; return; }
+                if (s === '__MEDLEY_END__') { inMedleyEncore = false; return; }
+                if (inMedleyEncore) return;
+                if (s.includes('_アンコール')) {
+                    const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
+                    if (clean === songName) isMatch = true;
+                }
+            });
+        }
+
+        if (isMatch) hits.push(rec);
+    });
+
+    // モーダルHTML生成
+    hits.sort((a, b) => new Date(b.date) - new Date(a.date));
+    let listHtml = hits.map(rec => `
+        <div class="card-base p-3 mb-2 clickable-item border border-gray-100 bg-white" onclick="closeModal(); showLiveDetail(allLiveRecords.find(r => r.date === '${rec.date}'))">
+            <div class="text-xs text-gray-500">${rec.date}</div>
+            <div class="font-bold text-gray-700">${rec.tourName}</div>
+            <div class="text-xs text-gray-400 text-right mt-1">${rec.venue}</div>
+        </div>
+    `).join('');
+
+    if (hits.length === 0) listHtml = '<p class="text-center text-gray-400 my-4">データが見つかりませんでした</p>';
+
+    const html = `
+        <h2 class="font-bold text-center text-lg mb-4 text-aiko-pink leading-tight">${title}</h2>
+        <p class="text-right text-xs text-gray-400 mb-2">計 ${hits.length} 回</p>
+        <div class="overflow-y-auto max-h-[60vh]">
+            ${listHtml}
+        </div>
+    `;
+
+    document.getElementById('modal-body').innerHTML = html;
+    document.getElementById('modal-overlay').style.display = 'flex';
 }
