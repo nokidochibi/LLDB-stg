@@ -160,9 +160,11 @@ async function loadAllData(useCache = false) {
     if (!fullResponse.ok) throw new Error(`HTTP error! status: ${fullResponse.status}`);
     const fullData = await fullResponse.json();
 
-    // 全データが届いたらキャッシュ保存＆画面を完全版に更新（true）
-    saveToCache(fullData);
-    initializeApp(fullData, true);
+    // 全データが届いたら先に画面を更新（ユーザーを待たせない）
+    initializeApp(fullData, true);
+    
+    // その後、裏側でキャッシュに保存する
+    setTimeout(() => saveToCache(fullData), 100);
     
     // 追加：もし詳細画面を開きっぱなしなら、最新データ（セトリ）で再表示する
     if (document.body.classList.contains('detail-view') && currentDisplayingRecord) {
@@ -312,7 +314,8 @@ function initializeApp(data, isFullLoad = true) {
       }
       
       // 修正②: 全データ読み込み完了後にも「今日は何の日」をチェック（Step1でデータ不足だった場合のため）
-      setTimeout(checkTodayEvents, 1000);
+      // 引数 true を渡して「フルチェック完了」として実行。遅延も少し短縮します。
+      setTimeout(() => checkTodayEvents(true), 500);
   }
   
   if (appInitializedResolver) appInitializedResolver();
@@ -2381,7 +2384,7 @@ window.findAndShowLive = function(dateStr, tourName) {
 // Daily Events & Anniversary Logic
 // -----------------------------------------------------------
 
-function checkTodayEvents() {
+function checkTodayEvents(isFullCheck = false) {
     const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
     const todayMonth = now.getMonth() + 1;
     const todayDate = now.getDate();
@@ -2430,7 +2433,10 @@ function checkTodayEvents() {
 
     if (anniversaryQueue.length > 0) {
         processNextAnniversary();
-        localStorage.setItem('lldb_last_greeting_date', todayKey);
+        // 全データ（Step2）でのチェック完了時のみ、今日はおしまい！と記録する
+        if (isFullCheck) {
+            localStorage.setItem('lldb_last_greeting_date', todayKey);
+        }
     }
 }
 
