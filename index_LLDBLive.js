@@ -225,14 +225,8 @@ function finishLoading() {
 
 // isFullLoad引数を追加: trueなら全機能有効化、falseならリスト表示のみ
 function initializeApp(data, isFullLoad = true) {
-  if (isFullLoad) {
-      isFullDataLoaded = true; // 全データ読み込み時のみフラグを立てる
-      // ★追加: 読み込み完了したらアニメーションタイマーを停止
-      if (loadingEmojiInterval) {
-          clearInterval(loadingEmojiInterval);
-          loadingEmojiInterval = null;
-      }
-  }
+  // フラグ設定はデータ分析後に行うため、ここでは削除しました
+
   allLiveRecords = data.liveRecords || [];
   // 以下のデータはStep1では空の可能性があるため安全策をとる
   albumData = data.albumData || [];
@@ -282,6 +276,13 @@ function initializeApp(data, isFullLoad = true) {
       analyzeSongStats(allLiveRecords);
       analyzePatterns(allLiveRecords);
       
+      // ★修正: 分析が終わったこのタイミングでフラグを立てる
+      isFullDataLoaded = true;
+      if (loadingEmojiInterval) {
+          clearInterval(loadingEmojiInterval);
+          loadingEmojiInterval = null;
+      }
+
       if (historyData.length > 0) {
           renderHistoryTab();
       }
