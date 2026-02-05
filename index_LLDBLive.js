@@ -1541,13 +1541,26 @@ function renderRecordsTab() {
     const unregisteredDiv = document.getElementById('records-unregistered');
     const contentDiv = document.getElementById('records-content');
 
-    // ★追加: データ読み込み中の表示（未登録エリアを一時的に利用）
+    // ★追加: データ読み込み中の表示（DOM破壊を防ぐため動的生成）
+    let loadingDiv = document.getElementById('records-loading-indicator');
+    
     if (!isFullDataLoaded) {
         contentDiv.classList.add('hidden');
-        unregisteredDiv.classList.remove('hidden');
-        unregisteredDiv.innerHTML = '<div class="text-center py-12"><div class="text-2xl mb-2 animate-bounce">🌱</div><p class="text-gray-400 text-sm">データ読み込み中...<br>少し待っててね</p></div>';
+        unregisteredDiv.classList.add('hidden'); // 未登録画面も隠す
+
+        if (!loadingDiv) {
+            loadingDiv = document.createElement('div');
+            loadingDiv.id = 'records-loading-indicator';
+            loadingDiv.className = 'text-center py-12';
+            loadingDiv.innerHTML = '<div class="text-2xl mb-2 animate-bounce">🌱</div><p class="text-gray-400 text-sm">データ読み込み中...<br>少し待っててね</p>';
+            // contentDivの親要素に追加（contentDivの直前）
+            contentDiv.parentNode.insertBefore(loadingDiv, contentDiv);
+        }
         return;
     }
+
+    // 読み込み完了時はローディングを削除
+    if (loadingDiv) loadingDiv.remove();
 
     if (!isRegistered) {
         unregisteredDiv.classList.remove('hidden');
@@ -1940,7 +1953,7 @@ function renderPatternStats() {
   if (!isFullDataLoaded) {
       types.forEach(type => {
           const container = document.getElementById(type + '-songs');
-          if (container) container.innerHTML = '<div class="text-center py-4 text-xs text-gray-400 animate-pulse">読み込み中...</div>';
+          if (container) container.innerHTML = '<div class="text-center py-8"><div class="text-xl mb-1 animate-bounce">🌱</div><p class="text-gray-400 text-xs">データ読み込み中...<br>少し待っててね</p></div>';
       });
       return;
   }
