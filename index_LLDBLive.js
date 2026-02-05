@@ -271,6 +271,12 @@ function initializeApp(data, isFullLoad = true) {
   checkOrientation();
   window.addEventListener('resize', checkOrientation);
 
+  // ★追加: 読み込み中表示を出すために、最初にも一度呼び出す
+  renderSongRanking();
+  renderPatternStats();
+  renderVenueRanking();
+  renderRecordsTab();
+
   // 【重要】以下の重い処理は、全データが揃っている時(isFullLoad=true)のみ実行
   if (isFullLoad) {
       analyzeSongStats(allLiveRecords);
