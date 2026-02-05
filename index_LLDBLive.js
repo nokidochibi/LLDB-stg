@@ -287,6 +287,16 @@ function initializeApp(data, isFullLoad = true) {
       renderPatternStats();
       renderVenueRanking();
       renderVenueLiveCountChart();
+      
+      // ★追加: 現在開いているタブを再描画して、ローディング表示を消す
+      const activeTab = document.querySelector('.tab-item.active');
+      if (activeTab) {
+          const tabId = activeTab.dataset.tab;
+          if (tabId === 'song') renderSongRanking();
+          if (tabId === 'venue') { renderVenueRanking(); renderVenueLiveCountChart(); }
+          if (tabId === 'pattern') renderPatternStats();
+          if (tabId === 'records') renderRecordsTab();
+      }
   }
   
   if (appInitializedResolver) appInitializedResolver();
@@ -1480,13 +1490,7 @@ function selectRegion(regionName) {
 }
 
 function switchToTab(tabId) {
-    // 楽曲・場所・統計・記録タブは、全データが揃うまでガードする
-    const needsFullData = ['song', 'venue', 'pattern', 'records'];
-    if (needsFullData.includes(tabId) && !isFullDataLoaded) {
-        alert("詳細データを読み込み中...\nあと数秒待ってから切り替えてください🏃‍♂️");
-        return;
-    }
-
+    // ガード処理を削除（読み込み中でも切り替えを許可）
     document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
     const targetTabItem = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
     if (targetTabItem) targetTabItem.classList.add('active');
@@ -1536,6 +1540,14 @@ function renderRecordsTab() {
     const isRegistered = userUserData.settings && userUserData.settings.syncId;
     const unregisteredDiv = document.getElementById('records-unregistered');
     const contentDiv = document.getElementById('records-content');
+
+    // ★追加: データ読み込み中の表示（未登録エリアを一時的に利用）
+    if (!isFullDataLoaded) {
+        contentDiv.classList.add('hidden');
+        unregisteredDiv.classList.remove('hidden');
+        unregisteredDiv.innerHTML = '<div class="text-center py-12"><div class="text-2xl mb-2 animate-bounce">🌱</div><p class="text-gray-400 text-sm">データ読み込み中...<br>少し待っててね</p></div>';
+        return;
+    }
 
     if (!isRegistered) {
         unregisteredDiv.classList.remove('hidden');
@@ -1831,7 +1843,14 @@ function renderUserSongRanking() {
 function renderSongRanking() {
   const container = document.getElementById('song-ranking-container');
   if (!container) return;
-  const sortOrder = songSortState; 
+
+  // ★追加: データ読み込み中の表示
+  if (!isFullDataLoaded) {
+      container.innerHTML = '<div class="text-center py-12"><div class="text-2xl mb-2 animate-bounce">🌱</div><p class="text-gray-400 text-sm">データ読み込み中...<br>少し待っててね</p></div>';
+      return;
+  }
+
+  const sortOrder = songSortState;
   const searchTerm = document.getElementById('song-search-input').value.toLowerCase();
 
   updateSortIcons();
@@ -1916,6 +1935,16 @@ function updateSortIcons() {
 
 function renderPatternStats() {
   const types = ['opening', 'encore', 'last'];
+  
+  // ★追加: データ読み込み中の表示
+  if (!isFullDataLoaded) {
+      types.forEach(type => {
+          const container = document.getElementById(type + '-songs');
+          if (container) container.innerHTML = '<div class="text-center py-4 text-xs text-gray-400 animate-pulse">読み込み中...</div>';
+      });
+      return;
+  }
+
   types.forEach(type => {
     const container = document.getElementById(type + '-songs');
     if (!container) return;
@@ -1936,6 +1965,14 @@ function renderVenueRanking() {
   const venueContainer = document.getElementById('venue-ranking-container');
   const regionContainer = document.getElementById('region-ranking-container');
   if (!venueContainer || !regionContainer) return;
+
+  // ★追加: データ読み込み中の表示
+  if (!isFullDataLoaded) {
+      const loadingHtml = '<div class="text-center py-12"><div class="text-2xl mb-2 animate-bounce">🌱</div><p class="text-gray-400 text-sm">データ読み込み中...<br>少し待っててね</p></div>';
+      venueContainer.innerHTML = loadingHtml;
+      regionContainer.innerHTML = loadingHtml;
+      return;
+  }
 
   const vcs = {}, rcs = {};
   allLiveRecords.forEach(rec => {
