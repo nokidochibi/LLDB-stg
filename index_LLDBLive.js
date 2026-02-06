@@ -1614,7 +1614,13 @@ function renderRecordsTab() {
     const catCounts = { pop: 0, rock: 0, aloha: 0, other: 0 };
     const breakdown = { pop: {}, rock: {}, aloha: {}, other: {} };
     
+    // ★修正: 未聴の曲もリストに出すため、全曲を0回で初期化
     const songFreq = {};
+    if (typeof songStats !== 'undefined') {
+        Object.keys(songStats).forEach(song => {
+            songFreq[song] = { count: 0, countNoMedley: 0, lastYear: 0 };
+        });
+    }
 
     attendedRecords.forEach(rec => {
         userYearlyCounts[rec.year] = (userYearlyCounts[rec.year] || 0) + 1;
@@ -1848,12 +1854,17 @@ function renderUserSongRanking() {
       count: isMedley ? data.count : data.countNoMedley,
       lastYear: data.lastYear 
     }))
-    .filter(item => item.count > 0)
+    // ★修正: 0回の曲も表示するためフィルタ(.filter(item => item.count > 0))を削除
     .sort((a, b) => {
       if (userSongSortState === 'count-desc') return b.count - a.count || b.lastYear - a.lastYear;
       if (userSongSortState === 'count-asc') return a.count - b.count || a.lastYear - b.lastYear;
       if (userSongSortState === 'year-desc') return b.lastYear - a.lastYear || b.count - a.count;
-      if (userSongSortState === 'year-asc') return a.lastYear - b.lastYear || b.count - a.count;
+      // ★修正: 古い順のとき、未聴(0年)は一番下に持っていく
+      if (userSongSortState === 'year-asc') {
+          if (a.lastYear === 0) return 1;
+          if (b.lastYear === 0) return -1;
+          return a.lastYear - b.lastYear || b.count - a.count;
+      }
       return 0;
     });
 
@@ -1873,13 +1884,15 @@ function renderUserSongRanking() {
     }
 
     const rankColor = currentRank <= 3 && searchInputText === '' ? ['text-aiko-pink','text-aiko-yellow','text-aiko-blue'][currentRank-1] : 'text-gray-300';
+    // ★修正: 未聴の場合は (ー) と表示する
+    const yearText = item.lastYear > 0 ? `(${item.lastYear}年)` : '(ー)';
 
     return `
       <div class="card-base p-3 mb-2 clickable-item flex items-center border border-gray-100 bg-white" onclick="selectUserSong('${item.name.replace(/'/g, "\\'")}')">
         <span class="rank-number ${rankColor}">${currentRank}</span>
         <span class="song-title text-gray-700">${item.name}</span>
         <span class="song-count">${item.count} <span>回</span></span>
-        <span class="text-[11px] text-gray-400 ml-2 w-14 text-right">(${item.lastYear}年)</span>
+        <span class="text-[11px] text-gray-400 ml-2 w-14 text-right">${yearText}</span>
       </div>`;
   }).join('');
 }
