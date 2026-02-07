@@ -399,9 +399,11 @@ function renderAlbumChart() {
 function renderLiveCountChart() {
   const canvas = document.getElementById('live-count-chart');
   if (!canvas) return;
-  // すでに完成済みなら何もしない
-  if (isFullDataLoaded && chartInstances.liveCount && !canvas.dataset.needsUpdate) return;
-  canvas.removeAttribute('data-needs-update');
+  
+  // ★修正: 曲を選択した時にグラフが反映されるよう、再描画ブロック処理を削除しました
+  // if (isFullDataLoaded && chartInstances.liveCount && !canvas.dataset.needsUpdate) return;
+  // canvas.removeAttribute('data-needs-update');
+
   if (chartInstances.liveCount) chartInstances.liveCount.destroy();
 
   const songToSearch = document.getElementById('song-search-input').value.trim();
