@@ -53,6 +53,7 @@ let lastScrollPosition = 0;
 let isLoadingFinished = false;
 let isFullDataLoaded = false; // 全データの読み込み完了を管理するフラグ
 let loadingEmojiInterval = null; // ★追加: 読み込みアニメーション用タイマー
+let isVoteRankingLoaded = false; // ★追加: 投票ランキングの取得状態
 
 // --- Initialization ---
 
@@ -305,9 +306,9 @@ function initializeApp(data, isFullLoad = true) {
               renderVenueRanking();
               renderVenueLiveCountChart();
           } else if (tabId === 'pattern') {
-              renderCompositionHeatmap(); // ★追加: 全ライブ成分表の描画
               renderPatternStats();
               renderAlbumChart();
+              fetchAndRenderVoteRanking(); // ★追加
           } else if (tabId === 'records') {
               renderRecordsTab();
           }
@@ -518,7 +519,7 @@ function renderLiveCountChart() {
 function renderTotalLiveCategorySummary(targetSong = null) {
   // 文言更新
   const labelEl = document.getElementById('song-stats-label');
-  if (labelEl) labelEl.textContent = targetSong ? 'この曲の演奏回数' : '全ライブ開催回数';
+  if (labelEl) labelEl.textContent = targetSong ? 'この曲の演奏公演数' : '全ライブ開催回数';
 
   let targetRecords = allLiveRecords;
   
@@ -1540,9 +1541,9 @@ function switchToTab(tabId) {
     }
     if (tabId === 'pattern') {
         // ★追加: タブ切り替え時に必ず再描画する
-        renderCompositionHeatmap(); // ★追加: 全ライブ成分表の描画
         renderPatternStats();
         renderAlbumChart();
+        fetchAndRenderVoteRanking(); // ★追加
     }
     if (tabId === 'venue') {
         // ★追加: タブ切り替え時に必ず再描画する
@@ -1994,125 +1995,6 @@ function updateSortIcons() {
     lucide.createIcons();
 }
 
-// ▼▼ 今回追加：全ライブ成分表の描画関数 ▼▼
-function renderCompositionHeatmap() {
-  const container = document.getElementById('composition-heatmap-container');
-  if (!container) return;
-
-  if (!isFullDataLoaded) {
-      container.innerHTML = '<div class="text-center py-8"><div class="text-xl mb-1 animate-bounce">🌱</div><p class="text-gray-400 text-xs">データ読み込み中...<br>少し待っててね</p></div>';
-      return;
-  }
-
-  const startYear = 1998;
-  const endYear = new Date().getFullYear();
-  const counts = { '表題曲': {}, 'カップリング曲': {}, 'アルバム曲': {} };
-  
-  // 全ライブのセトリから集計
-  allLiveRecords.forEach(rec => {
-    rec.setlist.forEach(s => {
-      if (!s || s === '__MEDLEY_START__' || s === '__MEDLEY_END__') return;
-      const clean = s.replace(/_アンコール(?: #\d+)?/g, '').replace(/#\d+$/g, '').trim();
-      const info = songData[clean];
-      if (!info || !info.year) return;
-
-      let type = 'その他';
-      if (info.type) {
-          if (info.type.includes('表題') || info.type.includes('シングル')) type = '表題曲';
-          else if (info.type.includes('カップリング') || info.type.includes('C/W') || info.type.includes('B面')) type = 'カップリング曲';
-          else if (info.type.includes('アルバム') || info.type.includes('Album')) type = 'アルバム曲';
-      }
-      
-      if (counts[type]) {
-          if (!counts[type][info.year]) counts[type][info.year] = { count: 0, songs: new Set() };
-          counts[type][info.year].count++;
-          counts[type][info.year].songs.add(clean);
-      }
-    });
-  });
-
-  const liveYear = endYear; // ライブ開催年は最新年とする
-
-  let html = '<div class="flex items-end justify-between w-full pt-2 gap-px">';
-  
-  for (let y = startYear; y <= endYear; y++) {
-     const dTitle = counts['表題曲'][y] || { count: 0, songs: new Set() };
-     const dCW = counts['カップリング曲'][y] || { count: 0, songs: new Set() };
-     const dAlbum = counts['アルバム曲'][y] || { count: 0, songs: new Set() };
-
-     // 既存のセトリ成分表と完全に一致する濃さの計算
-     const getOpacity = (c) => c >= 3 ? 1 : c === 2 ? 0.7 : c === 1 ? 0.4 : 0.05;
-     
-     const colorTitle = `rgba(255, 105, 180, ${getOpacity(dTitle.count)})`;
-     const colorCW    = `rgba(59, 130, 246, ${getOpacity(dCW.count)})`;
-     const colorAlbum = `rgba(234, 179, 8, ${getOpacity(dAlbum.count)})`;
-
-     // セルのスタイル（サイズ、フォント、角丸などすべて既存と完全一致）
-     const cellBase = "w-full h-5 flex items-center justify-center text-[8px] font-bold text-gray-700 leading-none select-none rounded-[1px] overflow-hidden cursor-pointer";
-     
-     const isFuture = y > liveYear;
-     const emptyStyle = isFuture 
-        ? "background-color: #d1d5db; color: transparent; cursor: default;" 
-        : "background-color: #f3f4f6; color: transparent; cursor: default;";
-
-     html += `<div class="flex flex-col gap-px flex-1">`;
-
-     // クリック時のアクション（既存のロジックに完全一致）
-     const getOnClick = (year, type, data) => {
-        if (data.count === 0) return '';
-        let msg = `${year}年 ${type}\\n`;
-
-        if (type === 'カップリング曲' || type === 'アルバム曲') {
-            const groups = {}; 
-            data.songs.forEach(song => {
-                const info = songData[song];
-                let sourceTitle = '';
-                if (info) {
-                    if (type === 'カップリング曲') sourceTitle = info.singleTitle;
-                    else if (type === 'アルバム曲') sourceTitle = info.albumTitle;
-                }
-                const key = sourceTitle || 'その他';
-                if (!groups[key]) groups[key] = [];
-                groups[key].push(song);
-            });
-            msg = `${year}年 ${type}`;
-            Object.keys(groups).forEach(src => {
-                msg += `\\n\\n`;
-                if (src !== 'その他') {
-                    msg += `『${src}』に収録の\\n`;
-                }
-                msg += groups[src].map(s => `・${s}`).join('\\n');
-            });
-        } else {
-            msg += `\\n` + Array.from(data.songs).map(s => `・${s}`).join('\\n');
-        }
-
-        return `onclick="alert('${msg}')"`;
-     };
-
-     // 上段: 表題
-     let styleTitle = dTitle.count > 0 ? `background-color:${colorTitle}; color:${dTitle.count >= 3 ? 'white' : 'inherit'}` : emptyStyle;
-     html += `<div class="${cellBase}" style="${styleTitle}" ${getOnClick(y, '表題曲', dTitle)}>${dTitle.count > 0 ? dTitle.count : ''}</div>`;
-     
-     // 中段: カップリング
-     let styleCW = dCW.count > 0 ? `background-color:${colorCW}; color:${dCW.count >= 3 ? 'white' : 'inherit'}` : emptyStyle;
-     html += `<div class="${cellBase}" style="${styleCW}" ${getOnClick(y, 'カップリング曲', dCW)}>${dCW.count > 0 ? dCW.count : ''}</div>`;
-     
-     // 下段: アルバム
-     let styleAlbum = dAlbum.count > 0 ? `background-color:${colorAlbum}; color:${dAlbum.count >= 3 ? 'white' : 'inherit'}` : emptyStyle;
-     html += `<div class="${cellBase}" style="${styleAlbum}" ${getOnClick(y, 'アルバム曲', dAlbum)}>${dAlbum.count > 0 ? dAlbum.count : ''}</div>`;
-
-     // 年ラベル（既存と完全一致：4桁表示で90度回転）
-     html += `<div class="w-full h-10 relative mt-1"><div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[10px] text-gray-500 whitespace-nowrap">${y}</div></div>`;
-
-     html += `</div>`;
-  }
-  html += '</div>';
-
-  container.innerHTML = html;
-}
-// ▲▲ ここまで ▲▲
-
 function renderPatternStats() {
   const types = ['opening', 'encore', 'last'];
   
@@ -2139,6 +2021,63 @@ function renderPatternStats() {
       </div>`
     }).join('');
   });
+}
+
+// ★追加: 投票ランキングデータの取得と描画
+async function fetchAndRenderVoteRanking() {
+  const container = document.getElementById('vote-ranking-container');
+  if (!container) return;
+  if (isVoteRankingLoaded) return; // 取得済みならスキップ
+
+  try {
+    const response = await fetch(`${API_URL}?action=getVoteRanking`);
+    if (!response.ok) throw new Error('Network error');
+    const result = await response.json();
+
+    if (result.status === 'success' && result.rankings && result.rankings.length > 0) {
+      isVoteRankingLoaded = true;
+      let html = '';
+      
+      result.rankings.forEach((q, index) => {
+        // 各質問のTOP3だけを抽出
+        const top3 = q.items.slice(0, 3);
+        let itemsHtml = '';
+        
+        if (top3.length === 0) {
+          itemsHtml = '<p class="text-xs text-gray-400 py-2 text-center">まだ投票がありません</p>';
+        } else {
+          itemsHtml = top3.map((item, i) => {
+            const rankColor = ['text-aiko-pink','text-aiko-yellow','text-aiko-blue'][i] || 'text-gray-300';
+            return `
+            <div class="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+              <div class="flex items-center gap-2 overflow-hidden">
+                <span class="font-bold italic ${rankColor} w-4 text-center">${i + 1}</span>
+                <span class="text-sm font-bold text-gray-700 truncate">${item.song}</span>
+              </div>
+              <span class="text-xs font-bold text-gray-400 whitespace-nowrap">${item.count}票</span>
+            </div>`;
+          }).join('');
+        }
+
+        html += `
+        <div class="card-base bg-white p-3 shadow-sm border border-gray-100">
+          <div class="text-xs font-bold text-gray-500 mb-2 leading-tight border-b border-dashed border-gray-200 pb-2">
+            Q${index + 1}. ${q.title}
+          </div>
+          <div class="flex flex-col">
+            ${itemsHtml}
+          </div>
+        </div>`;
+      });
+
+      container.innerHTML = html;
+    } else {
+      container.innerHTML = '<div class="card-base bg-white p-4 text-center text-sm text-gray-400">まだ投票データがありません</div>';
+    }
+  } catch (error) {
+    console.error('Error fetching vote ranking:', error);
+    container.innerHTML = '<div class="card-base bg-white p-4 text-center text-sm text-red-400">データの取得に失敗しました</div>';
+  }
 }
 
 function renderVenueRanking() {
