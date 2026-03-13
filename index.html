@@ -578,7 +578,8 @@
                 }
             },
 
-            syncToCloud: async function(silent = false) {
+            // ★修正: 引数に isVote を追加
+            syncToCloud: async function(silent = false, isVote = false) {
                 if (!this.data.settings.syncId) return false;
                 if (!silent && !confirm('現在のデータをクラウドに保存しますか？')) return false;
 
@@ -591,8 +592,9 @@
                     params.append('syncId', this.data.settings.syncId);
                     params.append('data', compressed);
 
-                    // ★追加: 投票データがあれば一緒に送る
-                    if (window.lldbVotes) {
+                    // ★修正: 投票フラグがtrueの時だけ、投票データを送る
+                    if (isVote && window.lldbVotes) {
+                        params.append('isVoteUpdate', 'true');
                         params.append('q1', window.lldbVotes.q1 || '');
                         params.append('q2', window.lldbVotes.q2 || '');
                         params.append('q3', window.lldbVotes.q3 || '');
@@ -911,7 +913,8 @@
             btn.innerHTML = '<i class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></i> 保存中...';
             btn.disabled = true;
 
-            const success = await UserDataManager.syncToCloud(true);
+            // ★修正: 第2引数(isVote)を true にして呼び出す
+            const success = await UserDataManager.syncToCloud(true, true);
             
             btn.innerHTML = originalText;
             btn.disabled = false;
