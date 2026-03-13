@@ -826,7 +826,8 @@
                     
                     // ★追加: 投票編集ボタンを動的に追加
                     if (!document.getElementById('vote-edit-btn')) {
-                        activeArea.insertAdjacentHTML('beforeend', `<button id="vote-edit-btn" onclick="UserDataManager.loadFromCloud(true)" class="w-full mt-3 bg-[#4F46E5] text-white font-bold py-3 rounded-lg text-sm shadow hover:bg-indigo-600 flex items-center justify-center gap-2 transition"><i data-lucide="crown" class="w-4 h-4"></i> みんなの投票に参加・編集</button>`);
+                        // 修正: onclickの中身を handleVoteBtnClick(this) に変更
+                        activeArea.insertAdjacentHTML('beforeend', `<button id="vote-edit-btn" onclick="handleVoteBtnClick(this)" class="w-full mt-3 bg-[#4F46E5] text-white font-bold py-3 rounded-lg text-sm shadow hover:bg-indigo-600 flex items-center justify-center gap-2 transition"><i data-lucide="crown" class="w-4 h-4"></i> みんなの投票に参加・編集</button>`);
                         if(typeof lucide !== 'undefined') lucide.createIcons();
                     }
                 } else {
@@ -865,6 +866,23 @@
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
             }, 300);
+        }
+
+        // ★追加: 投票ボタンを押した時のローディングアニメーション処理
+        async function handleVoteBtnClick(btn) {
+            // ボタンの見た目を「準備中」に変更
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></i> データを準備中...';
+            btn.classList.add('opacity-70');
+            btn.disabled = true; // 連打防止
+            
+            // 裏側で通信を実行
+            await UserDataManager.loadFromCloud(true);
+            
+            // 通信が終わったら（モーダルが開く直前に）ボタンの見た目を元に戻す
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('opacity-70');
+            btn.disabled = false;
         }
 
         // ★追加: 投票モーダル制御
@@ -939,7 +957,7 @@
             btn.disabled = false;
             
             if(success) {
-                alert('投票を保存しました！\n（傾向タブのランキングには次回読み込み時に反映されます）');
+                alert('投票を保存しました！\n傾向タブの「みんなの投票ランキング」をチェックしてみてね👑');
                 closeVoteModal();
             } else {
                 alert('エラーが発生しました。通信環境を確認してもう一度お試しください。');
