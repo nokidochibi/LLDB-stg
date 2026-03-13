@@ -341,6 +341,63 @@
           </div>
         </div>
 
+    <div id="vote-modal" class="fixed inset-0 bg-black/60 z-[110] hidden items-center justify-center backdrop-blur-sm opacity-0 transition-opacity duration-300" onclick="closeVoteModal()">
+      <div class="bg-white w-[95%] max-w-md rounded-xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]" onclick="event.stopPropagation()">
+        
+        <div class="bg-gradient-to-r from-red-500 to-pink-500 px-5 py-4 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2 text-white">
+            <i data-lucide="crown" class="w-5 h-5"></i>
+            <h2 class="font-bold text-lg">My LLDB 投票</h2>
+          </div>
+          <button onclick="closeVoteModal()" class="text-white/80 hover:text-white">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </div>
+        
+        <div class="p-5 overflow-y-auto flex-1 bg-gray-50/50">
+          <p class="text-xs text-gray-500 mb-4 font-bold leading-relaxed bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+            ログインありがとうございます！<br>
+            みんなで作るランキングのお題です。<br>
+            あなたの「今の気分」で選んでください。
+          </p>
+
+          <form id="vote-form" class="space-y-4">
+            <div class="card-base bg-white p-4 shadow-sm border border-gray-100">
+              <label class="block text-sm font-bold text-gray-700 mb-2" id="label-q1">Q1. 読み込み中...</label>
+              <input type="text" id="vote-q1" placeholder="曲名を入力" class="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-200 focus:border-red-400 transition" autocomplete="off">
+            </div>
+            <div class="card-base bg-white p-4 shadow-sm border border-gray-100">
+              <label class="block text-sm font-bold text-gray-700 mb-2" id="label-q2">Q2. 読み込み中...</label>
+              <input type="text" id="vote-q2" placeholder="曲名を入力" class="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-200 focus:border-red-400 transition" autocomplete="off">
+            </div>
+            <div class="card-base bg-white p-4 shadow-sm border border-gray-100">
+              <label class="block text-sm font-bold text-gray-700 mb-2" id="label-q3">Q3. 読み込み中...</label>
+              <input type="text" id="vote-q3" placeholder="曲名を入力" class="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-200 focus:border-red-400 transition" autocomplete="off">
+            </div>
+            <div class="card-base bg-white p-4 shadow-sm border border-gray-100">
+              <label class="block text-sm font-bold text-gray-700 mb-2" id="label-q4">Q4. 読み込み中...</label>
+              <input type="text" id="vote-q4" placeholder="曲名を入力" class="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-200 focus:border-red-400 transition" autocomplete="off">
+            </div>
+            <div class="card-base bg-white p-4 shadow-sm border border-gray-100">
+              <label class="block text-sm font-bold text-gray-700 mb-2" id="label-q5">Q5. 読み込み中...</label>
+              <input type="text" id="vote-q5" placeholder="曲名を入力" class="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-200 focus:border-red-400 transition" autocomplete="off">
+            </div>
+          </form>
+        </div>
+
+        <div class="p-4 bg-white border-t border-gray-100 shrink-0 flex flex-col gap-2">
+          <button type="button" onclick="submitVote()" class="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold py-3 rounded-xl text-sm shadow-md hover:opacity-90 transition flex items-center justify-center gap-2">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            投票して保存する
+          </button>
+          <button type="button" onclick="closeVoteModal()" class="w-full text-gray-400 font-bold py-2 rounded-xl text-xs hover:bg-gray-50 transition">
+            あとで投票する
+          </button>
+        </div>
+        
+      </div>
+    </div>
+
 
     <div id="app-live" class="app-screen active">
         <iframe src="./index_LLDBLive.html" class="w-full h-full border-none"></iframe>
