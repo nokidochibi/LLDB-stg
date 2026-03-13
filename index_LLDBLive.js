@@ -2046,19 +2046,31 @@ async function fetchAndRenderVoteRanking() {
       let html = '';
       
       result.rankings.forEach((q, index) => {
-        // ★修正：上位20曲を取得
-        const top20 = q.items.slice(0, 20);
         let itemsHtml = '';
         
-        if (top20.length === 0) {
+        if (q.items.length === 0) {
           itemsHtml = '<p class="text-xs text-gray-400 py-2 text-center">まだ投票がありません</p>';
         } else {
-          itemsHtml = top20.map((item, i) => {
-            const rankColor = i < 3 ? ['text-aiko-pink','text-aiko-yellow','text-aiko-blue'][i] : 'text-gray-400';
+          // 順位計算用の変数
+          let currentRank = 0;
+          let lastVal = -1;
+          let skip = 1;
+
+          // 全件表示しつつ、同票なら同じ順位にする
+          itemsHtml = q.items.map((item, i) => {
+            if (item.count !== lastVal) {
+              if (lastVal !== -1) { currentRank += skip; skip = 1; } 
+              else { currentRank = 1; }
+              lastVal = item.count;
+            } else {
+              skip++;
+            }
+
+            const rankColor = currentRank <= 3 ? ['text-aiko-pink','text-aiko-yellow','text-aiko-blue'][currentRank-1] : 'text-gray-400';
             return `
             <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
               <div class="flex items-center gap-2 overflow-hidden">
-                <span class="font-bold italic ${rankColor} w-5 text-center text-xs">${i + 1}</span>
+                <span class="font-bold italic ${rankColor} w-5 text-center text-xs">${currentRank}</span>
                 <span class="text-sm font-bold text-gray-700 truncate">${item.song}</span>
               </div>
               <span class="text-[10px] font-bold text-gray-400 whitespace-nowrap">${item.count}票</span>
@@ -2066,7 +2078,7 @@ async function fetchAndRenderVoteRanking() {
           }).join('');
         }
 
-        // ★修正：アコーディオンUIに変更 (details/summaryタグを使用)
+        // アコーディオンUI (全件表示)
         html += `
         <details class="card-base bg-white p-0 shadow-sm border border-gray-100 overflow-hidden group" ${index === 0 ? 'open' : ''}>
           <summary class="flex items-center justify-between p-4 cursor-pointer list-none bg-white">
@@ -2077,7 +2089,6 @@ async function fetchAndRenderVoteRanking() {
           </summary>
           <div class="px-4 pb-4 border-t border-gray-50">
             ${itemsHtml}
-            ${q.items.length > 20 ? `<p class="text-[10px] text-gray-300 text-center mt-2">（21位以下は省略）</p>` : ''}
           </div>
         </details>`;
       });
