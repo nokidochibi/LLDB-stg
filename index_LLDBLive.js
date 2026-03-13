@@ -2039,14 +2039,45 @@ async function fetchAndRenderVoteRanking() {
       let html = '';
       
       result.rankings.forEach((q, index) => {
-        // 各質問のTOP3だけを抽出
-        const top3 = q.items.slice(0, 3);
+        // ★修正：上位20曲を取得
+        const top20 = q.items.slice(0, 20);
         let itemsHtml = '';
         
-        if (top3.length === 0) {
+        if (top20.length === 0) {
           itemsHtml = '<p class="text-xs text-gray-400 py-2 text-center">まだ投票がありません</p>';
         } else {
-          itemsHtml = top3.map((item, i) => {
+          itemsHtml = top20.map((item, i) => {
+            const rankColor = i < 3 ? ['text-aiko-pink','text-aiko-yellow','text-aiko-blue'][i] : 'text-gray-400';
+            return `
+            <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+              <div class="flex items-center gap-2 overflow-hidden">
+                <span class="font-bold italic ${rankColor} w-5 text-center text-xs">${i + 1}</span>
+                <span class="text-sm font-bold text-gray-700 truncate">${item.song}</span>
+              </div>
+              <span class="text-[10px] font-bold text-gray-400 whitespace-nowrap">${item.count}票</span>
+            </div>`;
+          }).join('');
+        }
+
+        // ★修正：アコーディオンUIに変更 (details/summaryタグを使用)
+        html += `
+        <details class="card-base bg-white p-0 shadow-sm border border-gray-100 overflow-hidden group" ${index === 0 ? 'open' : ''}>
+          <summary class="flex items-center justify-between p-4 cursor-pointer list-none bg-white">
+            <div class="text-sm font-bold text-gray-700 pr-2">
+              <span class="text-aiko-red mr-1">Q${index + 1}.</span> ${q.title}
+            </div>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180"></i>
+          </summary>
+          <div class="px-4 pb-4 border-t border-gray-50">
+            ${itemsHtml}
+            ${q.items.length > 20 ? `<p class="text-[10px] text-gray-300 text-center mt-2">（21位以下は省略）</p>` : ''}
+          </div>
+        </details>`;
+      });
+
+      container.innerHTML = html;
+      if(typeof lucide !== 'undefined') lucide.createIcons(); // アイコン再描画
+    } else {
             const rankColor = ['text-aiko-pink','text-aiko-yellow','text-aiko-blue'][i] || 'text-gray-300';
             return `
             <div class="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
