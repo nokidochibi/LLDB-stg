@@ -2078,31 +2078,6 @@ async function fetchAndRenderVoteRanking() {
       container.innerHTML = html;
       if(typeof lucide !== 'undefined') lucide.createIcons(); // アイコン再描画
     } else {
-            const rankColor = ['text-aiko-pink','text-aiko-yellow','text-aiko-blue'][i] || 'text-gray-300';
-            return `
-            <div class="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
-              <div class="flex items-center gap-2 overflow-hidden">
-                <span class="font-bold italic ${rankColor} w-4 text-center">${i + 1}</span>
-                <span class="text-sm font-bold text-gray-700 truncate">${item.song}</span>
-              </div>
-              <span class="text-xs font-bold text-gray-400 whitespace-nowrap">${item.count}票</span>
-            </div>`;
-          }).join('');
-        }
-
-        html += `
-        <div class="card-base bg-white p-3 shadow-sm border border-gray-100">
-          <div class="text-xs font-bold text-gray-500 mb-2 leading-tight border-b border-dashed border-gray-200 pb-2">
-            Q${index + 1}. ${q.title}
-          </div>
-          <div class="flex flex-col">
-            ${itemsHtml}
-          </div>
-        </div>`;
-      });
-
-      container.innerHTML = html;
-    } else {
       container.innerHTML = '<div class="card-base bg-white p-4 text-center text-sm text-gray-400">まだ投票データがありません</div>';
     }
   } catch (error) {
