@@ -1536,6 +1536,11 @@ function switchToTab(tabId) {
         // ★追加: タブ切り替え時に必ず再描画する
         renderSongRanking();
         renderLiveCountChart();
+        
+        // ★追加: 検索窓に曲名が入っていればそれを考慮して回数を再計算
+        const currentSong = document.getElementById('song-search-input').value;
+        renderTotalLiveCategorySummary(currentSong);
+        
         // 既存のリサイズ処理
         if(chartInstances.liveCount) chartInstances.liveCount.resize();
     }
@@ -2027,7 +2032,9 @@ function renderPatternStats() {
 async function fetchAndRenderVoteRanking() {
   const container = document.getElementById('vote-ranking-container');
   if (!container) return;
-  if (isVoteRankingLoaded) return; // 取得済みならスキップ
+  
+  // ★修正: タブを開くたびに最新を取得するようスキップ判定を削除し、取得中はローディング表示を出す
+  container.innerHTML = '<div class="card-base bg-white p-4 text-center text-sm text-gray-400"><i class="animate-spin w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full inline-block align-middle mr-2"></i>最新のランキングを取得中...</div>';
 
   try {
     const response = await fetch(`${API_URL}?action=getVoteRanking`);
