@@ -2031,6 +2031,8 @@ function renderCompositionHeatmap() {
     });
   });
 
+  const liveYear = endYear; // ライブ開催年は最新年とする
+
   let html = '<div class="flex items-end justify-between w-full pt-2 gap-px">';
   
   for (let y = startYear; y <= endYear; y++) {
@@ -2038,47 +2040,74 @@ function renderCompositionHeatmap() {
      const dCW = counts['カップリング曲'][y] || { count: 0, songs: new Set() };
      const dAlbum = counts['アルバム曲'][y] || { count: 0, songs: new Set() };
 
-     // 全ライブ集計用：数が多いため色の濃さの基準を引き上げる
-     const getOpacity = (c) => c >= 50 ? 1 : c >= 15 ? 0.7 : c >= 1 ? 0.4 : 0.05;
+     // 既存のセトリ成分表と完全に一致する濃さの計算
+     const getOpacity = (c) => c >= 3 ? 1 : c === 2 ? 0.7 : c === 1 ? 0.4 : 0.05;
      
      const colorTitle = `rgba(255, 105, 180, ${getOpacity(dTitle.count)})`;
      const colorCW    = `rgba(59, 130, 246, ${getOpacity(dCW.count)})`;
      const colorAlbum = `rgba(234, 179, 8, ${getOpacity(dAlbum.count)})`;
 
-     // 幅を潰して全体を収めるため、マスの中に数字は書かず色だけにする
-     const cellBase = "w-full h-5 flex items-center justify-center rounded-[1px] cursor-pointer";
-     const emptyStyle = "background-color: #f3f4f6; cursor: default;";
+     // セルのスタイル（サイズ、フォント、角丸などすべて既存と完全一致）
+     const cellBase = "w-full h-5 flex items-center justify-center text-[8px] font-bold text-gray-700 leading-none select-none rounded-[1px] overflow-hidden cursor-pointer";
+     
+     const isFuture = y > liveYear;
+     const emptyStyle = isFuture 
+        ? "background-color: #d1d5db; color: transparent; cursor: default;" 
+        : "background-color: #f3f4f6; color: transparent; cursor: default;";
 
      html += `<div class="flex flex-col gap-px flex-1">`;
 
+     // クリック時のアクション（既存のロジックに完全一致）
      const getOnClick = (year, type, data) => {
         if (data.count === 0) return '';
-        const songList = Array.from(data.songs).sort();
-        let msg = `${year}年 ${type} (延べ${data.count}回演奏)\\n\\n`;
-        msg += songList.map(s => `・${s}`).join('\\n');
+        let msg = `${year}年 ${type}\\n`;
+
+        if (type === 'カップリング曲' || type === 'アルバム曲') {
+            const groups = {}; 
+            data.songs.forEach(song => {
+                const info = songData[song];
+                let sourceTitle = '';
+                if (info) {
+                    if (type === 'カップリング曲') sourceTitle = info.singleTitle;
+                    else if (type === 'アルバム曲') sourceTitle = info.albumTitle;
+                }
+                const key = sourceTitle || 'その他';
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(song);
+            });
+            msg = `${year}年 ${type}`;
+            Object.keys(groups).forEach(src => {
+                msg += `\\n\\n`;
+                if (src !== 'その他') {
+                    msg += `『${src}』に収録の\\n`;
+                }
+                msg += groups[src].map(s => `・${s}`).join('\\n');
+            });
+        } else {
+            msg += `\\n` + Array.from(data.songs).map(s => `・${s}`).join('\\n');
+        }
+
         return `onclick="alert('${msg}')"`;
      };
 
-     html += `<div class="${cellBase}" style="${dTitle.count > 0 ? `background-color:${colorTitle}` : emptyStyle}" ${getOnClick(y, '表題曲', dTitle)}></div>`;
-     html += `<div class="${cellBase}" style="${dCW.count > 0 ? `background-color:${colorCW}` : emptyStyle}" ${getOnClick(y, 'カップリング曲', dCW)}></div>`;
-     html += `<div class="${cellBase}" style="${dAlbum.count > 0 ? `background-color:${colorAlbum}` : emptyStyle}" ${getOnClick(y, 'アルバム曲', dAlbum)}></div>`;
+     // 上段: 表題
+     let styleTitle = dTitle.count > 0 ? `background-color:${colorTitle}; color:${dTitle.count >= 3 ? 'white' : 'inherit'}` : emptyStyle;
+     html += `<div class="${cellBase}" style="${styleTitle}" ${getOnClick(y, '表題曲', dTitle)}>${dTitle.count > 0 ? dTitle.count : ''}</div>`;
+     
+     // 中段: カップリング
+     let styleCW = dCW.count > 0 ? `background-color:${colorCW}; color:${dCW.count >= 3 ? 'white' : 'inherit'}` : emptyStyle;
+     html += `<div class="${cellBase}" style="${styleCW}" ${getOnClick(y, 'カップリング曲', dCW)}>${dCW.count > 0 ? dCW.count : ''}</div>`;
+     
+     // 下段: アルバム
+     let styleAlbum = dAlbum.count > 0 ? `background-color:${colorAlbum}; color:${dAlbum.count >= 3 ? 'white' : 'inherit'}` : emptyStyle;
+     html += `<div class="${cellBase}" style="${styleAlbum}" ${getOnClick(y, 'アルバム曲', dAlbum)}>${dAlbum.count > 0 ? dAlbum.count : ''}</div>`;
 
-     // スマホに収めるため年は「下2桁」のみ表示 (例: 1998 → 98)
-     const shortYear = y.toString().slice(-2);
-     html += `<div class="w-full h-8 relative mt-1"><div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[9px] text-gray-500 whitespace-nowrap">${shortYear}</div></div>`;
+     // 年ラベル（既存と完全一致：4桁表示で90度回転）
+     html += `<div class="w-full h-10 relative mt-1"><div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[10px] text-gray-500 whitespace-nowrap">${y}</div></div>`;
 
      html += `</div>`;
   }
   html += '</div>';
-
-  // 下部に凡例を追加
-  html += `
-    <div class="flex justify-center gap-3 mt-1 pb-1 text-[10px] font-bold text-gray-500">
-        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-[rgba(255,105,180,0.7)]"></span>表題曲</div>
-        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-[rgba(59,130,246,0.7)]"></span>カップリング</div>
-        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-[rgba(234,179,8,0.7)]"></span>アルバム</div>
-    </div>
-  `;
 
   container.innerHTML = html;
 }
