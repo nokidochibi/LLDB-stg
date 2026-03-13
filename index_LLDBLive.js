@@ -305,6 +305,7 @@ function initializeApp(data, isFullLoad = true) {
               renderVenueRanking();
               renderVenueLiveCountChart();
           } else if (tabId === 'pattern') {
+              renderCompositionHeatmap(); // ★追加: 全ライブ成分表の描画
               renderPatternStats();
               renderAlbumChart();
           } else if (tabId === 'records') {
@@ -1539,6 +1540,7 @@ function switchToTab(tabId) {
     }
     if (tabId === 'pattern') {
         // ★追加: タブ切り替え時に必ず再描画する
+        renderCompositionHeatmap(); // ★追加: 全ライブ成分表の描画
         renderPatternStats();
         renderAlbumChart();
     }
@@ -1991,6 +1993,96 @@ function updateSortIcons() {
 
     lucide.createIcons();
 }
+
+// ▼▼ 今回追加：全ライブ成分表の描画関数 ▼▼
+function renderCompositionHeatmap() {
+  const container = document.getElementById('composition-heatmap-container');
+  if (!container) return;
+
+  if (!isFullDataLoaded) {
+      container.innerHTML = '<div class="text-center py-8"><div class="text-xl mb-1 animate-bounce">🌱</div><p class="text-gray-400 text-xs">データ読み込み中...<br>少し待っててね</p></div>';
+      return;
+  }
+
+  const startYear = 1998;
+  const endYear = new Date().getFullYear();
+  const counts = { '表題曲': {}, 'カップリング曲': {}, 'アルバム曲': {} };
+  
+  // 全ライブのセトリから集計
+  allLiveRecords.forEach(rec => {
+    rec.setlist.forEach(s => {
+      if (!s || s === '__MEDLEY_START__' || s === '__MEDLEY_END__') return;
+      const clean = s.replace(/_アンコール(?: #\d+)?/g, '').replace(/#\d+$/g, '').trim();
+      const info = songData[clean];
+      if (!info || !info.year) return;
+
+      let type = 'その他';
+      if (info.type) {
+          if (info.type.includes('表題') || info.type.includes('シングル')) type = '表題曲';
+          else if (info.type.includes('カップリング') || info.type.includes('C/W') || info.type.includes('B面')) type = 'カップリング曲';
+          else if (info.type.includes('アルバム') || info.type.includes('Album')) type = 'アルバム曲';
+      }
+      
+      if (counts[type]) {
+          if (!counts[type][info.year]) counts[type][info.year] = { count: 0, songs: new Set() };
+          counts[type][info.year].count++;
+          counts[type][info.year].songs.add(clean);
+      }
+    });
+  });
+
+  let html = '<div class="flex items-end justify-between w-full pt-2 gap-px">';
+  
+  for (let y = startYear; y <= endYear; y++) {
+     const dTitle = counts['表題曲'][y] || { count: 0, songs: new Set() };
+     const dCW = counts['カップリング曲'][y] || { count: 0, songs: new Set() };
+     const dAlbum = counts['アルバム曲'][y] || { count: 0, songs: new Set() };
+
+     // 全ライブ集計用：数が多いため色の濃さの基準を引き上げる
+     const getOpacity = (c) => c >= 50 ? 1 : c >= 15 ? 0.7 : c >= 1 ? 0.4 : 0.05;
+     
+     const colorTitle = `rgba(255, 105, 180, ${getOpacity(dTitle.count)})`;
+     const colorCW    = `rgba(59, 130, 246, ${getOpacity(dCW.count)})`;
+     const colorAlbum = `rgba(234, 179, 8, ${getOpacity(dAlbum.count)})`;
+
+     // 幅を潰して全体を収めるため、マスの中に数字は書かず色だけにする
+     const cellBase = "w-full h-5 flex items-center justify-center rounded-[1px] cursor-pointer";
+     const emptyStyle = "background-color: #f3f4f6; cursor: default;";
+
+     html += `<div class="flex flex-col gap-px flex-1">`;
+
+     const getOnClick = (year, type, data) => {
+        if (data.count === 0) return '';
+        const songList = Array.from(data.songs).sort();
+        let msg = `${year}年 ${type} (延べ${data.count}回演奏)\\n\\n`;
+        msg += songList.map(s => `・${s}`).join('\\n');
+        return `onclick="alert('${msg}')"`;
+     };
+
+     html += `<div class="${cellBase}" style="${dTitle.count > 0 ? `background-color:${colorTitle}` : emptyStyle}" ${getOnClick(y, '表題曲', dTitle)}></div>`;
+     html += `<div class="${cellBase}" style="${dCW.count > 0 ? `background-color:${colorCW}` : emptyStyle}" ${getOnClick(y, 'カップリング曲', dCW)}></div>`;
+     html += `<div class="${cellBase}" style="${dAlbum.count > 0 ? `background-color:${colorAlbum}` : emptyStyle}" ${getOnClick(y, 'アルバム曲', dAlbum)}></div>`;
+
+     // スマホに収めるため年は「下2桁」のみ表示 (例: 1998 → 98)
+     const shortYear = y.toString().slice(-2);
+     html += `<div class="w-full h-8 relative mt-1"><div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -rotate-90 text-[9px] text-gray-500 whitespace-nowrap">${shortYear}</div></div>`;
+
+     html += `</div>`;
+  }
+  html += '</div>';
+
+  // 下部に凡例を追加
+  html += `
+    <div class="flex justify-center gap-3 mt-1 pb-1 text-[10px] font-bold text-gray-500">
+        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-[rgba(255,105,180,0.7)]"></span>表題曲</div>
+        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-[rgba(59,130,246,0.7)]"></span>カップリング</div>
+        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-[rgba(234,179,8,0.7)]"></span>アルバム</div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+// ▲▲ ここまで ▲▲
 
 function renderPatternStats() {
   const types = ['opening', 'encore', 'last'];
