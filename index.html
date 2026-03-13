@@ -579,8 +579,8 @@
             },
 
             syncToCloud: async function(silent = false) {
-                if (!this.data.settings.syncId) return;
-                if (!silent && !confirm('現在のデータをクラウドに保存しますか？')) return;
+                if (!this.data.settings.syncId) return false;
+                if (!silent && !confirm('現在のデータをクラウドに保存しますか？')) return false;
 
                 try {
                     // 圧縮された文字列をそのまま送る
@@ -590,6 +590,15 @@
                     params.append('action', 'save_user_data');
                     params.append('syncId', this.data.settings.syncId);
                     params.append('data', compressed);
+
+                    // ★追加: 投票データがあれば一緒に送る
+                    if (window.lldbVotes) {
+                        params.append('q1', window.lldbVotes.q1 || '');
+                        params.append('q2', window.lldbVotes.q2 || '');
+                        params.append('q3', window.lldbVotes.q3 || '');
+                        params.append('q4', window.lldbVotes.q4 || '');
+                        params.append('q5', window.lldbVotes.q5 || '');
+                    }
 
                     const res = await fetch(GAS_API_URL, {
                         method: 'POST',
@@ -601,11 +610,13 @@
                     this.save(true); // LastSync更新のため(再同期はしない)
                     this.updateUI();
                     if(!silent) alert('クラウドに保存しました！');
+                    return true;
                     } else {
                         throw new Error(json.message);
                     }
                 } catch(e) {
                     if(!silent) alert('保存に失敗しました: ' + e);
+                    return false;
                 }
             },
 
@@ -633,6 +644,14 @@
                         this.updateUI();
                         this.broadcastData();
                         if(!silent) alert('復元が完了しました！');
+                        
+                        // ★追加: 質問とお題を保持してモーダルを開く
+                        if (json.questions) {
+                            window.lldbQuestions = json.questions;
+                            window.lldbVotes = json.votes || {};
+                            openVoteModal();
+                        }
+                        
                         return true;
                     } else {
                         alert('データが見つかりませんでした。IDを確認してください。');
@@ -795,6 +814,12 @@
                     lastSyncDisplay.textContent = this.data.settings.lastSync 
                         ? `最終保存: ${this.data.settings.lastSync}` 
                         : '未同期';
+                    
+                    // ★追加: 投票編集ボタンを動的に追加
+                    if (!document.getElementById('vote-edit-btn')) {
+                        activeArea.insertAdjacentHTML('beforeend', `<button id="vote-edit-btn" onclick="UserDataManager.loadFromCloud(true)" class="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold py-3 rounded-lg text-sm shadow hover:opacity-90 flex items-center justify-center gap-2 transition"><i data-lucide="crown" class="w-4 h-4"></i> みんなの投票に参加・編集</button>`);
+                        if(typeof lucide !== 'undefined') lucide.createIcons();
+                    }
                 } else {
                     setupArea.classList.remove('hidden');
                     activeArea.classList.add('hidden');
@@ -831,6 +856,72 @@
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
             }, 300);
+        }
+
+        // ★追加: 投票モーダル制御
+        function openVoteModal() {
+            if (window.lldbQuestions) {
+                document.getElementById('label-q1').textContent = `Q1. ${window.lldbQuestions.q1}`;
+                document.getElementById('label-q2').textContent = `Q2. ${window.lldbQuestions.q2}`;
+                document.getElementById('label-q3').textContent = `Q3. ${window.lldbQuestions.q3}`;
+                document.getElementById('label-q4').textContent = `Q4. ${window.lldbQuestions.q4}`;
+                document.getElementById('label-q5').textContent = `Q5. ${window.lldbQuestions.q5}`;
+            }
+            if (window.lldbVotes) {
+                document.getElementById('vote-q1').value = window.lldbVotes.q1 || '';
+                document.getElementById('vote-q2').value = window.lldbVotes.q2 || '';
+                document.getElementById('vote-q3').value = window.lldbVotes.q3 || '';
+                document.getElementById('vote-q4').value = window.lldbVotes.q4 || '';
+                document.getElementById('vote-q5').value = window.lldbVotes.q5 || '';
+            }
+
+            closeMyLLDBModal(); // 設定モーダルと重ならないように閉じる
+            
+            const modal = document.getElementById('vote-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeVoteModal() {
+            const modal = document.getElementById('vote-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        async function submitVote() {
+            if (!UserDataManager.data.settings.syncId) {
+                alert('投票するにはMy LLDBの設定が必要です！');
+                return;
+            }
+
+            window.lldbVotes = {
+                q1: document.getElementById('vote-q1').value.trim(),
+                q2: document.getElementById('vote-q2').value.trim(),
+                q3: document.getElementById('vote-q3').value.trim(),
+                q4: document.getElementById('vote-q4').value.trim(),
+                q5: document.getElementById('vote-q5').value.trim()
+            };
+
+            const btn = document.querySelector('#vote-modal button[onclick="submitVote()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></i> 保存中...';
+            btn.disabled = true;
+
+            const success = await UserDataManager.syncToCloud(true);
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            
+            if(success) {
+                alert('投票を保存しました！\n（傾向タブのランキングには次回読み込み時に反映されます）');
+                closeVoteModal();
+            } else {
+                alert('エラーが発生しました。通信環境を確認してもう一度お試しください。');
+            }
         }
 
         // 初期化実行 (DOM Load時)
