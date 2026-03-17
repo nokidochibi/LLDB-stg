@@ -987,6 +987,10 @@
                 else if (event.data.type === 'openMyLLDB') {
                 openMyLLDBModal();
                 }
+                // ★追加: 傾向タブからの投票モーダル起動要求
+                else if (event.data.type === 'openVoteModal') {
+                openVoteModal();
+                }
                 });
         });
 
