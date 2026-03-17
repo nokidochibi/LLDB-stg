@@ -543,13 +543,26 @@ button { font-size: 13px !important; }
   </div>
 
   <div id="tab-venue" class="tab-content" style="display:none">
-    <div class="mb-5">
-      <h3 class="font-bold mb-2 text-gray-700 text-base flex items-center gap-2"><i data-lucide="bar-chart" class="w-4 h-4 text-aiko-red"></i> 年別開催回数</h3>
-      <div class="card-base bg-white p-2">
-        <canvas id="venue-live-count-chart" style="height:220px; max-height:220px"></canvas>
-      </div>
-    </div>
-    <div class="card-base bg-white border-0 mb-0 rounded-b-none pb-4">
+<div class="mb-5">
+<h3 class="font-bold mb-2 text-gray-700 text-base flex items-center gap-2"><i data-lucide="bar-chart" class="w-4 h-4 text-aiko-red"></i> 年別開催回数</h3>
+<div class="card-base bg-white p-2">
+<canvas id="venue-live-count-chart" style="height:220px; max-height:220px"></canvas>
+</div>
+</div>
+
+<div class="card-base bg-white border-0 p-4 mb-5 flex items-center justify-between overflow-hidden relative">
+<div class="flex-1">
+<h3 class="font-bold mb-3 text-gray-700 text-base flex items-center gap-2">
+<i data-lucide="map-pin" class="w-4 h-4 text-aiko-red"></i> <span id="venue-stats-label">全ライブ開催回数</span>: <span id="venue-total-held" class="text-lg text-aiko-red">0</span>
+</h3>
+<div id="venue-category-counts" class="text-sm font-bold space-y-1"></div>
+</div>
+<div style="width: 70px; height: 70px;" class="flex-shrink-0">
+<canvas id="venue-category-doughnut"></canvas>
+</div>
+</div>
+
+<div class="card-base bg-white border-0 mb-0 rounded-b-none pb-4">
       <div class="flex gap-2 items-center">
         <div class="relative flex-1">
             <input type="text" id="venue-search-input" placeholder="会場 / 都道府県で検索" class="w-full px-3 bg-gray-50 border-gray-200">
