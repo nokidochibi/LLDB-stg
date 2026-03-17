@@ -838,9 +838,10 @@
         };
 
         // モーダル制御
-        function openMyLLDBModal() {
-      toggleNoren(); // メニュー閉じる
-      const modal = document.getElementById('mylldb-modal');
+function openMyLLDBModal() {
+const menu = document.getElementById('noren-menu');
+if (menu && menu.classList.contains('open')) toggleNoren(); // 暖簾が開いている時だけ閉じる
+const modal = document.getElementById('mylldb-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex'); // for flexbox centering
       setTimeout(() => modal.classList.remove('opacity-0'), 10);
