@@ -270,11 +270,12 @@ function initializeApp(data, isFullLoad = true) {
 
   // ★追加: 読み込み中表示を出す（Step1のときのみ実行）
   if (!isFullLoad) {
-      renderSongRanking();
-      renderPatternStats();
-      renderVenueRanking();
-      renderRecordsTab();
-  }
+renderSongRanking();
+renderPatternStats();
+renderVenueRanking();
+renderVenueCategorySummary();
+renderRecordsTab();
+}
 
   // 【重要】以下の重い処理は、全データが揃っている時(isFullLoad=true)のみ実行
   if (isFullLoad) {
@@ -302,10 +303,11 @@ function initializeApp(data, isFullLoad = true) {
               renderSongRanking();
               renderLiveCountChart();
               renderTotalLiveCategorySummary();
-          } else if (tabId === 'venue') {
-              renderVenueRanking();
-              renderVenueLiveCountChart();
-          } else if (tabId === 'pattern') {
+} else if (tabId === 'venue') {
+renderVenueRanking();
+renderVenueLiveCountChart();
+renderVenueCategorySummary();
+} else if (tabId === 'pattern') {
               renderPatternStats();
               renderAlbumChart();
               fetchAndRenderVoteRanking(); // ★追加
@@ -586,75 +588,173 @@ function renderTotalLiveCategorySummary(targetSong = null) {
 }
 
 function renderVenueLiveCountChart() {
-  const canvas = document.getElementById('venue-live-count-chart');
-  if (!canvas) return;
-  if (chartInstances.venueLiveCount) chartInstances.venueLiveCount.destroy();
+const canvas = document.getElementById('venue-live-count-chart');
+if (!canvas) return;
+if (chartInstances.venueLiveCount) chartInstances.venueLiveCount.destroy();
 
-  const liveCountsByYear = allLiveRecords.reduce((acc, rec) => {
-    if (rec.year) acc[rec.year] = (acc[rec.year] || 0) + 1;
-    return acc;
-  }, {});
+const years = [];
+const breakdown = { pop: {}, rock: {}, aloha: {}, other: {}, total: {} };
 
-  const selectedPlaysByYear = {};
-  if (selectedVenueInfo) {
-    allLiveRecords.forEach(rec => {
-      if (!rec.year) return;
-      let isMatch = false;
-      if (selectedVenueInfo.type === 'venue') {
-        const venueKey = rec.region === 'オンライン' ? 'オンライン' : `${rec.venue} (${rec.region})`;
-        if (venueKey === selectedVenueInfo.name) isMatch = true;
-      } else if (selectedVenueInfo.type === 'region') {
-        if (rec.region === selectedVenueInfo.name) isMatch = true;
-      }
-      if (isMatch) selectedPlaysByYear[rec.year] = (selectedPlaysByYear[rec.year] || 0) + 1;
-    });
-  }
+allLiveRecords.forEach(rec => {
+if(!rec.year) return;
+if(!breakdown.total[rec.year]) {
+years.push(rec.year);
+breakdown.total[rec.year] = 0;
+breakdown.pop[rec.year] = 0;
+breakdown.rock[rec.year] = 0;
+breakdown.aloha[rec.year] = 0;
+breakdown.other[rec.year] = 0;
+}
+breakdown.total[rec.year]++;
+});
+years.sort((a,b) => a - b);
 
-  const years = Object.keys(liveCountsByYear).sort((a, b) => a - b);
-  const totalLiveData = years.map(year => liveCountsByYear[year]);
-  const selectedPlayData = years.map(year => selectedPlaysByYear[year] || 0);
+allLiveRecords.forEach(rec => {
+if(!rec.year) return;
+let isMatch = true;
+if (selectedVenueInfo) {
+isMatch = false;
+if (selectedVenueInfo.type === 'venue') {
+const venueKey = rec.region === 'オンライン' ? 'オンライン' : `${rec.venue} (${rec.region})`;
+if (venueKey === selectedVenueInfo.name) isMatch = true;
+} else if (selectedVenueInfo.type === 'region') {
+if (rec.region === selectedVenueInfo.name) isMatch = true;
+}
+}
 
-  const datasets = [{
-    label: '選択場所',
-    data: selectedPlayData,
-    backgroundColor: 'rgba(255, 105, 180, 0.8)',
-    borderColor: 'rgba(255, 105, 180, 1)',
-    borderWidth: 1,
-    stack: 'stack1',
-    datalabels: {
-      display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
-      color: 'gray',
-      anchor: 'end',
-      align: 'end',
-      offset: -2,
-      font: { size: 10, weight: 'bold' },
-      formatter: val => val
-    }
-  }, {
-    label: 'その他',
-    data: totalLiveData.map((total, i) => Math.max(0, total - selectedPlayData[i])),
-    backgroundColor: THEME_COLORS.BG_GRAY_ALPHA,
-    borderColor: 'rgba(229, 231, 235, 1)',
-    borderWidth: 1,
-    stack: 'stack1',
-    datalabels: { display: false }
-  }];
+if (isMatch) {
+const name = rec.tourName.toLowerCase();
+if (name.includes('pop')) breakdown.pop[rec.year]++;
+else if (name.includes('rock')) breakdown.rock[rec.year]++;
+else if (name.includes('aloha')) breakdown.aloha[rec.year]++;
+else breakdown.other[rec.year]++;
+}
+});
 
-  chartInstances.venueLiveCount = new Chart(canvas, {
-    type: 'bar',
-    data: { labels: years, datasets },
-    plugins: [ChartDataLabels],
-    options: {
-      ...chartCommonOptions,
-      scales: {
-        x: {
-          stacked: true,
-          ticks: { font: { size: 10 }, maxRotation: 90, minRotation: 90, autoSkip: false }
-        },
-        y: { stacked: true, beginAtZero: true, min: 0, ticks: { font: { size: 10 }, stepSize: 5 } }
-      }
-    }
-  });
+const getDatalabelsConfig = () => ({
+display: (ctx) => {
+const dsIndex = ctx.datasetIndex;
+const dataIndex = ctx.dataIndex;
+const datasets = ctx.chart.data.datasets;
+if (datasets[dsIndex].data[dataIndex] === 0) return false;
+for (let i = dsIndex + 1; i <= 3; i++) {
+if (datasets[i].data[dataIndex] > 0) return false;
+}
+return true;
+},
+color: 'gray', anchor: 'end', align: 'end', offset: -2,
+font: { size: 10, weight: 'bold' },
+formatter: (value, ctx) => {
+const idx = ctx.dataIndex;
+const ds = ctx.chart.data.datasets;
+return ds[0].data[idx] + ds[1].data[idx] + ds[2].data[idx] + ds[3].data[idx];
+}
+});
+
+const datalabelsConfig = getDatalabelsConfig();
+
+const datasets = [
+{ label: 'Pop', data: years.map(y => breakdown.pop[y]), backgroundColor: THEME_COLORS.POP, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
+{ label: 'Rock', data: years.map(y => breakdown.rock[y]), backgroundColor: THEME_COLORS.ROCK, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
+{ label: 'Aloha', data: years.map(y => breakdown.aloha[y]), backgroundColor: THEME_COLORS.ALOHA, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
+{ label: 'Other', data: years.map(y => breakdown.other[y]), backgroundColor: THEME_COLORS.EVENT, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig }
+];
+
+if (selectedVenueInfo) {
+datasets.push({
+label: '他の場所',
+data: years.map(y => {
+const played = breakdown.pop[y] + breakdown.rock[y] + breakdown.aloha[y] + breakdown.other[y];
+return Math.max(0, breakdown.total[y] - played);
+}),
+backgroundColor: THEME_COLORS.BG_GRAY_ALPHA,
+borderColor: THEME_COLORS.BG_GRAY_ALPHA,
+borderWidth: 1,
+stack: 'stack1',
+datalabels: { display: false }
+});
+}
+
+chartInstances.venueLiveCount = new Chart(canvas, {
+type: 'bar',
+data: { labels: years, datasets: datasets },
+plugins: [ChartDataLabels],
+options: {
+...chartCommonOptions,
+scales: {
+x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 90, minRotation: 90, autoSkip: false } },
+y: { stacked: true, beginAtZero: true, min: 0, ticks: { font: { size: 10 }, stepSize: 5 } }
+}
+}
+});
+}
+
+// 新規追加: 場所ごとの開催回数サマリー（ドーナツグラフ）
+function renderVenueCategorySummary() {
+const labelEl = document.getElementById('venue-stats-label');
+if (labelEl) labelEl.textContent = selectedVenueInfo ? 'この場所の開催回数' : '全ライブ開催回数';
+
+let targetRecords = allLiveRecords;
+
+if (selectedVenueInfo) {
+targetRecords = allLiveRecords.filter(rec => {
+if (selectedVenueInfo.type === 'venue') {
+const venueKey = rec.region === 'オンライン' ? 'オンライン' : `${rec.venue} (${rec.region})`;
+return venueKey === selectedVenueInfo.name;
+} else if (selectedVenueInfo.type === 'region') {
+return rec.region === selectedVenueInfo.name;
+}
+return false;
+});
+}
+
+const totalCount = targetRecords.length;
+const totalEl = document.getElementById('venue-total-held');
+if (totalEl) totalEl.textContent = totalCount;
+
+const counts = { pop: 0, rock: 0, aloha: 0, other: 0 };
+targetRecords.forEach(rec => {
+const name = rec.tourName.toLowerCase();
+if (name.includes('pop')) counts.pop++;
+else if (name.includes('rock')) counts.rock++;
+else if (name.includes('aloha')) counts.aloha++;
+else counts.other++;
+});
+
+const countsEl = document.getElementById('venue-category-counts');
+if (countsEl) {
+countsEl.innerHTML = `
+<div class="grid grid-cols-2 gap-x-2 gap-y-1 text-base">
+<p class="text-pop truncate">・Pop: ${counts.pop}</p>
+<p class="text-aloha truncate">・Aloha: ${counts.aloha}</p>
+<p class="text-rock truncate">・Rock: ${counts.rock}</p>
+<p class="text-event truncate">・Event: ${counts.other}</p>
+</div>
+`;
+}
+
+const canvas = document.getElementById('venue-category-doughnut');
+if (!canvas) return;
+
+if (chartInstances.venueCategory) chartInstances.venueCategory.destroy();
+
+chartInstances.venueCategory = new Chart(canvas, {
+type: 'doughnut',
+data: {
+labels: ['Pop', 'Rock', 'Aloha', 'Other'],
+datasets: [{
+data: [counts.pop, counts.rock, counts.aloha, counts.other],
+backgroundColor: [THEME_COLORS.POP, THEME_COLORS.ROCK, THEME_COLORS.ALOHA, THEME_COLORS.EVENT],
+borderWidth: 0
+}]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+cutout: '70%',
+plugins: { legend: { display: false }, tooltip: { enabled: false } }
+}
+});
 }
 
 function renderHeatmap(setlist) {
@@ -1497,8 +1597,9 @@ function selectVenue(fullVenueName) {
   document.getElementById('region-ranking-container').style.display = 'none';
   
   renderVenueRanking();
-  renderVenueLiveCountChart();
-  document.getElementById('venue-show-setlist-btn').style.display = 'inline-block';
+renderVenueLiveCountChart();
+renderVenueCategorySummary();
+document.getElementById('venue-show-setlist-btn').style.display = 'inline-block';
 }
 
 function selectRegion(regionName) {
@@ -1511,8 +1612,9 @@ function selectRegion(regionName) {
   document.getElementById('region-ranking-container').style.display = 'block';
 
   renderVenueRanking();
-  renderVenueLiveCountChart();
-  document.getElementById('venue-show-setlist-btn').style.display = 'inline-block';
+renderVenueLiveCountChart();
+renderVenueCategorySummary();
+document.getElementById('venue-show-setlist-btn').style.display = 'inline-block';
 }
 
 function switchToTab(tabId) {
@@ -1551,11 +1653,12 @@ function switchToTab(tabId) {
         fetchAndRenderVoteRanking(); // ★追加
     }
     if (tabId === 'venue') {
-        // ★追加: タブ切り替え時に必ず再描画する
-        renderVenueRanking();
-        renderVenueLiveCountChart();
-        if(chartInstances.venueLiveCount) chartInstances.venueLiveCount.resize();
-    }
+// ★追加: タブ切り替え時に必ず再描画する
+renderVenueRanking();
+renderVenueLiveCountChart();
+renderVenueCategorySummary();
+if(chartInstances.venueLiveCount) chartInstances.venueLiveCount.resize();
+}
 }
 
 // -----------------------------------------------------------
@@ -2226,10 +2329,11 @@ function setupEventListeners() {
   document.getElementById('venue-clear-btn').addEventListener('click', () => {
     document.getElementById('venue-search-input').value = '';
     selectedVenueInfo = null;
-    document.getElementById('venue-show-setlist-btn').style.display = 'none';
-    renderVenueRanking();
-    renderVenueLiveCountChart();
-  });
+document.getElementById('venue-show-setlist-btn').style.display = 'none';
+renderVenueRanking();
+renderVenueLiveCountChart();
+renderVenueCategorySummary();
+});
 
   document.getElementById('venue-show-setlist-btn').addEventListener('click', () => {
     if (!selectedVenueInfo) return;
