@@ -3181,11 +3181,18 @@ function safeTrackEvent(eventName, params) {
 window.addEventListener('message', (event) => {
   if (event.data.type === 'userDataUpdated') {
     userUserData = event.data.data;
+    
+    // 履歴タブを開いている場合は再描画してメッセージを消す
+    const activeTab = document.querySelector('.tab-item.active');
+    if (activeTab && activeTab.dataset.tab === 'records') {
+        if (typeof renderRecordsTab === 'function') renderRecordsTab();
+    }
+
     if (!document.body.classList.contains('detail-view')) {
         applyFilters();
     } else if (currentDisplayingRecord) {
         const modal = document.getElementById('memo-modal');
-        if (modal.style.display === 'none') {
+        if (modal && modal.style.display === 'none') {
             showLiveDetail(currentDisplayingRecord);
         }
     }
