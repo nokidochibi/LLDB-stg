@@ -1549,6 +1549,16 @@ function switchToTab(tabId) {
         renderPatternStats();
         renderAlbumChart();
         fetchAndRenderVoteRanking(); // ★追加
+
+        // ★追加: タブを開いた時にログイン済みなら投票ボタンを表示
+        const voteBtn = document.getElementById('pattern-vote-btn');
+        if (voteBtn) {
+            if (userUserData.settings && userUserData.settings.syncId) {
+                voteBtn.classList.remove('hidden');
+            } else {
+                voteBtn.classList.add('hidden');
+            }
+        }
     }
     if (tabId === 'venue') {
         // ★追加: タブ切り替え時に必ず再描画する
@@ -2258,6 +2268,14 @@ function setupEventListeners() {
   [document.getElementById('modal-overlay'), document.getElementById('memo-modal')].forEach(modal => {
     if(modal) modal.addEventListener('click', e => { if (e.target === e.currentTarget) e.target.style.display = 'none'; });
   });
+
+  // ★追加: 投票ボタンを押した時に親画面にモーダルを開くよう指示を出す
+  const patternVoteBtn = document.getElementById('pattern-vote-btn');
+  if (patternVoteBtn) {
+      patternVoteBtn.addEventListener('click', () => {
+          window.parent.postMessage({ type: 'openVoteModal' }, '*');
+      });
+  }
 
   ['tour-select', 'year-select', 'region-select'].forEach(id => {
       const el = document.getElementById(id);
@@ -3063,6 +3081,17 @@ function safeTrackEvent(eventName, params) {
 window.addEventListener('message', (event) => {
   if (event.data.type === 'userDataUpdated') {
     userUserData = event.data.data;
+
+    // ★追加: My LLDBにログイン済みの時だけ投票ボタンを表示する
+    const voteBtn = document.getElementById('pattern-vote-btn');
+    if (voteBtn) {
+        if (userUserData.settings && userUserData.settings.syncId) {
+            voteBtn.classList.remove('hidden');
+        } else {
+            voteBtn.classList.add('hidden');
+        }
+    }
+
     if (!document.body.classList.contains('detail-view')) {
         applyFilters();
     } else if (currentDisplayingRecord) {
