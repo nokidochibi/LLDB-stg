@@ -569,9 +569,14 @@ button { font-size: 13px !important; }
   <div id="tab-pattern" class="tab-content" style="display:none">
 
     <div class="mb-8">
-      <h3 class="font-bold mb-2 text-aiko-red text-base flex items-center gap-2 border-b-2 border-red-100 pb-2">
-        <i data-lucide="crown" class="w-5 h-5"></i> みんなの投票ランキング
-      </h3>
+      <div class="flex items-center justify-between mb-2 border-b-2 border-red-100 pb-2">
+        <h3 class="font-bold text-aiko-red text-base flex items-center gap-2">
+          <i data-lucide="crown" class="w-5 h-5"></i> みんなの投票ランキング
+        </h3>
+        <button id="pattern-vote-btn" class="hidden bg-[#4F46E5] text-white px-1.5 py-1.5 rounded-lg text-[11px] font-bold shadow flex items-center justify-center gap-1 active:scale-95 transition whitespace-nowrap">
+          <i data-lucide="crown" class="w-3.5 h-3.5"></i> みんなの投票に参加・編集
+        </button>
+      </div>
       <div id="vote-ranking-container" class="space-y-4">
         <div class="card-base bg-white p-4 text-center text-sm text-gray-400">ランキングデータを読み込み中... 🌱</div>
       </div>
@@ -601,12 +606,7 @@ button { font-size: 13px !important; }
 
   <div id="records-content" class="hidden">
     <div class="mb-5">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="font-bold text-gray-700 text-base flex items-center gap-2"><i data-lucide="bar-chart-2" class="w-4 h-4 text-aiko-red"></i> 年別参戦回数</h3>
-        <button id="record-vote-btn" class="bg-[#4F46E5] text-white px-1.5 py-1.5 rounded-lg text-[11px] font-bold shadow flex items-center justify-center gap-1 active:scale-95 transition whitespace-nowrap">
-          <i data-lucide="crown" class="w-3.5 h-3.5"></i> みんなの投票に参加・編集
-        </button>
-      </div>
+      <h3 class="font-bold mb-2 text-gray-700 text-base flex items-center gap-2"><i data-lucide="bar-chart-2" class="w-4 h-4 text-aiko-red"></i> 年別参戦回数</h3>
       <div class="card-base bg-white p-2">
         <canvas id="user-yearly-chart" style="height:220px; max-height:220px"></canvas>
       </div>
