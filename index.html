@@ -995,9 +995,17 @@ const modal = document.getElementById('mylldb-modal');
                 else if (event.data.type === 'openMyLLDB') {
                 openMyLLDBModal();
                 }
-                // ★追加: 傾向タブからの投票モーダル起動要求
+                // ★追加: 傾向タブからの投票モーダル起動要求（データをロードしてから開く）
                 else if (event.data.type === 'openVoteModal') {
-                openVoteModal();
+                    // もし同期IDが設定されていれば、裏側で最新の質問と選択肢を取ってきてからモーダルを開く
+                    if (UserDataManager.data.settings.syncId) {
+                        UserDataManager.loadFromCloud(true).then(() => {
+                            openVoteModal();
+                        });
+                    } else {
+                        // 未ログイン状態ならそのまま開く（開いた後に「設定が必要です」と促される）
+                        openVoteModal();
+                    }
                 }
                 });
         });
