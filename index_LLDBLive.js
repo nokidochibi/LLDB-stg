@@ -2368,8 +2368,25 @@ renderVenueCategorySummary();
   if (patternVoteBtn) {
       patternVoteBtn.addEventListener('click', () => {
           if (userUserData.settings && userUserData.settings.syncId) {
-              // ログイン済み：親画面の投票モーダルを開く
+              // ボタンを「データを準備中」の表示に変更して連打を防止
+              const originalHtml = patternVoteBtn.innerHTML;
+              patternVoteBtn.innerHTML = '<i class="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full inline-block align-middle mr-1"></i> データを準備中...';
+              patternVoteBtn.classList.add('opacity-70');
+              patternVoteBtn.style.pointerEvents = 'none';
+
+              // ログイン済み：親画面の投票モーダルを開く（データロード開始）
               window.parent.postMessage({ type: 'openVoteModal' }, '*');
+
+              // 親画面から「ロード完了」の合図を受け取ったらボタンを元の見た目に戻す
+              const resetBtn = (e) => {
+                  if (e.data.type === 'userDataUpdated') {
+                      patternVoteBtn.innerHTML = originalHtml;
+                      patternVoteBtn.classList.remove('opacity-70');
+                      patternVoteBtn.style.pointerEvents = 'auto';
+                      window.removeEventListener('message', resetBtn);
+                  }
+              };
+              window.addEventListener('message', resetBtn);
           } else {
               // 未ログイン：記録タブへ遷移してログインを促す
               switchToTab('records');
