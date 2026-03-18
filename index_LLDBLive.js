@@ -102,6 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error("Loading process failed:", e);
       finishLoading();
     });
+
+  // ★追加：子画面の準備が完了したら、親画面にユーザーデータを要求する
+  window.parent.postMessage({ type: 'requestUserData' }, '*');
 });
 
 // --- Data Loading & Caching ---
