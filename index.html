@@ -1007,6 +1007,10 @@ const modal = document.getElementById('mylldb-modal');
                         openVoteModal();
                     }
                 }
+                // ★追加: 子画面からのユーザーデータ要求に応答する
+                else if (event.data.type === 'requestUserData') {
+                    UserDataManager.broadcastData();
+                }
                 });
         });
 
