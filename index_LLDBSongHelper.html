@@ -292,19 +292,18 @@
 
     <footer>
         <form id="search-form">
-    <!-- 新しく追加した親枠（横並び・上下中央揃え） -->
-    <div class="flex items-center gap-2 w-full">
-        <!-- 角丸カプセルのdiv（入力欄専用になった） -->
-        <div class="relative flex-1 flex items-center bg-gray-100 rounded-[24px] px-4 py-1 ...">
-            <textarea id="search-input" rows="1" ...></textarea>
-        </div>
-        <!-- カプセルの外に移動した送信ボタン -->
-        <button type="submit" id="submit-btn"
-            class="send-btn-active text-orange-500 p-2 rounded-full hover:bg-orange-100 transition-colors flex-shrink-0">
-            <i data-lucide="send" class="w-6 h-6 fill-current"></i>
-        </button>
-    </div>
-</form>
+            <div class="flex items-center gap-2 w-full">
+                <div class="relative flex-1 flex items-center bg-gray-100 rounded-[24px] px-4 py-1 focus-within:bg-white focus-within:ring-1 focus-within:ring-orange-200 border border-transparent focus-within:border-orange-300 transition-all shadow-inner">
+                    <textarea id="search-input" rows="1"
+                        class="flex-1 bg-transparent border-none focus:outline-none text-[15px] placeholder-gray-400 min-w-0"
+                        placeholder="例：あれは" required autocomplete="off"></textarea>
+                </div>
+                <button type="submit" id="submit-btn"
+                    class="send-btn-active text-orange-500 p-2 rounded-full hover:bg-orange-100 transition-colors flex-shrink-0">
+                    <i data-lucide="send" class="w-6 h-6 fill-current"></i>
+                </button>
+            </div>
+        </form>
 
         <div id="footer-tab-area">
             <button id="tab-lyrics" data-tab="lyrics" onclick="switchTab('lyrics')" class="tab-btn active">
