@@ -293,11 +293,15 @@
     <footer>
         <form id="search-form">
             <div class="flex items-center gap-2 w-full">
+                <!-- 入力欄カプセル -->
                 <div class="relative flex-1 flex items-center bg-gray-100 rounded-[24px] px-4 py-1 focus-within:bg-white focus-within:ring-1 focus-within:ring-orange-200 border border-transparent focus-within:border-orange-300 transition-all shadow-inner">
+                    <!-- 白い四角が出ないよう、確実に透明・リセットをかける -->
                     <textarea id="search-input" rows="1"
-                        class="flex-1 bg-transparent border-none focus:outline-none text-[15px] placeholder-gray-400 min-w-0"
+                        class="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 appearance-none text-[15px] placeholder-gray-400 min-w-0"
+                        style="background-color: transparent !important; box-shadow: none !important;"
                         placeholder="例：あれは" required autocomplete="off"></textarea>
                 </div>
+                <!-- カプセルの外にある送信ボタン -->
                 <button type="submit" id="submit-btn"
                     class="send-btn-active text-orange-500 p-2 rounded-full hover:bg-orange-100 transition-colors flex-shrink-0">
                     <i data-lucide="send" class="w-6 h-6 fill-current"></i>
