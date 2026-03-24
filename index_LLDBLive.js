@@ -1105,8 +1105,16 @@ function applyFilters() {
 }
 
 function renderLiveList(records) {
+  // ★追加: まだ全体のデータが読み込めていない（初期状態）なら、何もしない
+  // （HTMLに書かれた「今日も都合よく生きる...」をそのまま表示させておく）
+  if (allLiveRecords.length === 0) {
+    return;
+  }
+
   const container = document.getElementById('live-list-container');
-  container.innerHTML = '';
+  container.innerHTML = ''; // データが取得できてから、初めて中身をリセットする
+
+  // データは読み込み完了しているが、検索結果が0件だった場合
   if (!records.length) {
     container.innerHTML = '<p class="text-center text-gray-500 py-8 text-sm">該当する公演が見つかりませんでした。</p>';
     return;
