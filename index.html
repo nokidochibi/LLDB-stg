@@ -1104,7 +1104,7 @@ const modal = document.getElementById('mylldb-modal');
             try {
                 console.log("Start loading update history in background...");
                 // APIへリクエスト
-                const response = await fetch(`${GAS_API_URL}?action=getUpdateHistory`);
+                const response = await fetch(`${CF_WORKER_URL}?action=getUpdateHistory`);
                 const json = await response.json();
 
                 // スプレッドシートの最新バージョン（B2セル）を真っ先に反映（履歴の有無に関わらず）
