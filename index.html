@@ -58,6 +58,7 @@
         // 【0. GLOBAL】 共通定数設定
         // ==========================================================================
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec";
+        const CF_WORKER_URL = "https://lldb.noki-dochibi.workers.dev/";
         const ICON_URL = "https://unavatar.io/twitter/noki_dochibi";
         const APP_VERSION = "v4.7.3"; /* Major Update for Renewal */
     </script>
@@ -849,7 +850,7 @@ const modal = document.getElementById('mylldb-modal');
       UserDataManager.init(); // 念の為UI最新化
 
       // ユーザー数を取得して表示
-      fetch(`${GAS_API_URL}?action=getUserCount`)
+      fetch(`${CF_WORKER_URL}?action=getUserCount`)
         .then(res => res.json())
         .then(json => {
           if(json.status === 'success' && json.count) {
