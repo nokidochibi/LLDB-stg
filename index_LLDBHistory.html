@@ -605,7 +605,7 @@
                 } catch (e) { console.error("Cache Error", e); }
 
                 try {
-                    const res = await fetch(`${GAS_API_URL}?action=getHistoryData`);
+                    const res = await fetch(`${parent.CF_WORKER_URL}?action=getHistoryData`);
                     const json = await res.json();
                     allData = json;
                     try { localStorage.setItem(CACHE_KEY, JSON.stringify(json)); } catch(e){}
