@@ -146,7 +146,8 @@ async function loadAllData(useCache = false) {
   // キャッシュがない場合: 2段階読み込みを実行
   try {
     // 【Step 1】まずは軽いデータ(Basic)だけ取ってくる
-    const basicResponse = await fetch(`${API_URL}?action=getLiveBasicData`);
+    // 親の index.html で定義した Cloudflare Worker URL を使用
+    const basicResponse = await fetch(`${parent.CF_WORKER_URL}?action=getLiveBasicData`);
     if (!basicResponse.ok) throw new Error(`HTTP error! status: ${basicResponse.status}`);
     const basicData = await basicResponse.json();
 
