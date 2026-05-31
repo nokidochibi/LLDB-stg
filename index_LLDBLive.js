@@ -177,9 +177,11 @@ async function loadAllData(useCache = false) {
 // --- Loading Animation & Transition ---
 
 function startLoadingAnimation(mode) {
+  // Cloudflare化でデータ取得が爆速になったため、Smart/Normal問わず、
+  // 演出としてテンポ良く表示されるように全体的に秒数を短縮
   const delays = (mode === 'smart') 
     ? [{ id: 'loading-text-1', delay: 0 }, { id: 'loading-text-2', delay: 200 }, { id: 'loading-text-3', delay: 400 }, { id: 'loading-text-4', delay: 600 }, { id: 'loading-text-5', delay: 800 }]
-    : [{ id: 'loading-text-1', delay: 1000 }, { id: 'loading-text-2', delay: 1900 }, { id: 'loading-text-3', delay: 2800 }, { id: 'loading-text-4', delay: 3800 }, { id: 'loading-text-5', delay: 4600 }];
+    : [{ id: 'loading-text-1', delay: 500 }, { id: 'loading-text-2', delay: 1200 }, { id: 'loading-text-3', delay: 1900 }, { id: 'loading-text-4', delay: 2600 }, { id: 'loading-text-5', delay: 3200 }];
   
   delays.forEach(item => {
             setTimeout(() => {
@@ -197,7 +199,7 @@ function startLoadingAnimation(mode) {
 
   setTimeout(() => {
     if (animationFinishedResolver) animationFinishedResolver();
-  }, (mode === 'smart' ? 1200 : 5500));
+  }, (mode === 'smart' ? 1200 : 4000)); // アニメーション終了の合図も短縮
 }
 
 function finishLoading() {
