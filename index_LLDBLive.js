@@ -3,7 +3,7 @@
 // ======================================================================
 
 // --- Configuration & Constants ---
-const API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec";
+const API_URL = "https://lldb.noki-dochibi.workers.dev/";
 const CACHE_KEY = 'lldb_data_v4_1_update_history_v6';
 const AIKO_BIRTH = new Date(1975, 10, 22); // 1975/11/22
 
