@@ -3,7 +3,7 @@
 // ======================================================================
 
 // --- Configuration & Constants ---
-const API_URL = "https://lldb.noki-dochibi.workers.dev/";
+const API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec";
 const CACHE_KEY = 'lldb_data_v4_1_update_history_v6';
 const AIKO_BIRTH = new Date(1975, 10, 22); // 1975/11/22
 
@@ -146,8 +146,7 @@ async function loadAllData(useCache = false) {
   // キャッシュがない場合: 2段階読み込みを実行
   try {
     // 【Step 1】まずは軽いデータ(Basic)だけ取ってくる
-    // 親の index.html で定義した Cloudflare Worker URL を使用
-    const basicResponse = await fetch(`${parent.CF_WORKER_URL}?action=getLiveBasicData`);
+    const basicResponse = await fetch(`${API_URL}?action=getLiveBasicData`);
     if (!basicResponse.ok) throw new Error(`HTTP error! status: ${basicResponse.status}`);
     const basicData = await basicResponse.json();
 
