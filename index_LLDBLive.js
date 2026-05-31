@@ -181,8 +181,8 @@ function startLoadingAnimation(mode) {
   // 演出としてテンポ良く表示されるように全体的に秒数を短縮
   const delays = (mode === 'smart') 
     ? [{ id: 'loading-text-1', delay: 0 }, { id: 'loading-text-2', delay: 200 }, { id: 'loading-text-3', delay: 400 }, { id: 'loading-text-4', delay: 600 }, { id: 'loading-text-5', delay: 800 }]
-    : [{ id: 'loading-text-1', delay: 300 }, { id: 'loading-text-2', delay: 800 }, { id: 'loading-text-3', delay: 1300 }, { id: 'loading-text-4', delay: 1800 }, { id: 'loading-text-5', delay: 2300 }];
-  
+    : [{ id: 'loading-text-1', delay: 400 }, { id: 'loading-text-2', delay: 1000 }, { id: 'loading-text-3', delay: 1600 }, { id: 'loading-text-4', delay: 2200 }, { id: 'loading-text-5', delay: 2800 }];  
+
   delays.forEach(item => {
             setTimeout(() => {
               const element = document.getElementById(item.id);
@@ -199,7 +199,7 @@ function startLoadingAnimation(mode) {
 
   setTimeout(() => {
     if (animationFinishedResolver) animationFinishedResolver();
-  }, (mode === 'smart' ? 1200 : 3000)); // アニメーション終了の合図も短縮
+  }, (mode === 'smart' ? 1200 : 3500)); // アニメーション終了の合図も短縮
 }
 
 function finishLoading() {
