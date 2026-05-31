@@ -155,9 +155,6 @@ async function loadAllData(useCache = false) {
 
     // 軽いデータでとりあえず画面を表示（グラフなどはまだ描画しない = false）
     initializeApp(basicData, false);
-    
-    // ロード画面を消す（ユーザーはここで操作可能になる）
-    finishLoading();
 
     // 【Step 2】裏側で重い全データ(All)を取りに行く
     console.log("Fetching full data in background...");
@@ -207,7 +204,7 @@ function startLoadingAnimation(mode) {
           });
 
   setTimeout(() => {
-    finishLoading();
+    if (animationFinishedResolver) animationFinishedResolver();
   }, (mode === 'smart' ? 1200 : 5500));
 }
 
@@ -223,11 +220,9 @@ function finishLoading() {
   }
   const mainContent = document.getElementById('main-content');
   if (mainContent) {
-      mainContent.style.opacity = '1';
+    mainContent.style.opacity = '1';
   }
   // 起動直後の重複チェックを削除
-  
-  if (animationFinishedResolver) animationFinishedResolver();
 }
 
 // isFullLoad引数を追加: trueなら全機能有効化、falseならリスト表示のみ
