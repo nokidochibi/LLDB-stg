@@ -1219,17 +1219,37 @@ const modal = document.getElementById('mylldb-modal');
             });
 
             // 3. アプリの初期画面を表示する（ハッシュルーティング）
-            const hash = window.location.hash;
-            if (hash === '#song') { switchApp('songHelper'); } 
-            else if (hash === '#trends') { switchApp('trends'); } 
-            else if (hash === '#history') { switchApp('history'); } 
-            else { switchApp('live'); }
+    const hash = window.location.hash;
+    if (hash === '#song') { switchApp('songHelper'); }
+    else if (hash === '#trends') { switchApp('trends'); }
+    else if (hash === '#history') { switchApp('history'); }
+    else { switchApp('live'); }
 
-            // 4. バックグラウンド処理を開始（優先度②：スプシの4.6取得など）
-            loadUpdateHistory();
-            checkRemoteConfig();
-            
-            const aboutVerEl = document.getElementById('about-version-display');
+    // 4. バックグラウンド処理を開始（優先度②：スプシの4.6取得など）
+    loadUpdateHistory();
+    checkRemoteConfig();
+
+    // 5. URLパラメータに「search」があれば、Liveタブに検索指示を送る（外部アプリからの遷移用）
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchQuery = urlParams.get('search');
+    if (searchQuery) {
+      switchApp('live');
+      const liveIframe = document.querySelector('#app-live iframe');
+      const sendSearchMsg = () => {
+        if (liveIframe && liveIframe.contentWindow) {
+          liveIframe.contentWindow.postMessage({
+            type: 'execLiveSearch',
+            tourName: searchQuery
+          }, '*');
+        }
+      };
+      if (liveIframe) {
+        liveIframe.addEventListener('load', () => setTimeout(sendSearchMsg, 500));
+        setTimeout(sendSearchMsg, 1500); // 既にロード済みの場合の予備
+      }
+    }
+
+    const aboutVerEl = document.getElementById('about-version-display');
             if(aboutVerEl) aboutVerEl.textContent = aboutVersion;
 
             lucide.createIcons();
