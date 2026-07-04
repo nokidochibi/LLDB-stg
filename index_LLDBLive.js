@@ -3641,3 +3641,4 @@ function showModal(songName, type) {
     document.getElementById('modal-body').innerHTML = html;
     document.getElementById('modal-overlay').style.display = 'flex';
 }
+
