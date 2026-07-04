@@ -3396,7 +3396,7 @@ function openSongDetailModal(songName) {
             messageHtml = `<div class="text-center"><span class="font-bold text-gray-800">${currentTourShort}</span>での演奏は、<br><span class="font-bold text-gray-800">${prevYear}年</span>の<span class="font-bold text-gray-800">${prevTour}</span>以来</div>`;
         }
     } else {
-        messageHtml = `<div class="text-center"><span class="font-bold text-gray-800">${currentTourShort}</span>での演奏が<br><span class="font-bold text-aiko-red text-base">初披露</span>！🎉</div>`;
+        messageHtml = `<div class="text-center"><span class="font-bold text-gray-800">${currentTourShort}</span>での演奏が<br><span class="font-bold text-aiko-red text-base ml-1">初披露</span>！🎉</div>`;
     }
     
     document.getElementById('song-detail-modal-title').textContent = `『${songName}』`;
@@ -3406,7 +3406,7 @@ function openSongDetailModal(songName) {
     
     // モーダル表示のアニメーションをスムーズにするため少し遅延させて描画
     setTimeout(() => {
-        renderSongDetailCharts(songName);
+        renderSongDetailCharts(songName, currentYear, prevYear);
         lucide.createIcons();
     }, 50);
 }
@@ -3415,12 +3415,12 @@ function closeSongDetailModal() {
     document.getElementById('song-detail-modal').style.display = 'none';
 }
 
-function renderSongDetailCharts(songName) {
+function renderSongDetailCharts(songName, currentYear, prevYear) {
   const canvasCount = document.getElementById('song-detail-live-count-chart');
   if (chartInstances.songDetailLiveCount) chartInstances.songDetailLiveCount.destroy();
 
   const years = [];
-  const breakdown = { pop: {}, rock: {}, aloha: {}, other: {}, total: {} };
+  const breakdown = { pop: 0, rock: 0, aloha: 0, other: 0, totalByYear: {} };
   
   // X軸の年をすべて用意（1998〜最新のライブ年）
   let maxYear = new Date().getFullYear();
@@ -3429,19 +3429,13 @@ function renderSongDetailCharts(songName) {
   }
   for (let y = 1998; y <= maxYear; y++) {
       years.push(y);
-      breakdown.total[y] = 0;
-      breakdown.pop[y] = 0;
-      breakdown.rock[y] = 0;
-      breakdown.aloha[y] = 0;
-      breakdown.other[y] = 0;
+      breakdown.totalByYear[y] = 0;
   }
 
   let totalCount = 0;
-  const categoryCounts = { pop: 0, rock: 0, aloha: 0, other: 0 };
 
   allLiveRecords.forEach(rec => {
     if(!rec.year) return;
-    breakdown.total[rec.year]++;
     
     let isCounted = false;
     rec.setlist.forEach(s => {
@@ -3451,72 +3445,65 @@ function renderSongDetailCharts(songName) {
     });
 
     if (isCounted) {
+      breakdown.totalByYear[rec.year]++;
       totalCount++;
       const name = rec.tourName.toLowerCase();
-      if (name.includes('pop')) { breakdown.pop[rec.year]++; categoryCounts.pop++; }
-      else if (name.includes('rock')) { breakdown.rock[rec.year]++; categoryCounts.rock++; }
-      else if (name.includes('aloha')) { breakdown.aloha[rec.year]++; categoryCounts.aloha++; }
-      else { breakdown.other[rec.year]++; categoryCounts.other++; }
+      if (name.includes('pop')) breakdown.pop++;
+      else if (name.includes('rock')) breakdown.rock++;
+      else if (name.includes('aloha')) breakdown.aloha++;
+      else breakdown.other++;
     }
   });
 
-  const getDatalabelsConfig = () => ({
-    display: (ctx) => {
-      const dsIndex = ctx.datasetIndex;
-      const dataIndex = ctx.dataIndex;
-      const datasets = ctx.chart.data.datasets;
-      if (datasets[dsIndex].data[dataIndex] === 0) return false;
-      for (let i = dsIndex + 1; i <= 3; i++) {
-        if (datasets[i].data[dataIndex] > 0) return false;
-      }
-      return true;
-    },
-    color: 'gray', anchor: 'end', align: 'end', offset: -2,
-    font: { size: 10, weight: 'bold' },
-    formatter: (value, ctx) => {
-      const idx = ctx.dataIndex;
-      const ds = ctx.chart.data.datasets;
-      return ds[0].data[idx] + ds[1].data[idx] + ds[2].data[idx] + ds[3].data[idx];
-    }
+  const dataCounts = years.map(y => breakdown.totalByYear[y]);
+
+  // 画像のデザインのように、背景には「全てのライブ回数」を薄いグレーで表示するためのデータを作成
+  const allLivesDataCounts = years.map(y => {
+      let count = 0;
+      allLiveRecords.forEach(r => { if(parseInt(r.year) === y) count++; });
+      return count;
   });
 
-  const datalabelsConfig = getDatalabelsConfig();
-
-  const datasets = [
-    { label: 'Pop', data: years.map(y => breakdown.pop[y]), backgroundColor: THEME_COLORS.POP, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
-    { label: 'Rock', data: years.map(y => breakdown.rock[y]), backgroundColor: THEME_COLORS.ROCK, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
-    { label: 'Aloha', data: years.map(y => breakdown.aloha[y]), backgroundColor: THEME_COLORS.ALOHA, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
-    { label: 'Other', data: years.map(y => breakdown.other[y]), backgroundColor: THEME_COLORS.EVENT, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
-    {
-      label: '未演奏',
-      data: years.map(y => {
-        const played = breakdown.pop[y] + breakdown.rock[y] + breakdown.aloha[y] + breakdown.other[y];
-        return Math.max(0, breakdown.total[y] - played);
-      }),
-      backgroundColor: THEME_COLORS.BG_GRAY_ALPHA,
-      borderColor: THEME_COLORS.BG_GRAY_ALPHA,
-      borderWidth: 1,
-      stack: 'stack1',
-      datalabels: { display: false }
-    }
-  ];
+  const getBackgroundColor = (ctx) => {
+      const year = years[ctx.dataIndex];
+      if (year === currentYear) return THEME_COLORS.POP; // 赤色（現在の年）
+      if (year === prevYear) return THEME_COLORS.ROCK; // 青色（前回の年）
+      return '#f87171'; // デフォルトの赤（その他の演奏された年）
+  };
 
   chartInstances.songDetailLiveCount = new Chart(canvasCount, {
     type: 'bar',
     data: { 
         labels: years, 
-        datasets: [{
-            data: dataCounts,
-            backgroundColor: getBackgroundColor,
-            borderRadius: 2
-        }] 
+        datasets: [
+            // 前面に色付きの「演奏された回数」の棒
+            {
+                data: dataCounts,
+                backgroundColor: getBackgroundColor,
+                borderRadius: 2,
+                order: 1
+            },
+            // 背面に薄いグレーの「全てのライブ回数」の棒
+            {
+                data: allLivesDataCounts,
+                backgroundColor: '#f1f5f9',
+                borderRadius: 2,
+                order: 2
+            }
+        ] 
     },
     plugins: [ChartDataLabels],
     options: {
       ...chartCommonOptions,
+      // 棒が横に並ばないように重ねる（スタックしないオーバーレイ表示）
+      interaction: { mode: 'index' },
       plugins: {
         legend: { display: false },
         datalabels: {
+          // データが0の場合はラベルを表示しない
+          display: function(context) {
+              return context.datasetIndex === 0 && context.dataset.data[context.dataIndex] > 0;
+          },
           color: (ctx) => years[ctx.dataIndex] === currentYear ? '#1e293b' : '#64748b',
           anchor: 'end',
           align: 'end',
@@ -3529,8 +3516,18 @@ function renderSongDetailCharts(songName) {
         }
       },
       scales: {
-        x: { ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90, autoSkip: false }, grid: { display: false } },
-        y: { beginAtZero: true, min: 0, ticks: { font: { size: 10 }, stepSize: 5 } }
+        x: { 
+            stacked: false, // スタックを解除して重ねる
+            ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90, autoSkip: false }, 
+            grid: { display: true, color: '#f1f5f9' } // 縦の罫線を表示
+        },
+        y: { 
+            stacked: false, // スタックを解除して重ねる
+            beginAtZero: true, 
+            min: 0, 
+            ticks: { font: { size: 10 }, stepSize: 10 },
+            grid: { display: true, color: '#f1f5f9' } // 横の罫線を表示
+        }
       }
     }
   });
@@ -3540,10 +3537,10 @@ function renderSongDetailCharts(songName) {
 
   document.getElementById('song-detail-category-counts').innerHTML = `
     <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-sm font-bold text-gray-500 mt-2">
-      <p class="text-pop truncate">・Pop: ${categoryCounts.pop}</p>
-      <p class="text-aloha truncate">・Aloha: ${categoryCounts.aloha}</p>
-      <p class="text-rock truncate">・Rock: ${categoryCounts.rock}</p>
-      <p class="text-event truncate">・Event: ${categoryCounts.other}</p>
+      <p class="text-pop truncate">・Pop: ${breakdown.pop}</p>
+      <p class="text-aloha truncate">・Aloha: ${breakdown.aloha}</p>
+      <p class="text-rock truncate">・Rock: ${breakdown.rock}</p>
+      <p class="text-event truncate">・Event: ${breakdown.other}</p>
     </div>
   `;
 
@@ -3555,7 +3552,7 @@ function renderSongDetailCharts(songName) {
     data: {
       labels: ['Pop', 'Rock', 'Aloha', 'Other'],
       datasets: [{
-        data: [categoryCounts.pop, categoryCounts.rock, categoryCounts.aloha, categoryCounts.other],
+        data: [breakdown.pop, breakdown.rock, breakdown.aloha, breakdown.other],
         backgroundColor: [THEME_COLORS.POP, THEME_COLORS.ROCK, THEME_COLORS.ALOHA, THEME_COLORS.EVENT],
         borderWidth: 0
       }]
