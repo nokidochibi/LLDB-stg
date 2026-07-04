@@ -3505,17 +3505,32 @@ function renderSongDetailCharts(songName) {
     type: 'bar',
     data: { 
         labels: years, 
-        datasets: datasets 
+        datasets: [{
+            data: dataCounts,
+            backgroundColor: getBackgroundColor,
+            borderRadius: 2
+        }] 
     },
     plugins: [ChartDataLabels],
     options: {
       ...chartCommonOptions,
       plugins: {
-        legend: { display: false }
+        legend: { display: false },
+        datalabels: {
+          color: (ctx) => years[ctx.dataIndex] === currentYear ? '#1e293b' : '#64748b',
+          anchor: 'end',
+          align: 'end',
+          offset: (ctx) => years[ctx.dataIndex] === currentYear ? -4 : -2,
+          font: (ctx) => ({
+            size: years[ctx.dataIndex] === currentYear ? 15 : 10,
+            weight: years[ctx.dataIndex] === currentYear ? '900' : 'bold'
+          }),
+          formatter: (value) => value > 0 ? value : ''
+        }
       },
       scales: {
-        x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 90, minRotation: 90, autoSkip: false } },
-        y: { stacked: true, beginAtZero: true, min: 0, ticks: { font: { size: 10 }, stepSize: 5 } }
+        x: { ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90, autoSkip: false }, grid: { display: false } },
+        y: { beginAtZero: true, min: 0, ticks: { font: { size: 10 }, stepSize: 5 } }
       }
     }
   });
