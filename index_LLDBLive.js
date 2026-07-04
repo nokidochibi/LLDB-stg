@@ -3420,17 +3420,21 @@ function renderSongDetailCharts(songName, currentYear, prevYear) {
   if (chartInstances.songDetailLiveCount) chartInstances.songDetailLiveCount.destroy();
 
   const years = [];
-  const breakdown = { pop: 0, rock: 0, aloha: 0, other: 0, totalByYear: {} };
+  const breakdown = { pop: {}, rock: {}, aloha: {}, other: {}, total: {} };
   
-  // X軸の年をすべて用意（1998〜最新のライブ年）
-  let maxYear = new Date().getFullYear();
-  if (allLiveRecords.length > 0) {
-      maxYear = Math.max(...allLiveRecords.map(r => parseInt(r.year) || 1998));
-  }
-  for (let y = 1998; y <= maxYear; y++) {
-      years.push(y);
-      breakdown.totalByYear[y] = 0;
-  }
+  allLiveRecords.forEach(rec => {
+    if(!rec.year) return;
+    if(!breakdown.total[rec.year]) {
+      years.push(rec.year);
+      breakdown.total[rec.year] = 0;
+      breakdown.pop[rec.year] = 0;
+      breakdown.rock[rec.year] = 0;
+      breakdown.aloha[rec.year] = 0;
+      breakdown.other[rec.year] = 0;
+    }
+    breakdown.total[rec.year]++;
+  });
+  years.sort((a,b) => a - b);
 
   let totalCount = 0;
   const categoryCounts = { pop: 0, rock: 0, aloha: 0, other: 0 };
@@ -3446,90 +3450,73 @@ function renderSongDetailCharts(songName, currentYear, prevYear) {
     });
 
     if (isCounted) {
-      breakdown.totalByYear[rec.year]++;
       totalCount++;
       const name = rec.tourName.toLowerCase();
-      if (name.includes('pop')) { breakdown.pop++; categoryCounts.pop++; }
-      else if (name.includes('rock')) { breakdown.rock++; categoryCounts.rock++; }
-      else if (name.includes('aloha')) { breakdown.aloha++; categoryCounts.aloha++; }
-      else { breakdown.other++; categoryCounts.other++; }
+      if (name.includes('pop')) { breakdown.pop[rec.year]++; categoryCounts.pop++; }
+      else if (name.includes('rock')) { breakdown.rock[rec.year]++; categoryCounts.rock++; }
+      else if (name.includes('aloha')) { breakdown.aloha[rec.year]++; categoryCounts.aloha++; }
+      else { breakdown.other[rec.year]++; categoryCounts.other++; }
     }
   });
 
-  const dataCounts = years.map(y => breakdown.totalByYear[y]);
-
-  // 画像のデザインのように、背景には「全てのライブ回数」を薄いグレーで表示するためのデータを作成
-  const allLivesDataCounts = years.map(y => {
-      let count = 0;
-      allLiveRecords.forEach(r => { if(parseInt(r.year) === y) count++; });
-      return count;
+  const getDatalabelsConfig = () => ({
+    display: (ctx) => {
+      const dsIndex = ctx.datasetIndex;
+      const dataIndex = ctx.dataIndex;
+      const datasets = ctx.chart.data.datasets;
+      if (datasets[dsIndex].data[dataIndex] === 0) return false;
+      for (let i = dsIndex + 1; i <= 3; i++) {
+        if (datasets[i].data[dataIndex] > 0) return false;
+      }
+      return true;
+    },
+    // ★ 今のライブの年（currentYear）の数字だけオレンジ色にする
+    color: (ctx) => years[ctx.dataIndex] === currentYear ? '#f97316' : 'gray',
+    anchor: 'end', 
+    align: 'end', 
+    offset: -2,
+    // ★ 今のライブの年（currentYear）のフォントサイズを少し大きく（12）にする
+    font: (ctx) => ({ 
+        size: years[ctx.dataIndex] === currentYear ? 12 : 10, 
+        weight: 'bold' 
+    }),
+    formatter: (value, ctx) => {
+      const idx = ctx.dataIndex;
+      const ds = ctx.chart.data.datasets;
+      return ds[0].data[idx] + ds[1].data[idx] + ds[2].data[idx] + ds[3].data[idx];
+    }
   });
 
-  const getBackgroundColor = (ctx) => {
-      const year = years[ctx.dataIndex];
-      if (year === currentYear) return THEME_COLORS.POP; // 赤色（現在の年）
-      if (year === prevYear) return THEME_COLORS.ROCK; // 青色（前回の年）
-      return '#f87171'; // デフォルトの赤（その他の演奏された年）
-  };
+  const datalabelsConfig = getDatalabelsConfig();
+
+  const datasets = [
+    { label: 'Pop', data: years.map(y => breakdown.pop[y]), backgroundColor: THEME_COLORS.POP, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
+    { label: 'Rock', data: years.map(y => breakdown.rock[y]), backgroundColor: THEME_COLORS.ROCK, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
+    { label: 'Aloha', data: years.map(y => breakdown.aloha[y]), backgroundColor: THEME_COLORS.ALOHA, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
+    { label: 'Other', data: years.map(y => breakdown.other[y]), backgroundColor: THEME_COLORS.EVENT, stack: 'stack1', borderRadius: 2, datalabels: datalabelsConfig },
+    {
+      label: '未演奏',
+      data: years.map(y => {
+        const played = breakdown.pop[y] + breakdown.rock[y] + breakdown.aloha[y] + breakdown.other[y];
+        return Math.max(0, breakdown.total[y] - played);
+      }),
+      backgroundColor: THEME_COLORS.BG_GRAY_ALPHA,
+      borderColor: THEME_COLORS.BG_GRAY_ALPHA,
+      borderWidth: 1,
+      stack: 'stack1',
+      datalabels: { display: false }
+    }
+  ];
 
   chartInstances.songDetailLiveCount = new Chart(canvasCount, {
     type: 'bar',
-    data: { 
-        labels: years, 
-        datasets: [
-            // 前面に色付きの「演奏された回数」の棒
-            {
-                data: dataCounts,
-                backgroundColor: getBackgroundColor,
-                borderRadius: 2,
-                order: 1
-            },
-            // 背面に薄いグレーの「全てのライブ回数」の棒
-            {
-                data: allLivesDataCounts,
-                backgroundColor: '#f1f5f9',
-                borderRadius: 2,
-                order: 2
-            }
-        ] 
-    },
+    data: { labels: years, datasets: datasets },
     plugins: [ChartDataLabels],
     options: {
       ...chartCommonOptions,
-      // 棒が横に並ばないように重ねる（スタックしないオーバーレイ表示）
-      interaction: { mode: 'index' },
-      plugins: {
-        legend: { display: false },
-        datalabels: {
-          // データが0の場合はラベルを表示しない
-          display: function(context) {
-              return context.datasetIndex === 0 && context.dataset.data[context.dataIndex] > 0;
-          },
-          // ★今年の数字の色とサイズを目立たせる
-          color: (ctx) => years[ctx.dataIndex] === currentYear ? '#1e293b' : '#64748b',
-          anchor: 'end',
-          align: 'end',
-          offset: (ctx) => years[ctx.dataIndex] === currentYear ? -4 : -2,
-          font: (ctx) => ({
-            size: years[ctx.dataIndex] === currentYear ? 15 : 10,
-            weight: years[ctx.dataIndex] === currentYear ? '900' : 'bold'
-          }),
-          formatter: (value) => value > 0 ? value : ''
-        }
-      },
       scales: {
-        x: { 
-            stacked: false, // スタックを解除して重ねる
-            ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90, autoSkip: false }, 
-            grid: { display: true, color: '#f1f5f9' } // 縦の罫線を表示
-        },
-        y: { 
-            stacked: false, // スタックを解除して重ねる
-            beginAtZero: true, 
-            min: 0, 
-            ticks: { font: { size: 10 }, stepSize: 10 },
-            grid: { display: true, color: '#f1f5f9' } // 横の罫線を表示
-        }
+        x: { stacked: true, ticks: { font: { size: 10 }, maxRotation: 90, minRotation: 90, autoSkip: false } },
+        y: { stacked: true, beginAtZero: true, min: 0, ticks: { font: { size: 10 }, stepSize: 5 } }
       }
     }
   });
