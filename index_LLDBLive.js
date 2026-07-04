@@ -3346,6 +3346,187 @@ function deleteMemo() {
     saveMemo();
 }
 
+// -----------------------------------------------------------
+// Song Detail Modal (セトリ内の曲名タップ時)
+// -----------------------------------------------------------
+
+function openSongDetailModal(songName) {
+    if (!currentDisplayingRecord) return;
+    
+    const currentTourName = currentDisplayingRecord.tourName;
+    const currentDate = new Date(currentDisplayingRecord.date);
+    const currentYear = parseInt(currentDisplayingRecord.year);
+    
+    let previousRecord = null;
+    let prevYear = null;
+    
+    // 日付の新しい順にソートして検索
+    const sortedRecords = [...allLiveRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    for (let rec of sortedRecords) {
+        // 現在のレコードより過去であること、かつツアー名が異なること
+        if (new Date(rec.date) < currentDate && rec.tourName !== currentTourName) {
+            let isPlayed = false;
+            for (let s of rec.setlist) {
+                if (s === '__MEDLEY_START__' || s === '__MEDLEY_END__') continue;
+                const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
+                if (clean === songName) {
+                    isPlayed = true;
+                    break;
+                }
+            }
+            if (isPlayed) {
+                previousRecord = rec;
+                prevYear = parseInt(rec.year);
+                break;
+            }
+        }
+    }
+    
+    let messageHtml = '';
+    if (previousRecord) {
+        const prevTour = previousRecord.shortTourName || previousRecord.tourName;
+        const diffYear = currentYear - prevYear;
+        
+        if (diffYear > 0) {
+            messageHtml = `<span class="font-bold text-gray-800">${prevYear}年</span>の<span class="font-bold text-gray-800">${prevTour}</span>以来<br><span class="font-bold text-aiko-red text-base">${diffYear}年</span>振り`;
+        } else {
+            messageHtml = `<span class="font-bold text-gray-800">${prevYear}年</span>の<span class="font-bold text-gray-800">${prevTour}</span>以来`;
+        }
+    } else {
+        messageHtml = `このツアーが<br><span class="font-bold text-aiko-red text-base">初披露</span>！🎉`;
+    }
+    
+    document.getElementById('song-detail-modal-title').textContent = `『${songName}』`;
+    document.getElementById('song-detail-modal-message').innerHTML = messageHtml;
+    
+    document.getElementById('song-detail-modal').style.display = 'flex';
+    
+    // モーダル表示のアニメーションをスムーズにするため少し遅延させて描画
+    setTimeout(() => {
+        renderSongDetailCharts(songName, currentYear, prevYear);
+        lucide.createIcons();
+    }, 50);
+}
+
+function closeSongDetailModal() {
+    document.getElementById('song-detail-modal').style.display = 'none';
+}
+
+function renderSongDetailCharts(songName, currentYear, prevYear) {
+  const canvasCount = document.getElementById('song-detail-live-count-chart');
+  if (chartInstances.songDetailLiveCount) chartInstances.songDetailLiveCount.destroy();
+
+  const years = [];
+  const breakdown = { pop: 0, rock: 0, aloha: 0, other: 0, totalByYear: {} };
+  
+  // X軸の年をすべて用意（1998〜最新のライブ年）
+  let maxYear = new Date().getFullYear();
+  if (allLiveRecords.length > 0) {
+      maxYear = Math.max(...allLiveRecords.map(r => parseInt(r.year) || 1998));
+  }
+  for (let y = 1998; y <= maxYear; y++) {
+      years.push(y);
+      breakdown.totalByYear[y] = 0;
+  }
+
+  let totalCount = 0;
+
+  allLiveRecords.forEach(rec => {
+    if(!rec.year) return;
+    
+    let isCounted = false;
+    rec.setlist.forEach(s => {
+      if (s === '__MEDLEY_START__' || s === '__MEDLEY_END__') return;
+      const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
+      if (clean === songName) isCounted = true;
+    });
+
+    if (isCounted) {
+      breakdown.totalByYear[rec.year]++;
+      totalCount++;
+      const name = rec.tourName.toLowerCase();
+      if (name.includes('pop')) breakdown.pop++;
+      else if (name.includes('rock')) breakdown.rock++;
+      else if (name.includes('aloha')) breakdown.aloha++;
+      else breakdown.other++;
+    }
+  });
+
+  const dataCounts = years.map(y => breakdown.totalByYear[y]);
+
+  const getBackgroundColor = (ctx) => {
+      const year = years[ctx.dataIndex];
+      if (year === currentYear) return THEME_COLORS.POP; // 赤色（現在の年）
+      if (year === prevYear) return THEME_COLORS.ROCK; // 青色（前回の年）
+      return '#E2E8F0'; // グレー（その他の年）
+  };
+
+  chartInstances.songDetailLiveCount = new Chart(canvasCount, {
+    type: 'bar',
+    data: { 
+        labels: years, 
+        datasets: [{
+            data: dataCounts,
+            backgroundColor: getBackgroundColor,
+            borderRadius: 2
+        }] 
+    },
+    plugins: [ChartDataLabels],
+    options: {
+      ...chartCommonOptions,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          color: '#64748b',
+          anchor: 'end',
+          align: 'end',
+          offset: -2,
+          font: { size: 10, weight: 'bold' },
+          formatter: (value) => value > 0 ? value : ''
+        }
+      },
+      scales: {
+        x: { ticks: { font: { size: 9 }, maxRotation: 90, minRotation: 90, autoSkip: false }, grid: { display: false } },
+        y: { beginAtZero: true, min: 0, ticks: { font: { size: 10 }, stepSize: 5 } }
+      }
+    }
+  });
+
+  // --- ドーナツグラフの描画 ---
+  document.getElementById('song-detail-total-lives').textContent = totalCount;
+
+  document.getElementById('song-detail-category-counts').innerHTML = `
+    <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-sm font-bold text-gray-500 mt-2">
+      <p class="text-pop truncate">・Pop: ${breakdown.pop}</p>
+      <p class="text-aloha truncate">・Aloha: ${breakdown.aloha}</p>
+      <p class="text-rock truncate">・Rock: ${breakdown.rock}</p>
+      <p class="text-event truncate">・Event: ${breakdown.other}</p>
+    </div>
+  `;
+
+  const canvasCategory = document.getElementById('song-detail-category-doughnut');
+  if (chartInstances.songDetailCategory) chartInstances.songDetailCategory.destroy();
+
+  chartInstances.songDetailCategory = new Chart(canvasCategory, {
+    type: 'doughnut',
+    data: {
+      labels: ['Pop', 'Rock', 'Aloha', 'Other'],
+      datasets: [{
+        data: [breakdown.pop, breakdown.rock, breakdown.aloha, breakdown.other],
+        backgroundColor: [THEME_COLORS.POP, THEME_COLORS.ROCK, THEME_COLORS.ALOHA, THEME_COLORS.EVENT],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: { legend: { display: false }, tooltip: { enabled: false } }
+    }
+  });
+}
+
 // ★追加: 傾向タブの詳細モーダル表示
 function showModal(songName, type) {
     if (!songName) return;
