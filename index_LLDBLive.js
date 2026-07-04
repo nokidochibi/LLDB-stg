@@ -2361,7 +2361,7 @@ renderVenueCategorySummary();
     tab.addEventListener('click', e => { e.preventDefault(); switchToTab(tab.dataset.tab); });
   });
 
-  [document.getElementById('modal-overlay'), document.getElementById('memo-modal')].forEach(modal => {
+  [document.getElementById('modal-overlay'), document.getElementById('memo-modal'), document.getElementById('song-detail-modal')].forEach(modal => {
     if(modal) modal.addEventListener('click', e => { if (e.target === e.currentTarget) e.target.style.display = 'none'; });
   });
 
