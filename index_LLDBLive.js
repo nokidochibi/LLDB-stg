@@ -3391,12 +3391,12 @@ function openSongDetailModal(songName) {
         const diffYear = currentYear - prevYear;
         
         if (diffYear > 0) {
-            messageHtml = `<span class="font-bold text-gray-800">${currentTourShort}</span>での演奏は、<span class="font-bold text-gray-800">${prevYear}年</span>の<span class="font-bold text-gray-800">${prevTour}</span>以来<span class="font-bold text-aiko-red text-base ml-1">${diffYear}年</span>振り`;
+            messageHtml = `<div class="text-center"><span class="font-bold text-gray-800">${currentTourShort}</span>での演奏は、<br><span class="font-bold text-gray-800">${prevYear}年</span>の<span class="font-bold text-gray-800">${prevTour}</span>以来<span class="font-bold text-aiko-red text-base ml-1">${diffYear}年</span>振り</div>`;
         } else {
-            messageHtml = `<span class="font-bold text-gray-800">${currentTourShort}</span>での演奏は、<span class="font-bold text-gray-800">${prevYear}年</span>の<span class="font-bold text-gray-800">${prevTour}</span>以来`;
+            messageHtml = `<div class="text-center"><span class="font-bold text-gray-800">${currentTourShort}</span>での演奏は、<br><span class="font-bold text-gray-800">${prevYear}年</span>の<span class="font-bold text-gray-800">${prevTour}</span>以来</div>`;
         }
     } else {
-        messageHtml = `<span class="font-bold text-gray-800">${currentTourShort}</span>での演奏が<span class="font-bold text-aiko-red text-base ml-1">初披露</span>！🎉`;
+        messageHtml = `<div class="text-center"><span class="font-bold text-gray-800">${currentTourShort}</span>での演奏が<br><span class="font-bold text-aiko-red text-base">初披露</span>！🎉</div>`;
     }
     
     document.getElementById('song-detail-modal-title').textContent = `『${songName}』`;
