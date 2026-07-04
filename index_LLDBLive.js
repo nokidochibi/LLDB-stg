@@ -1339,7 +1339,8 @@ function showLiveDetail(rec) {
     // --- ジャケット画像エリア生成 (End) ---
 
     // ★修正: 曲名エリアの幅を「65%」に変更して、画像を少し右へ移動させます。(数字を大きくするとさらに右へ行きます)
-    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 65%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
+    // ★修正: 曲名をタップして詳細モーダルを開けるようにスタイルとイベントを追加
+    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 65%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title cursor-pointer hover:text-aiko-red transition-colors active:scale-95 inline-block font-bold decoration-dashed decoration-gray-300 underline-offset-4" style="text-decoration-line: underline;" onclick="openSongDetailModal('${cleanSong.replace(/'/g, "\\'")}')">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
   });
 
   // 凡例(legendHtml)は削除しました。
