@@ -3433,6 +3433,7 @@ function renderSongDetailCharts(songName, currentYear, prevYear) {
   }
 
   let totalCount = 0;
+  const categoryCounts = { pop: 0, rock: 0, aloha: 0, other: 0 };
 
   allLiveRecords.forEach(rec => {
     if(!rec.year) return;
@@ -3448,10 +3449,10 @@ function renderSongDetailCharts(songName, currentYear, prevYear) {
       breakdown.totalByYear[rec.year]++;
       totalCount++;
       const name = rec.tourName.toLowerCase();
-      if (name.includes('pop')) breakdown.pop++;
-      else if (name.includes('rock')) breakdown.rock++;
-      else if (name.includes('aloha')) breakdown.aloha++;
-      else breakdown.other++;
+      if (name.includes('pop')) { breakdown.pop++; categoryCounts.pop++; }
+      else if (name.includes('rock')) { breakdown.rock++; categoryCounts.rock++; }
+      else if (name.includes('aloha')) { breakdown.aloha++; categoryCounts.aloha++; }
+      else { breakdown.other++; categoryCounts.other++; }
     }
   });
 
@@ -3504,6 +3505,7 @@ function renderSongDetailCharts(songName, currentYear, prevYear) {
           display: function(context) {
               return context.datasetIndex === 0 && context.dataset.data[context.dataIndex] > 0;
           },
+          // ★今年の数字の色とサイズを目立たせる
           color: (ctx) => years[ctx.dataIndex] === currentYear ? '#1e293b' : '#64748b',
           anchor: 'end',
           align: 'end',
@@ -3537,10 +3539,10 @@ function renderSongDetailCharts(songName, currentYear, prevYear) {
 
   document.getElementById('song-detail-category-counts').innerHTML = `
     <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-sm font-bold text-gray-500 mt-2">
-      <p class="text-pop truncate">・Pop: ${breakdown.pop}</p>
-      <p class="text-aloha truncate">・Aloha: ${breakdown.aloha}</p>
-      <p class="text-rock truncate">・Rock: ${breakdown.rock}</p>
-      <p class="text-event truncate">・Event: ${breakdown.other}</p>
+      <p class="text-pop truncate">・Pop: ${categoryCounts.pop}</p>
+      <p class="text-aloha truncate">・Aloha: ${categoryCounts.aloha}</p>
+      <p class="text-rock truncate">・Rock: ${categoryCounts.rock}</p>
+      <p class="text-event truncate">・Event: ${categoryCounts.other}</p>
     </div>
   `;
 
@@ -3552,7 +3554,7 @@ function renderSongDetailCharts(songName, currentYear, prevYear) {
     data: {
       labels: ['Pop', 'Rock', 'Aloha', 'Other'],
       datasets: [{
-        data: [breakdown.pop, breakdown.rock, breakdown.aloha, breakdown.other],
+        data: [categoryCounts.pop, categoryCounts.rock, categoryCounts.aloha, categoryCounts.other],
         backgroundColor: [THEME_COLORS.POP, THEME_COLORS.ROCK, THEME_COLORS.ALOHA, THEME_COLORS.EVENT],
         borderWidth: 0
       }]
