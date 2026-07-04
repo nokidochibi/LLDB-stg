@@ -2362,7 +2362,16 @@ renderVenueCategorySummary();
   });
 
   [document.getElementById('modal-overlay'), document.getElementById('memo-modal'), document.getElementById('song-detail-modal')].forEach(modal => {
-    if(modal) modal.addEventListener('click', e => { if (e.target === e.currentTarget) e.target.style.display = 'none'; });
+    if(modal) modal.addEventListener('click', e => { 
+        if (e.target === e.currentTarget) {
+            e.target.style.display = 'none'; 
+            // ★追加: モーダルが閉じたら戻るボタンを再表示
+            if (document.body.classList.contains('detail-view')) {
+                const backBtn = document.getElementById('back-button-fixed');
+                if (backBtn) backBtn.style.display = 'flex';
+            }
+        }
+    });
   });
 
   // ★追加: 投票ボタンを押した時の動作（ログイン状態で分岐）
@@ -3312,10 +3321,20 @@ function openMemoModal() {
     document.getElementById('memo-textarea').value = data.memo || '';
     
     document.getElementById('memo-modal').style.display = 'flex';
+
+    // ★追加: 戻るボタンを非表示
+    const backBtn = document.getElementById('back-button-fixed');
+    if (backBtn) backBtn.style.display = 'none';
 }
 
 function closeMemoModal() {
     document.getElementById('memo-modal').style.display = 'none';
+
+    // ★追加: 戻るボタンを再表示
+    if (document.body.classList.contains('detail-view')) {
+        const backBtn = document.getElementById('back-button-fixed');
+        if (backBtn) backBtn.style.display = 'flex';
+    }
 }
 
 function saveMemo() {
@@ -3403,6 +3422,10 @@ function openSongDetailModal(songName) {
     document.getElementById('song-detail-modal-message').innerHTML = messageHtml;
     
     document.getElementById('song-detail-modal').style.display = 'flex';
+
+    // ★追加: 戻るボタンを非表示
+    const backBtn = document.getElementById('back-button-fixed');
+    if (backBtn) backBtn.style.display = 'none';
     
     // モーダル表示のアニメーションをスムーズにするため少し遅延させて描画
     setTimeout(() => {
@@ -3413,6 +3436,12 @@ function openSongDetailModal(songName) {
 
 function closeSongDetailModal() {
     document.getElementById('song-detail-modal').style.display = 'none';
+
+    // ★追加: 戻るボタンを再表示
+    if (document.body.classList.contains('detail-view')) {
+        const backBtn = document.getElementById('back-button-fixed');
+        if (backBtn) backBtn.style.display = 'flex';
+    }
 }
 
 function renderSongDetailCharts(songName, currentYear, prevYear) {
