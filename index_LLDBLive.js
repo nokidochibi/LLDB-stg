@@ -2870,9 +2870,9 @@ window.searchByTourAndSong = function(tourName, songName) {
     const isMedleyIncluded = document.getElementById('medley-toggle').checked;
     const songInput = document.getElementById('song-filter-input');
     if (isMedleyIncluded) {
-        songInput.value = `${songName} ※楽曲タブから選択`;
+        songInput.value = `${songName} ※楽曲タブから選択`; // ★修正: 全角スペースに統一
     } else {
-        songInput.value = `${songName}(メドレー除外) ※楽曲タブから選択`;
+        songInput.value = `${songName}(メドレー除外) ※楽曲タブから選択`; // ★修正: 全角スペースに統一
     }
     
     switchToTab('search');
