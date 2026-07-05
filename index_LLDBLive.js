@@ -2769,6 +2769,8 @@ function handleError(error) {
       fatal: true
   });
   document.getElementById('live-list-container').innerHTML = `<p class="text-center text-red-500 py-8 text-sm">データ読み込み中にエラーが発生しました。<br>(${error.message})</p>`;
+  
+  if (appInitializedResolver) appInitializedResolver();
 }
 
 // -----------------------------------------------------------
