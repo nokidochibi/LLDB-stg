@@ -602,20 +602,57 @@ button { font-size: 13px !important; }
       </div>
     </div>
 
-    <div class="mb-5">
-      <div class="flex items-end justify-between mb-2">
-        <h3 class="font-bold text-gray-700 text-base flex items-center gap-1">⏳ 秘蔵期間が長かった曲 TOP10</h3>
-        <span class="text-[10px] text-gray-400 font-bold mb-0.5">※同率含む</span>
+    <details class="mb-3 card-base bg-white p-0 shadow-sm border border-gray-100 overflow-hidden group">
+      <summary class="flex items-center justify-between p-4 cursor-pointer list-none bg-white">
+        <div class="flex items-end justify-between w-full pr-2">
+          <h3 class="font-bold text-gray-700 text-base flex items-center gap-2">⏳ 秘蔵期間が長かった曲 TOP10</h3>
+          <span class="text-[10px] text-gray-400 font-bold mb-0.5 shrink-0">※同率含む</span>
+        </div>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180 flex-shrink-0"></i>
+      </summary>
+      <div class="px-4 pb-4 border-t border-gray-50">
+        <div id="interval-songs"></div>
       </div>
-      <div id="interval-songs" class="card-base bg-white p-2"></div>
-    </div>
+    </details>
 
-    <div class="mb-5"><h3 class="font-bold mb-2 text-gray-700 text-base">🎬 オープニング曲 TOP 10</h3>
-    <div id="opening-songs" class="card-base bg-white p-2"></div></div>
-    <div class="mb-5"><h3 class="font-bold mb-2 text-gray-700 text-base">👏 アンコール曲 TOP 10</h3>
-    <div id="encore-songs" class="card-base bg-white p-2"></div></div>
-    <div class="mb-5"><h3 class="font-bold mb-2 text-gray-700 text-base">🏁 大トリ曲 TOP 10</h3>
-    <div id="last-songs" class="card-base bg-white p-2"></div></div>
+    <details class="mb-3 card-base bg-white p-0 shadow-sm border border-gray-100 overflow-hidden group">
+      <summary class="flex items-center justify-between p-4 cursor-pointer list-none bg-white">
+        <div class="flex items-end justify-between w-full pr-2">
+          <h3 class="font-bold text-gray-700 text-base flex items-center gap-2">🎬 ツアーごとのOP曲 TOP10</h3>
+          <span class="text-[10px] text-gray-400 font-bold mb-0.5 shrink-0">※同率含む</span>
+        </div>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180 flex-shrink-0"></i>
+      </summary>
+      <div class="px-4 pb-4 border-t border-gray-50">
+        <div id="opening-songs"></div>
+      </div>
+    </details>
+
+    <details class="mb-3 card-base bg-white p-0 shadow-sm border border-gray-100 overflow-hidden group">
+      <summary class="flex items-center justify-between p-4 cursor-pointer list-none bg-white">
+        <div class="flex items-end justify-between w-full pr-2">
+          <h3 class="font-bold text-gray-700 text-base flex items-center gap-2">👏 アンコール曲 TOP10</h3>
+          <span class="text-[10px] text-gray-400 font-bold mb-0.5 shrink-0">※同率含む</span>
+        </div>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180 flex-shrink-0"></i>
+      </summary>
+      <div class="px-4 pb-4 border-t border-gray-50">
+        <div id="encore-songs"></div>
+      </div>
+    </details>
+
+    <details class="mb-5 card-base bg-white p-0 shadow-sm border border-gray-100 overflow-hidden group">
+      <summary class="flex items-center justify-between p-4 cursor-pointer list-none bg-white">
+        <div class="flex items-end justify-between w-full pr-2">
+          <h3 class="font-bold text-gray-700 text-base flex items-center gap-2">🏁 大トリ曲 TOP10</h3>
+          <span class="text-[10px] text-gray-400 font-bold mb-0.5 shrink-0">※同率含む</span>
+        </div>
+        <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180 flex-shrink-0"></i>
+      </summary>
+      <div class="px-4 pb-4 border-t border-gray-50">
+        <div id="last-songs"></div>
+      </div>
+    </details>
   </div>
 
   <div id="tab-records" class="tab-content" style="display:none">
