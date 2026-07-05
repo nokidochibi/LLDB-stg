@@ -2266,6 +2266,100 @@ function renderIntervalRanking() {
   container.innerHTML = html;
 }
 
+// ★追加: 秘蔵期間が長い曲（更新中）ランキング
+function renderCurrentIntervalRanking() {
+  const container = document.getElementById('current-interval-songs');
+  if (!container) return;
+
+  if (!isFullDataLoaded) {
+      container.innerHTML = '<div class="text-center py-8"><div class="text-xl mb-1 animate-bounce">🌱</div><p class="text-gray-400 text-xs">データ読み込み中...<br>少し待っててね</p></div>';
+      return;
+  }
+
+  let maxYear = new Date().getFullYear();
+  if (allLiveRecords.length > 0) {
+      maxYear = Math.max(...allLiveRecords.map(r => parseInt(r.year) || 1998));
+  }
+
+  const lastPlayedYear = {};
+
+  allLiveRecords.forEach(rec => {
+    if (!rec.year) return;
+    const currentYear = parseInt(rec.year);
+    
+    rec.setlist.forEach(s => {
+      if (s === '__MEDLEY_START__' || s === '__MEDLEY_END__') return;
+      const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
+      if (clean && clean !== 'メドレー' && !clean.includes('[') && !clean.includes(']')) {
+          if (!lastPlayedYear[clean] || currentYear > lastPlayedYear[clean]) {
+              lastPlayedYear[clean] = currentYear;
+          }
+      }
+    });
+  });
+
+  const intervals = [];
+  Object.keys(lastPlayedYear).forEach(song => {
+      const diff = maxYear - lastPlayedYear[song];
+      if (diff > 0) {
+          intervals.push({
+              song: song,
+              years: diff,
+              lastYear: lastPlayedYear[song]
+          });
+      }
+  });
+
+  intervals.sort((a, b) => b.years - a.years);
+
+  let currentRank = 1;
+  let currentVal = -1;
+  let rankResults = [];
+  
+  for (let i = 0; i < intervals.length; i++) {
+      if (currentVal === -1) {
+          currentVal = intervals[i].years;
+      } else if (intervals[i].years < currentVal) {
+          currentRank++;
+          currentVal = intervals[i].years;
+      }
+      
+      // TOP10順位まで取得（同率含む）
+      if (currentRank > 10) break;
+
+      rankResults.push({
+          rank: currentRank,
+          song: intervals[i].song,
+          years: intervals[i].years,
+          details: `${intervals[i].lastYear}年 → 現在`
+      });
+  }
+
+  if (rankResults.length === 0) {
+      container.innerHTML = '<p class="text-center text-gray-400 my-4 text-xs">データがありません</p>';
+      return;
+  }
+
+  let html = '';
+  rankResults.forEach((item, index) => {
+      const rankColor = item.rank === 1 ? 'text-aiko-pink' : item.rank === 2 ? 'text-aiko-yellow' : item.rank === 3 ? 'text-aiko-blue' : 'text-gray-300';
+      const borderClass = index !== rankResults.length - 1 ? 'border-b border-gray-100' : '';
+      
+      html += `<div class="py-3 clickable-item flex items-center justify-between ${borderClass}" onclick="selectSong('${item.song.replace(/'/g, "\\'")}')">
+          <div class="flex items-center flex-1 overflow-hidden pr-2">
+              <span class="rank-number ${rankColor} w-6 text-center shrink-0">${item.rank}</span>
+              <span class="song-title text-gray-700 truncate">${item.song}</span>
+          </div>
+          <div class="text-right shrink-0">
+              <div class="font-bold text-aiko-red text-sm leading-tight">${item.years} <span class="text-[10px] font-normal text-gray-500">年</span></div>
+              <div class="text-[9px] text-gray-400 mt-0.5">${item.details}</div>
+          </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
 // ★追加: 投票ランキングデータの取得と描画
 async function fetchAndRenderVoteRanking() {
   const container = document.getElementById('vote-ranking-container');
