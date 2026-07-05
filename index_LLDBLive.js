@@ -2858,6 +2858,27 @@ window.findAndShowLive = function(dateStr, tourName) {
     applyFilters();
 }
 
+// ★追加: ツアー名と曲名で絞り込んだ状態で公演タブへ遷移する関数
+window.searchByTourAndSong = function(tourName, songName) {
+    document.getElementById('tour-select').value = '';
+    document.getElementById('year-select').value = '';
+    document.getElementById('region-select').value = '';
+    document.getElementById('attended-filter-toggle').checked = false;
+    
+    document.getElementById('search-input').value = tourName;
+    
+    const isMedleyIncluded = document.getElementById('medley-toggle').checked;
+    const songInput = document.getElementById('song-filter-input');
+    if (isMedleyIncluded) {
+        songInput.value = `${songName} ※楽曲タブから選択`;
+    } else {
+        songInput.value = `${songName}(メドレー除外) ※楽曲タブから選択`;
+    }
+    
+    switchToTab('search');
+    applyFilters();
+}
+
 // -----------------------------------------------------------
 // Daily Events & Anniversary Logic
 // -----------------------------------------------------------
@@ -3865,19 +3886,43 @@ function showModal(songName, type) {
 
     // モーダルHTML生成
     hits.sort((a, b) => new Date(b.date) - new Date(a.date));
-    let listHtml = hits.map(rec => `
-        <div class="card-base p-3 mb-2 clickable-item border border-gray-100 bg-white" onclick="closeModal(); showLiveDetail(allLiveRecords.find(r => r.date === '${rec.date}'))">
-            <div class="text-xs text-gray-500">${rec.date}</div>
-            <div class="font-bold text-gray-700">${rec.tourName}</div>
-            <div class="text-xs text-gray-400 text-right mt-1">${rec.venue}</div>
-        </div>
-    `).join('');
+    
+    let listHtml = '';
+    let countDisplay = '';
+
+    if (type === 'opening') {
+        // ツアー名で重複排除してまとめる
+        const tourHitsMap = new Map();
+        hits.forEach(rec => {
+            if (!tourHitsMap.has(rec.tourName)) {
+                tourHitsMap.set(rec.tourName, rec);
+            }
+        });
+        const tourHits = Array.from(tourHitsMap.values());
+        countDisplay = `計 ${tourHits.length} ツアー`;
+        
+        listHtml = tourHits.map(rec => `
+            <div class="card-base p-4 mb-2 clickable-item border border-gray-100 bg-white" onclick="closeModal(); searchByTourAndSong('${rec.tourName.replace(/'/g, "\\'")}', '${songName.replace(/'/g, "\\'")}')">
+                <div class="font-bold text-gray-700 text-center text-lg">${rec.tourName}</div>
+                <div class="text-xs text-gray-400 text-center mt-2 flex items-center justify-center gap-1"><i data-lucide="search" class="w-3 h-3"></i> このツアーの公演を検索</div>
+            </div>
+        `).join('');
+    } else {
+        countDisplay = `計 ${hits.length} 回`;
+        listHtml = hits.map(rec => `
+            <div class="card-base p-3 mb-2 clickable-item border border-gray-100 bg-white" onclick="closeModal(); showLiveDetail(allLiveRecords.find(r => r.date === '${rec.date}'))">
+                <div class="text-xs text-gray-500">${rec.date}</div>
+                <div class="font-bold text-gray-700">${rec.tourName}</div>
+                <div class="text-xs text-gray-400 text-right mt-1">${rec.venue}</div>
+            </div>
+        `).join('');
+    }
 
     if (hits.length === 0) listHtml = '<p class="text-center text-gray-400 my-4">データが見つかりませんでした</p>';
 
     const html = `
         <h2 class="font-bold text-center text-lg mb-4 text-aiko-pink leading-tight">${title}</h2>
-        <p class="text-right text-xs text-gray-400 mb-2">計 ${hits.length} 回</p>
+        <p class="text-right text-xs text-gray-400 mb-2">${countDisplay}</p>
         <div class="overflow-y-auto max-h-[60vh]">
             ${listHtml}
         </div>
