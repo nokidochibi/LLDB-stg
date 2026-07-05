@@ -2278,7 +2278,6 @@ function renderCurrentIntervalRanking() {
       return;
   }
 
-  // ★修正: 確実に「今年（現在）」を基準にする
   const currentYearNow = new Date().getFullYear();
 
   const lastPlayedYear = {};
@@ -2300,7 +2299,7 @@ function renderCurrentIntervalRanking() {
 
   const intervals = [];
   Object.keys(lastPlayedYear).forEach(song => {
-      const diff = currentYearNow - lastPlayedYear[song]; // ★今年 - 最後に演奏された年
+      const diff = currentYearNow - lastPlayedYear[song]; 
       if (diff > 0) {
           intervals.push({
               song: song,
@@ -2311,6 +2310,53 @@ function renderCurrentIntervalRanking() {
   });
 
   intervals.sort((a, b) => b.years - a.years);
+
+  let currentRank = 1;
+  let currentVal = -1;
+  let rankResults = [];
+  
+  for (let i = 0; i < intervals.length; i++) {
+      if (currentVal === -1) {
+          currentVal = intervals[i].years;
+      } else if (intervals[i].years < currentVal) {
+          currentRank++;
+          currentVal = intervals[i].years;
+      }
+      
+      if (currentRank > 10) break;
+
+      rankResults.push({
+          rank: currentRank,
+          song: intervals[i].song,
+          years: intervals[i].years,
+          details: `${intervals[i].lastYear}年 → 現在`
+      });
+  }
+
+  if (rankResults.length === 0) {
+      container.innerHTML = '<p class="text-center text-gray-400 my-4 text-xs">データがありません</p>';
+      return;
+  }
+
+  let html = '';
+  rankResults.forEach((item, index) => {
+      const rankColor = item.rank === 1 ? 'text-aiko-pink' : item.rank === 2 ? 'text-aiko-yellow' : item.rank === 3 ? 'text-aiko-blue' : 'text-gray-300';
+      const borderClass = index !== rankResults.length - 1 ? 'border-b border-gray-100' : '';
+      
+      html += `<div class="py-3 clickable-item flex items-center justify-between ${borderClass}" onclick="selectSong('${item.song.replace(/'/g, "\\'")}')">
+          <div class="flex items-center flex-1 overflow-hidden pr-2">
+              <span class="rank-number ${rankColor} w-6 text-center shrink-0">${item.rank}</span>
+              <span class="song-title text-gray-700 truncate">${item.song}</span>
+          </div>
+          <div class="text-right shrink-0">
+              <div class="font-bold text-aiko-red text-sm leading-tight">${item.years} <span class="text-[10px] font-normal text-gray-500">年</span></div>
+              <div class="text-[9px] text-gray-400 mt-0.5">${item.details}</div>
+          </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
 
   let currentRank = 1;
   let currentVal = -1;
@@ -2867,10 +2913,12 @@ window.searchByTourAndSong = function(tourName, songName) {
     
     const isMedleyIncluded = document.getElementById('medley-toggle').checked;
     const songInput = document.getElementById('song-filter-input');
+    
+    // ★修正: コピペ時の変換を防ぐため、全角スペースをプログラム用の記号（\u3000）で指定して確実に入れる！
     if (isMedleyIncluded) {
-        songInput.value = `${songName} ※楽曲タブから選択`; // ★修正: 確実に【全角】スペースにする
+        songInput.value = songName + '\u3000※楽曲タブから選択';
     } else {
-        songInput.value = `${songName}(メドレー除外) ※楽曲タブから選択`; // ★修正: 確実に【全角】スペースにする
+        songInput.value = songName + '(メドレー除外)\u3000※楽曲タブから選択';
     }
     
     switchToTab('search');
