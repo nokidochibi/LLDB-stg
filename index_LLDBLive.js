@@ -303,6 +303,7 @@ renderVenueCategorySummary();
 } else if (tabId === 'pattern') {
               renderPatternStats();
               renderIntervalRanking(); // ★追加: 秘蔵期間ランキング
+              renderCurrentIntervalRanking(); // ★追加: 更新中の秘蔵ランキング
               renderAlbumChart();
               fetchAndRenderVoteRanking(); // ★追加
           } else if (tabId === 'records') {
@@ -1669,6 +1670,7 @@ function switchToTab(tabId) {
         // ★追加: タブ切り替え時に必ず再描画する
         renderPatternStats();
         renderIntervalRanking(); // ★追加: 秘蔵期間ランキング
+        renderCurrentIntervalRanking(); // ★追加: 更新中の秘蔵ランキング
         renderAlbumChart();
         fetchAndRenderVoteRanking(); // ★追加
     }
