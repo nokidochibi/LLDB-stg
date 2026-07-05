@@ -302,6 +302,7 @@ renderVenueLiveCountChart();
 renderVenueCategorySummary();
 } else if (tabId === 'pattern') {
               renderPatternStats();
+              renderIntervalRanking(); // ★追加: 秘蔵期間ランキング
               renderAlbumChart();
               fetchAndRenderVoteRanking(); // ★追加
           } else if (tabId === 'records') {
@@ -1651,6 +1652,7 @@ function switchToTab(tabId) {
     if (tabId === 'pattern') {
         // ★追加: タブ切り替え時に必ず再描画する
         renderPatternStats();
+        renderIntervalRanking(); // ★追加: 秘蔵期間ランキング
         renderAlbumChart();
         fetchAndRenderVoteRanking(); // ★追加
     }
@@ -2131,6 +2133,96 @@ function renderPatternStats() {
       </div>`
     }).join('');
   });
+}
+
+// ★追加: 秘蔵期間が長かった曲ランキング
+function renderIntervalRanking() {
+  const container = document.getElementById('interval-songs');
+  if (!container) return;
+
+  if (!isFullDataLoaded) {
+      container.innerHTML = '<div class="text-center py-8"><div class="text-xl mb-1 animate-bounce">🌱</div><p class="text-gray-400 text-xs">データ読み込み中...<br>少し待っててね</p></div>';
+      return;
+  }
+
+  const intervals = {};
+  const sortedRecords = [...allLiveRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  sortedRecords.forEach(rec => {
+    if (!rec.year) return;
+    const currentYear = parseInt(rec.year);
+    const playedSongs = new Set();
+    
+    rec.setlist.forEach(s => {
+      if (s === '__MEDLEY_START__' || s === '__MEDLEY_END__') return;
+      const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
+      if (clean && clean !== 'メドレー' && !clean.includes('[') && !clean.includes(']')) playedSongs.add(clean);
+    });
+
+    playedSongs.forEach(song => {
+      if (!intervals[song]) {
+        intervals[song] = { lastYear: currentYear, maxInt: 0, details: "" };
+      } else {
+        const diff = currentYear - intervals[song].lastYear;
+        if (diff > intervals[song].maxInt) {
+          intervals[song].maxInt = diff;
+          intervals[song].details = `${intervals[song].lastYear}年 → ${currentYear}年`;
+        }
+        intervals[song].lastYear = currentYear;
+      }
+    });
+  });
+
+  const sortedIntervals = Object.entries(intervals)
+    .filter(x => x[1].maxInt > 0)
+    .sort((a, b) => b[1].maxInt - a[1].maxInt);
+
+  let currentRank = 1;
+  let currentVal = -1;
+  let rankResults = [];
+  
+  for (let i = 0; i < sortedIntervals.length; i++) {
+      if (currentVal === -1) {
+          currentVal = sortedIntervals[i][1].maxInt;
+      } else if (sortedIntervals[i][1].maxInt < currentVal) {
+          currentRank++;
+          currentVal = sortedIntervals[i][1].maxInt;
+      }
+      
+      // TOP10順位まで取得（同率含む）
+      if (currentRank > 10) break;
+
+      rankResults.push({
+          rank: currentRank,
+          song: sortedIntervals[i][0],
+          years: sortedIntervals[i][1].maxInt,
+          details: sortedIntervals[i][1].details
+      });
+  }
+
+  if (rankResults.length === 0) {
+      container.innerHTML = '<p class="text-center text-gray-400 my-4 text-xs">データがありません</p>';
+      return;
+  }
+
+  let html = '';
+  rankResults.forEach((item, index) => {
+      const rankColor = item.rank === 1 ? 'text-aiko-pink' : item.rank === 2 ? 'text-aiko-yellow' : item.rank === 3 ? 'text-aiko-blue' : 'text-gray-300';
+      const borderClass = index !== rankResults.length - 1 ? 'border-b border-gray-100' : '';
+      
+      html += `<div class="p-3 clickable-item flex items-center justify-between ${borderClass}" onclick="selectSong('${item.song.replace(/'/g, "\\'")}')">
+          <div class="flex items-center flex-1 overflow-hidden pr-2">
+              <span class="rank-number ${rankColor}">${item.rank}</span>
+              <span class="song-title text-gray-700 truncate">${item.song}</span>
+          </div>
+          <div class="text-right shrink-0">
+              <div class="font-bold text-aiko-red text-[15px] leading-tight">${item.years} <span class="text-xs font-normal text-gray-500">年振り</span></div>
+              <div class="text-[10px] text-gray-400 mt-0.5">${item.details}</div>
+          </div>
+      </div>`;
+  });
+
+  container.innerHTML = html;
 }
 
 // ★追加: 投票ランキングデータの取得と描画
