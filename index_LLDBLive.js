@@ -2278,23 +2278,21 @@ function renderCurrentIntervalRanking() {
       return;
   }
 
-  let maxYear = new Date().getFullYear();
-  if (allLiveRecords.length > 0) {
-      maxYear = Math.max(...allLiveRecords.map(r => parseInt(r.year) || 1998));
-  }
+  // ★修正: 確実に「今年（現在）」を基準にする
+  const currentYearNow = new Date().getFullYear();
 
   const lastPlayedYear = {};
 
   allLiveRecords.forEach(rec => {
     if (!rec.year) return;
-    const currentYear = parseInt(rec.year);
+    const recYear = parseInt(rec.year);
     
     rec.setlist.forEach(s => {
       if (s === '__MEDLEY_START__' || s === '__MEDLEY_END__') return;
       const clean = s.replace(/_アンコール/g, '').replace(/#\d+$/g, '').trim();
       if (clean && clean !== 'メドレー' && !clean.includes('[') && !clean.includes(']')) {
-          if (!lastPlayedYear[clean] || currentYear > lastPlayedYear[clean]) {
-              lastPlayedYear[clean] = currentYear;
+          if (!lastPlayedYear[clean] || recYear > lastPlayedYear[clean]) {
+              lastPlayedYear[clean] = recYear;
           }
       }
     });
@@ -2302,7 +2300,7 @@ function renderCurrentIntervalRanking() {
 
   const intervals = [];
   Object.keys(lastPlayedYear).forEach(song => {
-      const diff = maxYear - lastPlayedYear[song];
+      const diff = currentYearNow - lastPlayedYear[song]; // ★今年 - 最後に演奏された年
       if (diff > 0) {
           intervals.push({
               song: song,
@@ -2870,9 +2868,9 @@ window.searchByTourAndSong = function(tourName, songName) {
     const isMedleyIncluded = document.getElementById('medley-toggle').checked;
     const songInput = document.getElementById('song-filter-input');
     if (isMedleyIncluded) {
-        songInput.value = `${songName} ※楽曲タブから選択`; // ★修正: 全角スペースに統一
+        songInput.value = `${songName} ※楽曲タブから選択`; // ★修正: 確実に【全角】スペースにする
     } else {
-        songInput.value = `${songName}(メドレー除外) ※楽曲タブから選択`; // ★修正: 全角スペースに統一
+        songInput.value = `${songName}(メドレー除外) ※楽曲タブから選択`; // ★修正: 確実に【全角】スペースにする
     }
     
     switchToTab('search');
