@@ -926,6 +926,8 @@ function analyzeSongStats(records) {
 
 function analyzePatterns(records) {
   const o = {}, e = {}, l = {};
+  const tourOpeningSongs = {}; // 追加: ツアーごとのオープニング曲記録用
+
   records.forEach(rec => {
     const cleanSetlist = [];
     let inMedley = false;
@@ -943,8 +945,22 @@ function analyzePatterns(records) {
     });
 
     if (cleanSetlist.length > 0) {
-        o[cleanSetlist[0]] = (o[cleanSetlist[0]] || 0) + 1;
-        l[cleanSetlist[cleanSetlist.length - 1]] = (l[cleanSetlist[cleanSetlist.length - 1]] || 0) + 1;
+        // オープニング曲 (ツアーごとに1回のみカウント)
+        const opSong = cleanSetlist[0];
+        const tourName = rec.tourName;
+        
+        if (!tourOpeningSongs[tourName]) {
+            tourOpeningSongs[tourName] = new Set();
+        }
+        
+        if (!tourOpeningSongs[tourName].has(opSong)) {
+            tourOpeningSongs[tourName].add(opSong);
+            o[opSong] = (o[opSong] || 0) + 1;
+        }
+
+        // 大トリ曲 (従来通り)
+        const lastSong = cleanSetlist[cleanSetlist.length - 1];
+        l[lastSong] = (l[lastSong] || 0) + 1;
     }
 
     let inMedleyForEncore = false;
@@ -2110,7 +2126,6 @@ function updateSortIcons() {
 function renderPatternStats() {
   const types = ['opening', 'encore', 'last'];
   
-  // ★追加: データ読み込み中の表示
   if (!isFullDataLoaded) {
       types.forEach(type => {
           const container = document.getElementById(type + '-songs');
@@ -2122,14 +2137,40 @@ function renderPatternStats() {
   types.forEach(type => {
     const container = document.getElementById(type + '-songs');
     if (!container) return;
-    const data = Object.entries(patternStats[type + 'Songs']).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    container.innerHTML = data.map(([song, count], i) => {
-      const rankColor = i < 3 ? ['text-aiko-pink','text-aiko-yellow','text-aiko-blue'][i] : 'text-gray-300';
-      const borderClass = i !== data.length -1 ? 'border-b border-gray-100' : '';
-      return `<div class="p-3 clickable-item flex items-center ${borderClass}" onclick="showModal('${song.replace(/'/g, "\\'")}', '${type}')">
-        <span class="rank-number ${rankColor}">${i + 1}</span>
-        <span class="song-title text-gray-700">${song}</span>
-        <span class="song-count">${count} <span>回</span></span>
+    const sortedData = Object.entries(patternStats[type + 'Songs']).sort((a, b) => b[1] - a[1]);
+    
+    let currentRank = 1;
+    let currentVal = -1;
+    let rankResults = [];
+
+    for (let i = 0; i < sortedData.length; i++) {
+        const count = sortedData[i][1];
+        const song = sortedData[i][0];
+        
+        if (currentVal === -1) {
+            currentVal = count;
+        } else if (count < currentVal) {
+            currentRank++;
+            currentVal = count;
+        }
+        
+        if (currentRank > 10) break;
+
+        rankResults.push({ rank: currentRank, song: song, count: count });
+    }
+
+    if (rankResults.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-400 my-4 text-xs">データがありません</p>';
+        return;
+    }
+
+    container.innerHTML = rankResults.map((item, i) => {
+      const rankColor = item.rank === 1 ? 'text-aiko-pink' : item.rank === 2 ? 'text-aiko-yellow' : item.rank === 3 ? 'text-aiko-blue' : 'text-gray-300';
+      const borderClass = i !== rankResults.length - 1 ? 'border-b border-gray-100' : '';
+      return `<div class="py-3 clickable-item flex items-center ${borderClass}" onclick="showModal('${item.song.replace(/'/g, "\\'")}', '${type}')">
+        <span class="rank-number ${rankColor} w-6 text-center shrink-0">${item.rank}</span>
+        <span class="song-title text-gray-700">${item.song}</span>
+        <span class="song-count">${item.count} <span>回</span></span>
       </div>`
     }).join('');
   });
@@ -2275,9 +2316,9 @@ async function fetchAndRenderVoteRanking() {
           }).join('');
         }
 
-        // アコーディオンUI (全件表示)
+       // アコーディオンUI (全件表示)
         html += `
-        <details class="card-base bg-white p-0 shadow-sm border border-gray-100 overflow-hidden group" ${index === 0 ? 'open' : ''}>
+        <details class="card-base bg-white p-0 shadow-sm border border-gray-100 overflow-hidden group">
           <summary class="flex items-center justify-between p-4 cursor-pointer list-none bg-white">
             <div class="text-sm font-bold text-gray-700 pr-2">
               <span class="text-aiko-red mr-1">Q${index + 1}.</span> ${q.title}
