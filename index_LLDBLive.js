@@ -2210,14 +2210,14 @@ function renderIntervalRanking() {
       const rankColor = item.rank === 1 ? 'text-aiko-pink' : item.rank === 2 ? 'text-aiko-yellow' : item.rank === 3 ? 'text-aiko-blue' : 'text-gray-300';
       const borderClass = index !== rankResults.length - 1 ? 'border-b border-gray-100' : '';
       
-      html += `<div class="p-3 clickable-item flex items-center justify-between ${borderClass}" onclick="selectSong('${item.song.replace(/'/g, "\\'")}')">
+      html += `<div class="py-3 clickable-item flex items-center justify-between ${borderClass}" onclick="selectSong('${item.song.replace(/'/g, "\\'")}')">
           <div class="flex items-center flex-1 overflow-hidden pr-2">
-              <span class="rank-number ${rankColor}">${item.rank}</span>
+              <span class="rank-number ${rankColor} w-6 text-center shrink-0">${item.rank}</span>
               <span class="song-title text-gray-700 truncate">${item.song}</span>
           </div>
           <div class="text-right shrink-0">
-              <div class="font-bold text-aiko-red text-[15px] leading-tight">${item.years} <span class="text-xs font-normal text-gray-500">年振り</span></div>
-              <div class="text-[10px] text-gray-400 mt-0.5">${item.details}</div>
+              <div class="font-bold text-aiko-red text-sm leading-tight">${item.years} <span class="text-[10px] font-normal text-gray-500">年振り</span></div>
+              <div class="text-[9px] text-gray-400 mt-0.5">${item.details}</div>
           </div>
       </div>`;
   });
