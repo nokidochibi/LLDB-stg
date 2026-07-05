@@ -1030,6 +1030,7 @@ function applyFilters() {
   songFilterValue = songFilterValue.replace(' ※楽曲タブから選択', '').replace(' ※楽曲タブから選択', '').replace('※楽曲タブから選択', '').replace('（楽曲タブから選択）', '').replace('(メドレー除外)', '').trim();
 
   const isMedleyIncluded = document.getElementById('medley-toggle').checked;
+  const isAttendedOnly = document.getElementById('attended-filter-toggle').checked; // ←この1行を復活させます
 
   const filters = {
     search: document.getElementById('search-input').value.toLowerCase(),
