@@ -1026,8 +1026,8 @@ function populateFilters(records, skipApply = false) {
 function applyFilters() {
   const songFilterInput = document.getElementById('song-filter-input');
   let songFilterValue = songFilterInput.value;
-  // ★修正: 半角・全角スペースどちらでも確実に消せるようにし、末尾の見えない空白もトリミングする
-  songFilterValue = songFilterValue.replace(/[  ]*※楽曲タブから選択/g, '').replace('（楽曲タブから選択）', '').replace('(メドレー除外)', '').trim();
+  // ★修正: 環境によって文字化けしないよう、全角・半角それぞれ明示的に指定して確実に消去する
+  songFilterValue = songFilterValue.replace(' ※楽曲タブから選択', '').replace(' ※楽曲タブから選択', '').replace('※楽曲タブから選択', '').replace('（楽曲タブから選択）', '').replace('(メドレー除外)', '').trim();
 
   const isMedleyIncluded = document.getElementById('medley-toggle').checked;
 
