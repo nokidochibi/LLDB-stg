@@ -447,10 +447,10 @@ function renderLiveCountChart() {
     }
 
     if (isCounted) {
-      const name = rec.tourName.toLowerCase();
-      if (name.includes('pop')) breakdown.pop[rec.year]++;
-      else if (name.includes('rock')) breakdown.rock[rec.year]++;
-      else if (name.includes('aloha')) breakdown.aloha[rec.year]++;
+      const shortName = (rec.shortTourName || '').toLowerCase();
+      if (shortName.includes('llp')) breakdown.pop[rec.year]++;
+      else if (shortName.includes('llr')) breakdown.rock[rec.year]++;
+      else if (shortName.includes('lla')) breakdown.aloha[rec.year]++;
       else breakdown.other[rec.year]++;
     }
   });
@@ -540,11 +540,11 @@ function renderTotalLiveCategorySummary(targetSong = null) {
   document.getElementById('total-held-lives').textContent = totalCount;
 
   const counts = { pop: 0, rock: 0, aloha: 0, other: 0 };
-  targetRecords.forEach(rec => {
-    const name = rec.tourName.toLowerCase();
-    if (name.includes('pop')) counts.pop++;
-    else if (name.includes('rock')) counts.rock++;
-    else if (name.includes('aloha')) counts.aloha++;
+ targetRecords.forEach(rec => {
+    const shortName = (rec.shortTourName || '').toLowerCase();
+    if (shortName.includes('llp')) counts.pop++;
+    else if (shortName.includes('llr')) counts.rock++;
+    else if (shortName.includes('lla')) counts.aloha++;
     else counts.other++;
   });
 
@@ -618,10 +618,10 @@ if (rec.region === selectedVenueInfo.name) isMatch = true;
 }
 
 if (isMatch) {
-const name = rec.tourName.toLowerCase();
-if (name.includes('pop')) breakdown.pop[rec.year]++;
-else if (name.includes('rock')) breakdown.rock[rec.year]++;
-else if (name.includes('aloha')) breakdown.aloha[rec.year]++;
+const shortName = (rec.shortTourName || '').toLowerCase();
+if (shortName.includes('llp')) breakdown.pop[rec.year]++;
+else if (shortName.includes('llr')) breakdown.rock[rec.year]++;
+else if (shortName.includes('lla')) breakdown.aloha[rec.year]++;
 else breakdown.other[rec.year]++;
 }
 });
@@ -709,10 +709,10 @@ if (totalEl) totalEl.textContent = totalCount;
 
 const counts = { pop: 0, rock: 0, aloha: 0, other: 0 };
 targetRecords.forEach(rec => {
-const name = rec.tourName.toLowerCase();
-if (name.includes('pop')) counts.pop++;
-else if (name.includes('rock')) counts.rock++;
-else if (name.includes('aloha')) counts.aloha++;
+const shortName = (rec.shortTourName || '').toLowerCase();
+if (shortName.includes('llp')) counts.pop++;
+else if (shortName.includes('llr')) counts.rock++;
+else if (shortName.includes('lla')) counts.aloha++;
 else counts.other++;
 });
 
@@ -1055,12 +1055,12 @@ function applyFilters() {
        }
     }
 
-    const tourName = rec.tourName.toLowerCase();
+    const shortName = (rec.shortTourName || '').toLowerCase();
     let tourMatch = true;
-    if (filters.tour === 'pop') tourMatch = tourName.includes('love like pop');
-    else if (filters.tour === 'rock') tourMatch = tourName.includes('love like rock');
-    else if (filters.tour === 'aloha') tourMatch = tourName.includes('love like aloha');
-    else if (filters.tour === 'other') tourMatch = !/love like (pop|rock|aloha)/.test(tourName);
+    if (filters.tour === 'pop') tourMatch = shortName.includes('llp');
+    else if (filters.tour === 'rock') tourMatch = shortName.includes('llr');
+    else if (filters.tour === 'aloha') tourMatch = shortName.includes('lla');
+    else if (filters.tour === 'other') tourMatch = !/ll(p|r|a)/.test(shortName);
 
     let songMatch = true;
     if (filters.song) {
@@ -1130,11 +1130,11 @@ function renderLiveList(records) {
   }
 
   records.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(rec => {
-    const tourNameLower = rec.tourName.toLowerCase();
+    const shortName = (rec.shortTourName || '').toLowerCase();
     let labelType = 'other', labelText = 'Event';
-    if (tourNameLower.includes('love like pop')) { labelType = 'pop'; labelText = 'POP'; }
-    else if (tourNameLower.includes('love like rock')) { labelType = 'rock'; labelText = 'ROCK'; }
-    else if (tourNameLower.includes('love like aloha')) { labelType = 'aloha'; labelText = 'ALOHA'; }
+    if (shortName.includes('llp')) { labelType = 'pop'; labelText = 'POP'; }
+    else if (shortName.includes('llr')) { labelType = 'rock'; labelText = 'ROCK'; }
+    else if (shortName.includes('lla')) { labelType = 'aloha'; labelText = 'ALOHA'; }
 
     const isAttended = userUserData.attendedLives && userUserData.attendedLives[rec.date];
 
@@ -1760,13 +1760,11 @@ function renderRecordsTab() {
 
     attendedRecords.forEach(rec => {
         userYearlyCounts[rec.year] = (userYearlyCounts[rec.year] || 0) + 1;
-
-        const name = rec.tourName.toLowerCase();
+        const shortName = (rec.shortTourName || '').toLowerCase();
         let catKey = 'other';
-        if (name.includes('pop')) catKey = 'pop';
-        else if (name.includes('rock')) catKey = 'rock';
-        else if (name.includes('aloha')) catKey = 'aloha';
-
+        if (shortName.includes('llp')) catKey = 'pop';
+        else if (shortName.includes('llr')) catKey = 'rock';
+        else if (shortName.includes('lla')) catKey = 'aloha';
         catCounts[catKey]++;
 
         if (rec.year) {
@@ -1859,11 +1857,11 @@ function renderUserCharts(allYearly, userYearly, cat, targetSong = null, breakdo
             });
 
             if (count > 0 && rec.year) {
-                const name = rec.tourName.toLowerCase();
+                const shortName = (rec.shortTourName || '').toLowerCase();
                 let catKey = 'other';
-                if (name.includes('pop')) catKey = 'pop';
-                else if (name.includes('rock')) catKey = 'rock';
-                else if (name.includes('aloha')) catKey = 'aloha';
+                if (shortName.includes('llp')) catKey = 'pop';
+                else if (shortName.includes('llr')) catKey = 'rock';
+                else if (shortName.includes('lla')) catKey = 'aloha';
                 
                 songBreakdown[catKey][rec.year] = (songBreakdown[catKey][rec.year] || 0) + 1;
             }
@@ -2689,10 +2687,10 @@ renderVenueCategorySummary();
 
           if (isMatch) {
             userYearlyCounts[rec.year] = (userYearlyCounts[rec.year] || 0) + 1;
-            const name = rec.tourName.toLowerCase();
-            if (name.includes('pop')) catCounts.pop++;
-            else if (name.includes('rock')) catCounts.rock++;
-            else if (name.includes('aloha')) catCounts.aloha++;
+            const shortName = (rec.shortTourName || '').toLowerCase();
+            if (shortName.includes('llp')) catCounts.pop++;
+            else if (shortName.includes('llr')) catCounts.rock++;
+            else if (shortName.includes('lla')) catCounts.aloha++;
             else catCounts.other++;
           }
       }
@@ -2974,11 +2972,11 @@ function showAnniversaryModal(events) {
             const yearsAgo = nowYear - recYear;
             const yearsAgoText = yearsAgo > 0 ? `${yearsAgo}年前の` : '';
             
-            const tourNameLower = rec.tourName.toLowerCase();
-            let labelType = 'other', labelText = 'Event';
-            if (tourNameLower.includes('love like pop')) { labelType = 'pop'; labelText = 'POP'; }
-            else if (tourNameLower.includes('love like rock')) { labelType = 'rock'; labelText = 'ROCK'; }
-            else if (tourNameLower.includes('love like aloha')) { labelType = 'aloha'; labelText = 'ALOHA'; }
+            const shortName = (rec.shortTourName || '').toLowerCase();
+    let labelType = 'other', labelText = 'Event';
+    if (shortName.includes('llp')) { labelType = 'pop'; labelText = 'POP'; }
+    else if (shortName.includes('llr')) { labelType = 'rock'; labelText = 'ROCK'; }
+    else if (shortName.includes('lla')) { labelType = 'aloha'; labelText = 'ALOHA'; }
 
             html += `
                 <h2 class="font-bold text-center text-xl mb-4 text-aiko-pink">🎉 ${yearsAgoText}今日は何の日？</h2>
@@ -3733,10 +3731,10 @@ function renderSongDetailCharts(songName, currentYear, prevYear) {
 
     if (isCounted) {
       totalCount++;
-      const name = rec.tourName.toLowerCase();
-      if (name.includes('pop')) { breakdown.pop[rec.year]++; categoryCounts.pop++; }
-      else if (name.includes('rock')) { breakdown.rock[rec.year]++; categoryCounts.rock++; }
-      else if (name.includes('aloha')) { breakdown.aloha[rec.year]++; categoryCounts.aloha++; }
+      const shortName = (rec.shortTourName || '').toLowerCase();
+      if (shortName.includes('llp')) { breakdown.pop[rec.year]++; categoryCounts.pop++; }
+      else if (shortName.includes('llr')) { breakdown.rock[rec.year]++; categoryCounts.rock++; }
+      else if (shortName.includes('lla')) { breakdown.aloha[rec.year]++; categoryCounts.aloha++; }
       else { breakdown.other[rec.year]++; categoryCounts.other++; }
     }
   });
