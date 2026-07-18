@@ -1112,8 +1112,9 @@
                     // ★変更: 表記揺れ（「・」の有無など）を吸収して探す
                     // 小文字化、全角記号を半角に、中ポツやスペースを消して比較する
                     const normalizeName = (name) => {
-                        return name.toLowerCase()
-                                   .replace(/[・･\s ]/g, '') // 中ポツとスペースを消す
+                        return name.normalize('NFC') // ★追加: 文字コードを標準的な形（NFC）に統一し、濁点分離問題を解決
+                                   .toLowerCase()
+                                   .replace(/[・･\s ]/g, '') // 半角/全角中ポツとスペースを消す
                                    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
                     };
                     
