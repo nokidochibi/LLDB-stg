@@ -1108,8 +1108,17 @@
                 const songNameMatch = post.match(/[「『]([^」』]+)[」』]/);
                 if (songNameMatch && songNameMatch[1] && songDatabaseForYear.length > 0) {
                     const songName = songNameMatch[1];
-                    // データベースから曲を探す（完全一致）
-                    const foundSong = songDatabaseForYear.find(s => s.songName === songName);
+                    
+                    // ★変更: 表記揺れ（「・」の有無など）を吸収して探す
+                    // 小文字化、全角記号を半角に、中ポツやスペースを消して比較する
+                    const normalizeName = (name) => {
+                        return name.toLowerCase()
+                                   .replace(/[・･\s ]/g, '') // 中ポツとスペースを消す
+                                   .replace(/[Ａ-Ｚａ-ｚ０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+                    };
+                    
+                    const normalizedTarget = normalizeName(songName);
+                    const foundSong = songDatabaseForYear.find(s => normalizeName(s.songName) === normalizedTarget);
                     
                     if (foundSong) {
                         // シングル発売日があればシングル、なければアルバムの発売日を使う
