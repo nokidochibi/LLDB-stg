@@ -769,7 +769,7 @@
                     <button onclick="this.closest('.message-row').scrollIntoView({behavior:'smooth', block:'start'})" class="text-[10px] text-orange-300 hover:text-orange-500 flex items-center gap-1 transition px-2 py-1 rounded-full hover:bg-white"><i data-lucide="arrow-up" class="w-3 h-3"></i> この回答のトップへ移動</button>
                 </div>
             </div></div>`;
-            addMessage(html, 'bot', true);
+            addMessage(html, 'bot', true, 'start');
             lucide.createIcons();
         }
 
@@ -814,7 +814,7 @@
             }
             html += '</div>';
             html += `<div class="flex justify-center mt-3 pt-2"><button onclick="this.closest('.message-row').scrollIntoView({behavior:'smooth', block:'start'})" class="text-[10px] text-orange-300 hover:text-orange-500 flex items-center gap-1 transition px-2 py-1 rounded-full hover:bg-white"><i data-lucide="arrow-up" class="w-3 h-3"></i> この回答のトップへ移動</button></div>`;
-            addMessage(html, 'bot', true);
+            addMessage(html, 'bot', true, 'start');
             lucide.createIcons();
         }
 
@@ -852,14 +852,14 @@
                             </div>
                         </div>
                     `;
-                    addMessage(messageContent, 'bot', true);
+                    addMessage(messageContent, 'bot', true, 'start');
                 } else {
-                    addMessage(messageContent, 'bot', true);
+                    addMessage(messageContent, 'bot', true, 'start');
                 }
             }
         }
 
-        function addMessage(content, type, isHtml = false) {
+        function addMessage(content, type, isHtml = false, scrollType = 'bottom') {
             const container = dom.containers[currentMode];
             const div = document.createElement('div');
             div.className = `flex items-start space-x-2 message-row ${type === 'user' ? 'justify-end' : ''}`;
@@ -876,7 +876,12 @@
                 : `<div class="${bubbleClass} px-4 py-3 shadow-sm max-w-[85%] text-sm leading-relaxed" ${userStyle}>${content}</div>`;
             
             container.appendChild(div);
-            scrollToBottom();
+
+            if (scrollType === 'bottom') {
+                scrollToBottom();
+            } else if (scrollType === 'start') {
+                div.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         function addLoading() {
