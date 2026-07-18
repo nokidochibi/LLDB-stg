@@ -658,6 +658,7 @@
 
     // ★追加: キャッシュキー定数
     const DATA_CACHE_KEY = 'lldb_trends_table_cache';
+    let fullTrendGraphsData = null; // ★追加: 全グラフデータを保持する変数
 
     async function fetchData() {
         // 1. キャッシュがあれば即表示
@@ -666,24 +667,29 @@
             if (cached) {
                 const json = JSON.parse(cached);
                 processAndDisplay(json);
+                // グラフデータもキャッシュから復元
+                if (json.trendGraphsData) fullTrendGraphsData = json.trendGraphsData;
             }
         } catch (e) { console.warn("Cache load failed", e); }
-
+        
         // 2. ネットワークから最新データを取得
         try {
-            const res = await fetch(`${GAS_API_URL}?action=getTrendsData`);
+            // ★変更: GASではなくCloudflareの新しい引き出しから取得
+            const res = await fetch(`https://lldb.noki-dochibi.workers.dev/trends`);
             const json = await res.json();
             
             if (json.status === 'error') throw new Error(json.message);
+            
+            // ★追加: 全グラフデータを変数に保存
+            if (json.trendGraphsData) fullTrendGraphsData = json.trendGraphsData;
 
             // 3. キャッシュを更新
             try {
                 localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(json));
             } catch (e) { console.warn("Cache save failed", e); }
-
+            
             // 4. 最新データで再描画
             processAndDisplay(json);
-
         } catch (e) {
             document.getElementById('error').textContent = "通信エラーが発生しました: " + e.message;
             document.getElementById('error').style.display = 'block';
@@ -699,6 +705,10 @@
 
     // ★追加: データ整形と表示の共通関数
     function processAndDisplay(json) {
+        // ★変更: 取得元のデータ構造に合わせて json.trendsData を使う
+        const trendsDataObj = json.trendsData || json; // キャッシュ互換のため
+        const listData = trendsDataObj.data || [];
+
         const adaptedData = {
             headers: [
                 { text: 'YouTube<br>動画タイトル', key: 'title', type: 'string' },
@@ -707,17 +717,15 @@
                 { text: '平均/日<br><small>(全期間)</small>', key: 'avgDailyViews', type: 'number' },
                 { text: '平均/日<br><small>(過去7日)</small>', key: 'avgViews7Days', type: 'number' }
             ],
-            data: json.data.map(item => ({
+            data: listData.map(item => ({
                 ...item,
                 totalViews: parseFloat(item.totalViews) || 0,
                 avgDailyViews: parseFloat(item.avgDailyViews) || 0,
                 avgViews7Days: (item.avgViews7Days === "(集計中)" ? item.avgViews7Days : parseFloat(item.avgViews7Days) || 0)
             })),
-            maxTotalViews: json.maxTotalViews || 0,
-            // APIが lastUpdateTime を返しているか確認し、あればセット
-            lastUpdateTime: json.lastUpdateTime || ''
+            maxTotalViews: trendsDataObj.maxTotalViews || 0,
+            lastUpdateTime: trendsDataObj.lastUpdateTime || ''
         };
-
         displayData(adaptedData);
     }
 
@@ -890,27 +898,33 @@
             content_type: 'trend_graph',
             item_name: title
         });
-
         document.getElementById('graphModal').classList.add('open');
         document.getElementById('graphTitle').textContent = title;
-        document.getElementById('graphLoading').style.display = 'block';
-        document.getElementById('dailyViewsChart').style.display = 'none';
         
         if(dailyViewsChartInstance) { dailyViewsChartInstance.destroy(); dailyViewsChartInstance = null; }
-
+        
         try {
-            const res = await fetch(`${GAS_API_URL}?action=getTrendGraph&url=${encodeURIComponent(url)}`);
-            const json = await res.json();
-            
-            document.getElementById('graphLoading').style.display = 'none';
-            
-            if(json.status === 'success' && json.data.length > 0) {
+            // ★変更: 通信せずに、ローカルに保持した全データから該当URLのデータを探す
+            if (fullTrendGraphsData && fullTrendGraphsData[url] && fullTrendGraphsData[url].length > 0) {
+                document.getElementById('graphLoading').style.display = 'none';
                 document.getElementById('dailyViewsChart').style.display = 'block';
-                renderGraph(json.data);
+                document.getElementById('noGraphData').style.display = 'none';
+                
+                // GASで軽量化した配列形式 [["2024/01/01", 100], ...] を
+                // Chart.jsで使えるオブジェクト形式 [{date: "2024/01/01", views: 100}, ...] に戻す
+                const formattedData = fullTrendGraphsData[url].map(d => ({
+                    date: d[0],
+                    views: d[1]
+                }));
+                
+                renderGraph(formattedData);
             } else {
+                document.getElementById('graphLoading').style.display = 'none';
+                document.getElementById('dailyViewsChart').style.display = 'none';
                 document.getElementById('noGraphData').style.display = 'block';
             }
         } catch(e) {
+            console.error("グラフ描画エラー:", e);
             document.getElementById('graphLoading').textContent = "エラーが発生しました";
         }
     }
