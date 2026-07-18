@@ -454,6 +454,9 @@
         let targetSongForSearch = ''; // 検索対象の一時保存用
         let isLoadingList = false; // ★追加: 読み込み重複防止フラグ
 
+        // 💡 爆速検索用データ (★追加)
+        let fullHelperData = null;
+
         const LOADING_MESSAGES = {
             lyrics: ["aikoからのtelepathyを受信中...", "そんなことよりパーティ抜け出さない？"],
             title: ["おっ！その曲なら確かね...", "俺もそれ好きだよ！待ってて..."],
@@ -486,7 +489,24 @@
             dom.botIcons.forEach(img => img.src = ICON_URL);
             fetchRequests(); 
             setupAutoResizeTextarea();
+
+            // 💡 アプリ起動時にCloudflareから全データを一括取得 (★追加)
+            fetchFullData();
         });
+
+        // 💡 Cloudflareから爆速で全データを読み込む処理 (★追加)
+        async function fetchFullData() {
+            try {
+                // Cloudflareの新しい引き出し（/song）へ取りに行く
+                const res = await fetch("https://lldb.noki-dochibi.workers.dev/song");
+                if (res.ok) {
+                    fullHelperData = await res.json();
+                    console.log("Song Helper Full Data Loaded!", fullHelperData);
+                }
+            } catch (e) {
+                console.error("Cloudflareデータ取得エラー:", e);
+            }
+        }
 
         function setupAutoResizeTextarea() {
             const el = dom.searchInput;
@@ -599,46 +619,56 @@
             addMessage(query, 'user');
             dom.searchInput.value = '';
             resetTextareaHeight(); 
-            const loadingId = addLoading();
 
-            try {
-                const response = await fetch(`${GAS_API_URL}?q=${encodeURIComponent(query)}&mode=${currentMode}`);
-                const data = await response.json();
-                removeLoading(loadingId);
-
-                if (data.status === 'success') {
-                    if (currentMode === 'lyrics') handleLyricsResults(data);
-                    else if (currentMode === 'title') handleTitleResults(data);
-                    else handleShiritoriResults(data);
-                } else {
-                    addMessage("ごめんね、うまく探せなかったみたい...", 'bot');
-                }
-            } catch (error) {
-                removeLoading(loadingId);
-                addMessage("通信失敗！もう一度試してみて！", 'bot');
-                safeTrackEvent('exception', { description: error.message, fatal: false });
+            // 💡 爆速検索の分岐
+            if (!fullHelperData) {
+                addMessage("データを読み込み中です。もう数秒待ってから試してみてね！", 'bot');
+                return;
             }
+
+            // 一瞬すぎて気づかないレベルですが、演出としてローディングを挟む
+            const loadingId = addLoading();
+            setTimeout(() => {
+                removeLoading(loadingId);
+                try {
+                    let data;
+                    if (currentMode === 'lyrics') data = localSearchLyrics(query);
+                    else if (currentMode === 'title') data = localSearchTitle(query);
+                    else if (currentMode === 'shiritori') data = localPlayShiritori(query);
+
+                    if (data && data.status === 'success') {
+                        if (currentMode === 'lyrics') handleLyricsResults(data);
+                        else if (currentMode === 'title') handleTitleResults(data);
+                        else handleShiritoriResults(data);
+                    } else {
+                        addMessage("ごめんね、うまく探せなかったみたい...", 'bot');
+                    }
+                } catch (error) {
+                    console.error("検索エラー:", error);
+                    addMessage("検索中にエラーが発生したよ。もう一度試してみて！", 'bot');
+                }
+            }, 50); // 0.05秒だけ待ってあげる（アニメーションのチラつき防止）
         });
 
         window.sendShiritoriAnswer = function(answer) {
              const query = answer;
              if (!query) return;
              addMessage(query, 'user');
-             const loadingId = addLoading();
              dom.searchInput.value = '';
              resetTextareaHeight();
-             fetch(`${GAS_API_URL}?q=${encodeURIComponent(query)}&mode=shiritori`)
-                .then(res => res.json())
-                .then(data => {
-                    removeLoading(loadingId);
-                    if (data.status === 'success') handleShiritoriResults(data);
-                    else addMessage("ごめんね、うまく探せなかったみたい...", 'bot');
-                })
-                .catch(err => {
-                    removeLoading(loadingId);
-                    addMessage("通信失敗！もう一度試してみて！", 'bot');
-                    safeTrackEvent('exception', { description: err.message, fatal: false });
-                });
+
+             if (!fullHelperData) {
+                 addMessage("データを読み込み中です...", 'bot');
+                 return;
+             }
+
+             const loadingId = addLoading();
+             setTimeout(() => {
+                 removeLoading(loadingId);
+                 const data = localPlayShiritori(query);
+                 if (data.status === 'success') handleShiritoriResults(data);
+                 else addMessage("ごめんね、うまく探せなかったみたい...", 'bot');
+             }, 50);
         };
 
         async function handleRequestPost(query) {
@@ -1225,6 +1255,222 @@
                 console.error("Hot swap failed:", e);
             }
         }
+
+        // ======================================================================
+        // 💡 爆速検索エンジン (Client-side Search Logic)
+        // ======================================================================
+
+        // 1. 歌詞検索
+        function localSearchLyrics(query) {
+            const qLower = query.toLowerCase();
+            const qNormalized = _normalizeString(query);
+            let results = [];
+            let fuzzyType = null;
+            let actualQuery = null;
+            const lyricsData = fullHelperData.lyricsData;
+
+            // ① 完全・部分一致
+            for(let item of lyricsData) {
+                if(item.rawText.toLowerCase().includes(qLower)) {
+                    let phrase = item.phrases.reduce((a, b) => a.length > b.length ? a : b, "");
+                    results.push({ title: item.title, phrase: phrase, display_text: `${phrase}（${item.title}）`});
+                }
+            }
+
+            // ② 正規化検索（もしかして検索）
+            if(results.length === 0 && qNormalized.length > 0) {
+                for(let item of lyricsData) {
+                    const norm = _normalizeString(item.rawText);
+                    if(norm.includes(qNormalized)) {
+                        let phrase = item.phrases.reduce((a, b) => a.length > b.length ? a : b, "");
+                        results.push({ title: item.title, phrase: phrase, display_text: `${phrase}（${item.title}）`});
+                        fuzzyType = "もしかして検索";
+                        const matchIndex = norm.indexOf(qNormalized);
+                        actualQuery = matchIndex !== -1 ? item.rawText.substring(matchIndex, matchIndex + qNormalized.length).trim() : qNormalized;
+                        if(results.length >= 10) break;
+                    }
+                }
+            }
+
+            // ③ あいまい検索
+            if(results.length === 0 && query.length >= 2) {
+                for(let item of lyricsData) {
+                    if(_hasMostChars(query, item.rawText)) {
+                        let phrase = item.phrases.reduce((a, b) => a.length > b.length ? a : b, "");
+                        results.push({ title: item.title, phrase: phrase, display_text: `${phrase}（${item.title}）`});
+                        fuzzyType = "あいまい検索";
+                        actualQuery = "近いフレーズ";
+                        if(results.length >= 3) break;
+                    }
+                }
+            }
+
+            let randomMsg = "";
+            if(lyricsData.length > 0) {
+                const rnd = lyricsData[Math.floor(Math.random() * lyricsData.length)];
+                randomMsg = rnd.phrases[0] ? String(rnd.phrases[0]).replace(/\r?\n/g, ' ') : "";
+            }
+
+            return { status: 'success', mode: 'lyrics', results, query, random_message: randomMsg, fuzzy_type: fuzzyType, actual_query: actualQuery };
+        }
+
+        // 2. タイトル検索
+        function localSearchTitle(query) {
+            const qLower = query.toLowerCase();
+            let songMatches = [];
+            let diskMatches = [];
+            const songData = fullHelperData.songData;
+
+            for(let row of songData) {
+                const sName = row.songName.toLowerCase();
+                const sKana = row.songKana;
+                const albTitle = row.albumTitle.toLowerCase();
+                const sglTitle = row.singleTitle.toLowerCase();
+
+                if(sName.includes(qLower) || sKana.includes(qLower)) {
+                    let releaseDateStr = (row.singleReleaseDate && row.singleReleaseDate !== '不明' && row.singleReleaseDate !== '') ? row.singleReleaseDate : row.albumReleaseDate;
+                    songMatches.push({
+                        title: row.songName, reading: row.songKana,
+                        single_info: (row.singleTitle && row.singleTitle !== '未収録' && row.singleTitle !== '') ? `${row.singleReleaseDate} 発売の ${row.singleNo} 枚目のシングル『${row.singleTitle}』の ${row.singleTrackNo} 曲目に収録されているよ。` : null,
+                        album_info: (row.albumTitle && row.albumTitle !== '未収録' && row.albumTitle !== '') ? `${row.albumReleaseDate} 発売の ${row.albumNo} 枚目のアルバム『${row.albumTitle}』の ${row.albumTrackNo} 曲目に収録されているよ。` : null,
+                        arranger: row.arranger, duration: row.duration, bpm: row.bpm,
+                        age_at_release: _calculateAikoAgeLocal(releaseDateStr),
+                        link_url: (row.mvUrl && row.mvUrl !== '未収録' && row.mvUrl !== '') ? row.mvUrl : row.liveUrl
+                    });
+                    if(row.singleTitle && row.singleTitle !== '未収録' && row.singleTitle !== '') diskMatches.push({type:'single', name:row.singleTitle, row});
+                    if(row.albumTitle && row.albumTitle !== '未収録' && row.albumTitle !== '') diskMatches.push({type:'album', name:row.albumTitle, row});
+                }
+                if(albTitle.includes(qLower) && row.albumTitle !== '未収録' && row.albumTitle !== '') diskMatches.push({type:'album', name:row.albumTitle, row});
+                else if(sglTitle.includes(qLower) && row.singleTitle !== '未収録' && row.singleTitle !== '') diskMatches.push({type:'single', name:row.singleTitle, row});
+            }
+
+            // ディスクごとのグループ化
+            const uniqueDiskNames = [...new Set(diskMatches.map(m=>m.name))];
+            let albums = [];
+            uniqueDiskNames.forEach(diskName => {
+                const songsInDisk = songData.filter(r => r.albumTitle === diskName || r.singleTitle === diskName);
+                if(songsInDisk.length === 0) return;
+                const isAlbum = songsInDisk[0].albumTitle === diskName;
+                songsInDisk.sort((a,b) => (Number(isAlbum?a.albumTrackNo:a.singleTrackNo)||99) - (Number(isAlbum?b.albumTrackNo:b.singleTrackNo)||99));
+                albums.push({
+                    disk_name: diskName,
+                    release_date: isAlbum ? songsInDisk[0].albumReleaseDate : songsInDisk[0].singleReleaseDate,
+                    songs: songsInDisk.map(r => ({title: r.songName, order: isAlbum ? r.albumTrackNo : r.singleTrackNo}))
+                });
+            });
+
+            return { status:'success', mode:'title', query, songs: songMatches, albums };
+        }
+
+        // 3. しりとりロジック
+        function localPlayShiritori(query) {
+            const data = fullHelperData.songData;
+            if(!data || data.length === 0) return { status: 'success', mode: 'shiritori', result: 'unknown_song', message: 'データベースが空っぽみたい...' };
+
+            let userSong = null;
+            for(let row of data) {
+                if(row.songName === query || row.songKana === query) {
+                    userSong = { title: row.songName, kana: row.songKana };
+                    break;
+                }
+            }
+
+            if(!userSong) return { status: 'success', mode: 'shiritori', result: 'unknown_song', message: `「${query}」！？未発表曲かも...🤔<br>正式名称で教えてね！` };
+
+            let userLastChar = _getLastChar(userSong.kana);
+            if(userLastChar === 'ん') return { status: 'success', mode: 'shiritori', result: 'user_lose', user_song: userSong, message: `ああっ！「${userSong.title}」は「ん」で終わるよ！<br>俺の勝ち😎` };
+
+            let botCandidates = [];
+            for(let row of data) {
+                if(row.songName === userSong.title) continue;
+                if(row.songName.includes('(') || row.songName.includes('（')) continue;
+                if(row.songKana.startsWith(userLastChar) && _getLastChar(row.songKana) !== 'ん') {
+                    botCandidates.push({ title: row.songName, kana: row.songKana });
+                }
+            }
+
+            if(botCandidates.length === 0) return { status: 'success', mode: 'shiritori', result: 'user_win', user_song: userSong, message: `「${userSong.title}」...！<br>「${userLastChar}」から始まる曲が思いつかない...<br>ぐぬぬ...！君の勝ちだ😎` };
+
+            let safeCandidates = [];
+            let killerCandidates = [];
+            botCandidates.forEach(botCand => {
+                const botLastChar = _getLastChar(botCand.kana);
+                const hasNext = data.some(r => r.songName !== botCand.title && !r.songName.includes('(') && !r.songName.includes('（') && r.songKana.startsWith(botLastChar));
+                if(hasNext) safeCandidates.push(botCand);
+                else killerCandidates.push(botCand);
+            });
+
+            let selectedSong, isKillerMove = false;
+            if(safeCandidates.length > 0) selectedSong = safeCandidates[Math.floor(Math.random() * safeCandidates.length)];
+            else { selectedSong = killerCandidates[Math.floor(Math.random() * killerCandidates.length)]; isKillerMove = true; }
+
+            const botLastChar = _getLastChar(selectedSong.kana);
+            if(isKillerMove) return { status: 'success', mode: 'shiritori', result: 'user_lose', user_song: userSong, bot_song: selectedSong, message: `「${userSong.title}」だね。<br>それなら...「${selectedSong.title}」！<br>...おっと、「${botLastChar}」から始まる曲はもうないみたい。<br>俺の勝ちだね😎` };
+
+            let nextHints = [];
+            for(let row of data) {
+                if(row.songName === selectedSong.title || row.songName.includes('(') || row.songName.includes('（')) continue;
+                if(row.songKana.startsWith(botLastChar)) nextHints.push({ title: row.songName, kana: row.songKana });
+            }
+
+            const allCandidates = nextHints.map(h => h.title);
+            nextHints = _shuffleArray(nextHints).slice(0, 5);
+
+            return { status: 'success', mode: 'shiritori', result: 'continue', user_song: userSong, bot_song: selectedSong, next_char: botLastChar, hints: nextHints, all_candidates: allCandidates, message: `「${userSong.title}」だね。<br>それなら...「${selectedSong.title}」！<br>次は「${botLastChar}」から始まる曲だよ！` };
+        }
+
+        // --- 以下は文字列処理などのヘルパー関数 ---
+        function _normalizeString(str) {
+            if (!str) return "";
+            let s = String(str).replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) { return String.fromCharCode(s.charCodeAt(0) - 0xFEE0); });
+            s = s.toLowerCase().replace(/[\u30a1-\u30f6]/g, function(match) { return String.fromCharCode(match.charCodeAt(0) - 0x60); });
+            return s;
+        }
+
+        function _hasMostChars(query, target) {
+            let matchCount = 0;
+            let targetArr = target.split('');
+            for (let i = 0; i < query.length; i++) {
+                const char = query[i];
+                const idx = targetArr.indexOf(char);
+                if (idx !== -1) {
+                    matchCount++;
+                    targetArr.splice(idx, 1);
+                }
+            }
+            return (matchCount / query.length) >= 0.8;
+        }
+
+        function _getLastChar(kana) {
+            if (!kana) return '';
+            kana = kana.trim();
+            let last = kana.slice(-1);
+            if (last === 'ー' && kana.length > 1) last = kana.slice(-2, -1);
+            const smallMap = { 'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お','っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ' };
+            if (smallMap[last]) last = smallMap[last];
+            return last;
+        }
+
+        function _shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function _calculateAikoAgeLocal(dateStr) {
+            if (!dateStr || dateStr === '不明' || dateStr === '未収録') return null;
+            const birthDate = new Date(1975, 10, 22);
+            const targetDate = new Date(dateStr.replace(/\//g, '-')); // iOS対応のためハイフン置換
+            if(isNaN(targetDate.getTime())) return null;
+            let age = targetDate.getFullYear() - birthDate.getFullYear();
+            const m = targetDate.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && targetDate.getDate() < birthDate.getDate())) age--;
+            return age;
+        }
+
     </script>
 </body>
 </html>
+```eof
