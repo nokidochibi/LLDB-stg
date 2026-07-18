@@ -659,8 +659,29 @@
     // ★追加: キャッシュキー定数
     const DATA_CACHE_KEY = 'lldb_trends_table_cache';
     let fullTrendGraphsData = null; // ★追加: 全グラフデータを保持する変数
+    
+    // ★追加: 楽曲リリース年取得のためのデータ保存用
+    let songDatabaseForYear = []; 
+
+    // ★追加: Song Helper用のデータをCloudflareから取得（MVの発売年特定に使う）
+    async function loadSongDataForYear() {
+        try {
+            const res = await fetch("https://lldb.noki-dochibi.workers.dev/song");
+            if (res.ok) {
+                const data = await res.json();
+                if (data.songData) {
+                    songDatabaseForYear = data.songData;
+                }
+            }
+        } catch(e) { console.error("SongData Load Error:", e); }
+    }
 
     async function fetchData() {
+        // 先に楽曲データを裏で取っておく
+        if (songDatabaseForYear.length === 0) {
+            await loadSongDataForYear();
+        }
+
         // 1. キャッシュがあれば即表示
         try {
             const cached = localStorage.getItem(DATA_CACHE_KEY);
@@ -1039,8 +1060,8 @@
         // 既存のハッシュタグ削除ロジックは廃止
 
         if (category === 'MV') {
-            // MVの場合："music video","aiko-"を削除
-            formatted = formatted.replace(/music video/gi, '').replace(/aiko-/gi, '');
+            // MVの場合："music video", "aiko-", "lyric video" (★追加) を削除
+            formatted = formatted.replace(/music video/gi, '').replace(/lyric video/gi, '').replace(/aiko-/gi, '');
         } else if (category === 'NY') {
             // New Yearの場合："aiko "を削除（aikoの後の半角スペースまで含めて削除）
             formatted = formatted.replace(/aiko /gi, '');
@@ -1066,26 +1087,56 @@
         if (formatted.endsWith('-') || formatted.endsWith('/')) {
              formatted = formatted.substring(0, formatted.length - 1).trim();
         }
-
         if (formatted.startsWith('-')) {
             formatted = formatted.substring(1).trim();
         }
 
+        let resultHtml = '';
         const match = formatted.match(/[「『]/);
+        
         if (match) {
             const idx = match.index;
             const pre = formatted.substring(0, idx).trim();
             const post = formatted.substring(idx);
-            const fmtPost = post.replace(/([「『][^」』]+[」』])/g, '<strong>$1</strong>');
+            
+            // カッコ内を太字に
+            let fmtPost = post.replace(/([「『][^」』]+[」』])/g, '<strong>$1</strong>');
+            
+            // ★追加: MVの場合は曲名をデータベースから探して発売年を付与
+            if (category === 'MV') {
+                // カッコの中身（曲名）だけを抽出（例：『花火』 -> 花火）
+                const songNameMatch = post.match(/[「『]([^」』]+)[」』]/);
+                if (songNameMatch && songNameMatch[1] && songDatabaseForYear.length > 0) {
+                    const songName = songNameMatch[1];
+                    // データベースから曲を探す（完全一致）
+                    const foundSong = songDatabaseForYear.find(s => s.songName === songName);
+                    
+                    if (foundSong) {
+                        // シングル発売日があればシングル、なければアルバムの発売日を使う
+                        let releaseDateStr = (foundSong.singleReleaseDate && foundSong.singleReleaseDate !== '不明' && foundSong.singleReleaseDate !== '未収録' && foundSong.singleReleaseDate !== '') 
+                            ? foundSong.singleReleaseDate 
+                            : foundSong.albumReleaseDate;
+                        
+                        // '1999/08/04' から年だけ取得
+                        if (releaseDateStr && releaseDateStr !== '不明' && releaseDateStr !== '未収録' && releaseDateStr !== '') {
+                            const year = releaseDateStr.split('/')[0];
+                            // カッコの後ろに (1999) などを追加
+                            fmtPost = fmtPost.replace(/([」』])/, `$1 <small style="color:#94a3b8; font-weight:normal;">(${year})</small>`);
+                        }
+                    }
+                }
+            }
             
             if (pre) {
-                // 常に改行せずスペースで繋ぐように変更
-                return `<small>${pre}</small> ${fmtPost}`;
+                resultHtml = `<small>${pre}</small> ${fmtPost}`;
             } else {
-                return fmtPost;
+                resultHtml = fmtPost;
             }
+        } else {
+            resultHtml = `<small>${formatted}</small>`;
         }
-        return `<small>${formatted}</small>`;
+
+        return resultHtml;
     }
 
     // GA4送信用の安全なラッパー関数
