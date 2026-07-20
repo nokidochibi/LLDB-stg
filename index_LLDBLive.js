@@ -2645,9 +2645,45 @@ renderVenueCategorySummary();
       }
   });
 
-  // --- Records Tab Listeners ---
+  // ★追加: 画面左側から右へスワイプで公演詳細から戻る機能
+  let touchstartX = 0;
+  let touchstartY = 0;
+  let touchendX = 0;
+  let touchendY = 0;
+  
+  const appElement = document.getElementById('app');
+  if (appElement) {
+      appElement.addEventListener('touchstart', (e) => {
+          touchstartX = e.changedTouches[0].screenX;
+          touchstartY = e.changedTouches[0].screenY;
+      }, { passive: true });
+      
+      appElement.addEventListener('touchend', (e) => {
+          touchendX = e.changedTouches[0].screenX;
+          touchendY = e.changedTouches[0].screenY;
+          handleSwipeToBack();
+      }, { passive: true });
+  }
 
+  function handleSwipeToBack() {
+      // 詳細画面が開いている時のみ発動
+      if (!document.body.classList.contains('detail-view')) return;
+      
+      const swipeDistX = touchendX - touchstartX;
+      const swipeDistY = touchendY - touchstartY;
+      
+      // 画面の左半分からスタートしたスワイプに限定（左端である必要はない）
+      const isFromLeftHalf = touchstartX < (window.innerWidth / 2);
+      
+      // 右スワイプ（X方向への移動が50px以上）、かつ斜め・縦スクロール時の誤爆防止（Y方向への移動が50px未満）
+      if (isFromLeftHalf && swipeDistX > 50 && Math.abs(swipeDistY) < 50) {
+          hideDetailView();
+      }
+  }
+
+  // --- Records Tab Listeners ---
   function selectUserSong(songName, skipScroll = false) {
+
     // 文言更新
     const labelEl = document.getElementById('user-stats-label');
     if (labelEl) labelEl.textContent = songName ? 'この曲を聴いた回数' : 'あなたの参戦回数';
@@ -2901,26 +2937,18 @@ function checkTodayEvents(isFullCheck = false) {
     }
 
     anniversaryQueue = [];
-
     const isSameDate = (val) => {
         if (!val) return false;
         
         const dateObj = new Date(val);
         if (isNaN(dateObj.getTime())) return false;
-
         const jstObj = new Date(dateObj.toLocaleString("en-US", {timeZone: "Asia/Tokyo"}));
         const m = jstObj.getMonth() + 1;
         const d = jstObj.getDate();
-
         return m === todayMonth && d === todayDate;
     };
-
-    allLiveRecords.forEach(rec => {
-        if (isSameDate(rec.date)) {
-            anniversaryQueue.push({ type: 'live', data: rec });
-        }
-    });
-
+    
+    // CD(発売日)を先に追加する
     if (typeof listData !== 'undefined' && Array.isArray(listData)) {
         listData.forEach(item => {
             if (isSameDate(item.releaseDate)) {
@@ -2928,7 +2956,14 @@ function checkTodayEvents(isFullCheck = false) {
             }
         });
     }
-
+    
+    // ライブを後に追加する
+    allLiveRecords.forEach(rec => {
+        if (isSameDate(rec.date)) {
+            anniversaryQueue.push({ type: 'live', data: rec });
+        }
+    });
+    
     console.log(`Hits: ${anniversaryQueue.length}`);
 
     if (anniversaryQueue.length > 0) {
