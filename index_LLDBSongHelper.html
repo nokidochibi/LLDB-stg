@@ -332,7 +332,6 @@
                 <span class="text-[10px] font-bold">一覧</span>
             </button>
             <div class="w-[1px] bg-gray-50 my-3"></div>
-            <!-- 開発者用タブを追加（リクエストタブを削除） -->
             <button id="tab-dev" data-tab="dev" onclick="switchTab('dev')" class="tab-btn">
                 <i data-lucide="terminal" class="w-6 h-6"></i>
                 <span class="text-[10px] font-bold">開発者用</span>
@@ -1218,22 +1217,55 @@
                 'わ','','を','','ん'
             ];
             
+            // 各文字から始まる曲が存在するかチェックするためのセット
+            const availableFirstChars = new Set();
+            let hasOther = false;
+            
+            if (fullHelperData && fullHelperData.songData) {
+                fullHelperData.songData.forEach(song => {
+                    const kana = song.songKana;
+                    if (kana) {
+                        const firstChar = kana.charAt(0);
+                        availableFirstChars.add(firstChar);
+                        if (!firstChar.match(/^[あ-んア-ン]/)) {
+                            hasOther = true;
+                        }
+                    }
+                });
+            }
+
+            const hasSongsStartingWith = (char) => {
+                if (char === 'その他') return hasOther;
+                const matchChars = getMatchingChars(char);
+                return matchChars.some(c => availableFirstChars.has(c));
+            };
+            
             let html = '';
             gojuon.forEach(char => {
                 if (char === '') {
                     html += `<div></div>`;
                 } else {
-                    html += `
-                        <button onclick="openDevSongList('${char}')" class="bg-white hover:bg-orange-50 active:bg-orange-100 text-gray-700 font-bold py-3 rounded-xl shadow-sm border border-gray-200 transition-colors text-lg flex items-center justify-center">
-                            ${char}
-                        </button>
-                    `;
+                    const isActive = hasSongsStartingWith(char);
+                    if (isActive) {
+                        html += `
+                            <button onclick="openDevSongList('${char}')" class="bg-white hover:bg-orange-50 active:bg-orange-100 text-gray-700 font-bold py-3 rounded-xl shadow-sm border border-gray-200 transition-colors text-lg flex items-center justify-center">
+                                ${char}
+                            </button>
+                        `;
+                    } else {
+                        html += `
+                            <button disabled class="bg-gray-50 text-gray-300 font-bold py-3 rounded-xl shadow-sm border border-gray-100 text-lg flex items-center justify-center cursor-not-allowed opacity-60">
+                                ${char}
+                            </button>
+                        `;
+                    }
                 }
             });
             
+            const isOtherActive = hasSongsStartingWith('その他');
             html += `
                 <div class="col-span-5 mt-2">
-                    <button onclick="openDevSongList('その他')" class="w-full bg-white hover:bg-orange-50 active:bg-orange-100 text-gray-700 font-bold py-3 rounded-xl shadow-sm border border-gray-200 transition-colors text-lg">
+                    <button ${isOtherActive ? `onclick="openDevSongList('その他')"` : 'disabled'} class="${isOtherActive ? 'bg-white hover:bg-orange-50 active:bg-orange-100 text-gray-700' : 'bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'} font-bold py-3 rounded-xl shadow-sm border ${isOtherActive ? 'border-gray-200' : 'border-gray-100'} transition-colors text-lg w-full">
                         その他（記号・英数字など）
                     </button>
                 </div>
@@ -1296,19 +1328,26 @@
         window.openDevLyrics = function(songName) {
             document.getElementById('dev-lyrics-title').textContent = songName;
             const content = document.getElementById('dev-lyrics-content');
-            content.innerHTML = '<div class="py-10 text-gray-400 animate-pulse">読み込み中...</div>';
+            content.innerHTML = '<div class="py-10 text-gray-400 animate-pulse text-center">読み込み中...</div>';
             devNavTo('lyrics');
 
             // 歌詞データの取得
             let lyricsHtml = "";
             if (fullHelperData && fullHelperData.lyricsData) {
-                const lyricsData = fullHelperData.lyricsData.find(l => l.title === songName);
-                if (lyricsData && lyricsData.phrases) {
-                    // 各フレーズ（セルごとのデータ）を処理し、改行を <br> に置換
-                    lyricsHtml = lyricsData.phrases
-                        .map(p => p.trim().replace(/\r?\n/g, '<br>'))
+                // filterを使って、該当する曲名の行を全て抽出する
+                const lyricsRows = fullHelperData.lyricsData.filter(l => l.title === songName);
+                
+                if (lyricsRows && lyricsRows.length > 0) {
+                    // 各行のフレーズを結合（スプレッドシート上ではB列に歌詞が縦に並んでいる構造のため）
+                    lyricsHtml = lyricsRows
+                        .map(row => {
+                            if (row.phrases && row.phrases.length > 0) {
+                                return row.phrases[0].trim();
+                            }
+                            return "";
+                        })
                         .filter(p => p !== "")
-                        .join('<br><br>');
+                        .join('<br>'); // 抽出したフレーズを改行でつなぐ
                 }
             }
 
@@ -1316,7 +1355,7 @@
                 // スプレッドシートの仕様（フルコーラスが入っていない場合がある）を伝える注釈を付与
                 content.innerHTML = lyricsHtml + '<div class="mt-12 text-[10px] text-gray-400 border-t border-gray-200 pt-4">※現在データベースに登録されているフレーズのみを表示しています。<br>（フルコーラスではない場合があります）</div>';
             } else {
-                content.innerHTML = '<div class="py-10 text-gray-400">この曲の歌詞データはありませんでした。</div>';
+                content.innerHTML = '<div class="py-10 text-gray-400 text-center">この曲の歌詞データはありませんでした。</div>';
             }
         };
 
