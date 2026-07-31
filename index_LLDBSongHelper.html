@@ -1217,59 +1217,58 @@
                 'わ','','を','','ん'
             ];
             
-            // 各文字から始まる曲が存在するかチェックするためのセット
-            const availableFirstChars = new Set();
-            let hasOther = false;
-            
-            if (fullHelperData && fullHelperData.songData) {
-                fullHelperData.songData.forEach(song => {
-                    const kana = song.songKana;
-                    if (kana) {
-                        const firstChar = kana.charAt(0);
-                        availableFirstChars.add(firstChar);
-                        if (!firstChar.match(/^[あ-んア-ン]/)) {
-                            hasOther = true;
-                        }
+            // 歌詞データに存在するユニークな曲名を取得
+            const availableLyricsTitles = new Set();
+            if (fullHelperData && fullHelperData.lyricsData) {
+                fullHelperData.lyricsData.forEach(item => {
+                    if (item.title) {
+                        availableLyricsTitles.add(item.title);
                     }
                 });
             }
-
-            const hasSongsStartingWith = (char) => {
-                if (char === 'その他') return hasOther;
-                const matchChars = getMatchingChars(char);
-                return matchChars.some(c => availableFirstChars.has(c));
-            };
             
             let html = '';
             gojuon.forEach(char => {
                 if (char === '') {
                     html += `<div></div>`;
                 } else {
-                    const isActive = hasSongsStartingWith(char);
-                    if (isActive) {
+                    const matchChars = getMatchingChars(char);
+                    let count = 0;
+                    
+                    if (fullHelperData && fullHelperData.songData) {
+                        const countedSongs = new Set();
+                        fullHelperData.songData.forEach(song => {
+                            // 歌詞データに存在しない曲はスキップ
+                            if (!availableLyricsTitles.has(song.songName)) return;
+                            
+                            const kana = song.songKana;
+                            if (kana) {
+                                const firstChar = kana.charAt(0);
+                                if (matchChars.includes(firstChar)) {
+                                    countedSongs.add(song.songName);
+                                }
+                            }
+                        });
+                        count = countedSongs.size;
+                    }
+
+                    if (count > 0) {
                         html += `
-                            <button onclick="openDevSongList('${char}')" class="bg-white hover:bg-orange-50 active:bg-orange-100 text-gray-700 font-bold py-3 rounded-xl shadow-sm border border-gray-200 transition-colors text-lg flex items-center justify-center">
-                                ${char}
+                            <button onclick="openDevSongList('${char}')" class="bg-white hover:bg-orange-50 active:bg-orange-100 text-gray-700 py-2 rounded-xl shadow-sm border border-gray-200 transition-colors flex flex-col items-center justify-center">
+                                <span class="font-bold text-lg leading-none">${char}</span>
+                                <span class="text-[10px] text-orange-500 font-bold mt-1">${count}曲</span>
                             </button>
                         `;
                     } else {
                         html += `
-                            <button disabled class="bg-gray-50 text-gray-300 font-bold py-3 rounded-xl shadow-sm border border-gray-100 text-lg flex items-center justify-center cursor-not-allowed opacity-60">
-                                ${char}
+                            <button disabled class="bg-gray-50 text-gray-300 py-2 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center cursor-not-allowed opacity-60">
+                                <span class="font-bold text-lg leading-none">${char}</span>
+                                <span class="text-[10px] text-gray-400 font-bold mt-1">0曲</span>
                             </button>
                         `;
                     }
                 }
             });
-            
-            const isOtherActive = hasSongsStartingWith('その他');
-            html += `
-                <div class="col-span-5 mt-2">
-                    <button ${isOtherActive ? `onclick="openDevSongList('その他')"` : 'disabled'} class="${isOtherActive ? 'bg-white hover:bg-orange-50 active:bg-orange-100 text-gray-700' : 'bg-gray-50 text-gray-300 cursor-not-allowed opacity-60'} font-bold py-3 rounded-xl shadow-sm border ${isOtherActive ? 'border-gray-200' : 'border-gray-100'} transition-colors text-lg w-full">
-                        その他（記号・英数字など）
-                    </button>
-                </div>
-            `;
             
             grid.innerHTML = html;
         }
@@ -1287,28 +1286,40 @@
         }
 
         window.openDevSongList = function(charLabel) {
-            if (!fullHelperData || !fullHelperData.songData) {
+            if (!fullHelperData || !fullHelperData.songData || !fullHelperData.lyricsData) {
                 alert('データを読み込み中です');
                 return;
             }
 
-            document.getElementById('dev-songlist-title').textContent = charLabel === 'その他' ? 'その他' : `${charLabel} から始まる曲`;
+            document.getElementById('dev-songlist-title').textContent = `${charLabel} から始まる曲`;
             const content = document.getElementById('dev-songlist-content');
             
             const matchChars = getMatchingChars(charLabel);
 
-            // 曲の絞り込み
-            const songs = fullHelperData.songData.filter(song => {
+            // 歌詞データに存在するユニークな曲名を取得
+            const availableLyricsTitles = new Set();
+            fullHelperData.lyricsData.forEach(item => {
+                if (item.title) {
+                    availableLyricsTitles.add(item.title);
+                }
+            });
+
+            // 曲の絞り込み (重複排除のためMapを使用)
+            const songsSet = new Map();
+            fullHelperData.songData.forEach(song => {
+                // 歌詞データに存在しない曲はスキップ
+                if (!availableLyricsTitles.has(song.songName)) return;
+
                 const kana = song.songKana;
-                if (!kana) return false;
+                if (!kana) return;
                 const firstChar = kana.charAt(0);
                 
-                if (charLabel === 'その他') {
-                    return !firstChar.match(/^[あ-んア-ン]/);
-                } else {
-                    return matchChars.includes(firstChar);
+                if (matchChars.includes(firstChar)) {
+                    songsSet.set(song.songName, song);
                 }
-            }).sort((a, b) => a.songKana.localeCompare(b.songKana, 'ja'));
+            });
+
+            const songs = Array.from(songsSet.values()).sort((a, b) => a.songKana.localeCompare(b.songKana, 'ja'));
 
             if (songs.length === 0) {
                 content.innerHTML = '<div class="p-6 text-center text-gray-400">該当する曲がありません</div>';
@@ -1355,7 +1366,7 @@
             }
 
             if (lyricsHtml) {
-                content.innerHTML = lyricsHtml; // 注釈を削除
+                content.innerHTML = lyricsHtml; 
             } else {
                 content.innerHTML = '<div class="py-10 text-gray-400 text-center">この曲の歌詞データはありませんでした。</div>';
             }
