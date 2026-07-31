@@ -1321,15 +1321,18 @@
                 `).join('');
             }
             
+            content.scrollTop = 0; // スクロール位置のリセット
             lucide.createIcons();
-            devNavTo('songlist');
+            
+            // DOMの描画を待ってから遷移アニメーションを開始し、カクつきを防ぐ
+            setTimeout(() => {
+                devNavTo('songlist');
+            }, 20);
         };
 
         window.openDevLyrics = function(songName) {
             document.getElementById('dev-lyrics-title').textContent = songName;
             const content = document.getElementById('dev-lyrics-content');
-            content.innerHTML = '<div class="py-10 text-gray-400 animate-pulse text-center">読み込み中...</div>';
-            devNavTo('lyrics');
 
             // 歌詞データの取得
             let lyricsHtml = "";
@@ -1352,11 +1355,17 @@
             }
 
             if (lyricsHtml) {
-                // スプレッドシートの仕様（フルコーラスが入っていない場合がある）を伝える注釈を付与
-                content.innerHTML = lyricsHtml + '<div class="mt-12 text-[10px] text-gray-400 border-t border-gray-200 pt-4">※現在データベースに登録されているフレーズのみを表示しています。<br>（フルコーラスではない場合があります）</div>';
+                content.innerHTML = lyricsHtml; // 注釈を削除
             } else {
                 content.innerHTML = '<div class="py-10 text-gray-400 text-center">この曲の歌詞データはありませんでした。</div>';
             }
+            
+            content.scrollTop = 0; // スクロール位置のリセット
+
+            // DOMの描画を待ってから遷移アニメーションを開始し、カクつきを防ぐ
+            setTimeout(() => {
+                devNavTo('lyrics');
+            }, 20);
         };
 
         // スワイプバック処理 (右スワイプで戻る)
