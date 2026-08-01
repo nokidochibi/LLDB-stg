@@ -167,7 +167,7 @@ async function loadAllData(useCache = false) {
             showLiveDetail(latestRec);
         }
     }
-    console.log("Full data loaded and merged.");
+    console.log("Full data loaded and merged.");
 
   } catch (error) {
       handleError(error); 
@@ -223,7 +223,7 @@ function finishLoading() {
 function initializeApp(data, isFullLoad = true) {
   // フラグ設定はデータ分析後に行うため、ここでは削除しました
 
-  allLiveRecords = data.liveRecords || [];
+  allLiveRecords = data.liveRecords || [];
   // 以下のデータはStep1では空の可能性があるため安全策をとる
   albumData = data.albumData || [];
   songData = data.songData || {};
@@ -1162,7 +1162,7 @@ function renderLiveList(records) {
 function showLiveDetail(rec) {
   // 修正：データがなくても中断せず、そのまま進む（読み込み完了後に自動更新されるため）
   
-  safeTrackEvent('select_content', { content_type: 'live_detail', item_id: rec.date, item_name: rec.tourName });
+  safeTrackEvent('select_content', { content_type: 'live_detail', item_id: rec.date, item_name: rec.tourName });
 
   lastScrollPosition = document.getElementById('app').scrollTop;
 
@@ -1393,9 +1393,9 @@ function showLiveDetail(rec) {
   const setlistHeaderHtml = `<div class="flex justify-between items-end mt-8 mb-2"><h3 class="font-bold text-gray-700 text-lg cursor-pointer flex items-center gap-2" onclick="copySetlist()">🎵 セットリスト</h3></div>`;
 
   // 修正：セトリデータがない場合、読み込み完了前なら「読み込み中(植物)」を表示、完了後なら「情報提供のお願い(左寄せ)」を表示
-  const setlistSection = setlistHtml.trim() 
-    ? `${summaryHtml}${setlistHeaderHtml}<div class="card-base shadow-none border border-gray-100 pb-2 bg-white">${setlistHtml}</div>` 
-    : (!isFullDataLoaded ? 
+  const setlistSection = setlistHtml.trim() 
+    ? `${summaryHtml}${setlistHeaderHtml}<div class="card-base shadow-none border border-gray-100 pb-2 bg-white">${setlistHtml}</div>` 
+    : (!isFullDataLoaded ? 
         `<div class="py-10 text-center"><div id="loading-emoji" class="text-2xl mb-2">🌱</div><p class="text-gray-400 text-sm">セトリ読み込み中...</p></div>` 
         : `<h3 class="font-bold mb-3 text-gray-700 text-lg">🎵 セットリスト</h3>
 <div class="card-base text-gray-500 text-sm leading-relaxed bg-white text-left">
@@ -1651,7 +1651,7 @@ document.getElementById('venue-show-setlist-btn').style.display = 'inline-block'
 
 function switchToTab(tabId) {
     // ガード処理を削除（読み込み中でも切り替えを許可）
-    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
     const targetTabItem = document.querySelector(`.tab-item[data-tab="${tabId}"]`);
     if (targetTabItem) targetTabItem.classList.add('active');
 
@@ -4030,3 +4030,4 @@ window.togglePlay = function(btnElement, url) {
         currentPlayingBtn = null;
     };
 };
+
