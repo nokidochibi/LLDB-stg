@@ -3121,7 +3121,11 @@ function showAnniversaryModal(events) {
 
     contentDiv.innerHTML = html;
     document.getElementById('modal-overlay').style.display = 'flex';
-    if(typeof lucide !== 'undefined') lucide.createIcons();
+  
+  // ★追加：モーダルが開いたらbodyにクラスをつけてスクロールを止める
+  document.body.classList.add('modal-open'); 
+  
+  if(typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 // -----------------------------------------------------------
@@ -3484,6 +3488,10 @@ function checkOrientation() {
 
 function closeModal() {
   document.getElementById('modal-overlay').style.display = 'none';
+  
+  // ★追加：モーダルが閉じたらクラスを外してスクロールを再開する
+  document.body.classList.remove('modal-open'); 
+  
   if (anniversaryQueue.length > 0) {
       setTimeout(processNextAnniversary, 300);
   }
