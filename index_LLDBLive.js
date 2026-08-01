@@ -2602,10 +2602,6 @@ renderVenueCategorySummary();
     if(modal) modal.addEventListener('click', e => { 
         if (e.target === e.currentTarget) {
             e.target.style.display = 'none'; 
-            
-            // ★追加: どのモーダルが閉じられてもスクロールロックを必ず解除！
-            document.body.classList.remove('modal-open'); 
-            
             // ★追加: モーダルが閉じたら戻るボタンを再表示
             if (document.body.classList.contains('detail-view')) {
                 const backBtn = document.getElementById('back-button-fixed');
@@ -3125,11 +3121,7 @@ function showAnniversaryModal(events) {
 
     contentDiv.innerHTML = html;
     document.getElementById('modal-overlay').style.display = 'flex';
-  
-  // ★追加：モーダルが開いたらbodyにクラスをつけてスクロールを止める
-  document.body.classList.add('modal-open'); 
-  
-  if(typeof lucide !== 'undefined') lucide.createIcons();
+    if(typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 // -----------------------------------------------------------
@@ -3492,10 +3484,6 @@ function checkOrientation() {
 
 function closeModal() {
   document.getElementById('modal-overlay').style.display = 'none';
-  
-  // ★追加：モーダルが閉じたらクラスを外してスクロールを再開する
-  document.body.classList.remove('modal-open'); 
-  
   if (anniversaryQueue.length > 0) {
       setTimeout(processNextAnniversary, 300);
   }
@@ -3638,9 +3626,6 @@ function openMemoModal() {
 
 function closeMemoModal() {
     document.getElementById('memo-modal').style.display = 'none';
-    
-    // ★追加: スクロールロック解除
-    document.body.classList.remove('modal-open');
 
     // ★追加: 戻るボタンを再表示
     if (document.body.classList.contains('detail-view')) {
@@ -3748,9 +3733,6 @@ function openSongDetailModal(songName) {
 
 function closeSongDetailModal() {
     document.getElementById('song-detail-modal').style.display = 'none';
-
-    // ★追加: スクロールロック解除
-    document.body.classList.remove('modal-open');
 
     // ★追加: 戻るボタンを再表示
     if (document.body.classList.contains('detail-view')) {
