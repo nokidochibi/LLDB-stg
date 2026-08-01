@@ -2602,6 +2602,10 @@ renderVenueCategorySummary();
     if(modal) modal.addEventListener('click', e => { 
         if (e.target === e.currentTarget) {
             e.target.style.display = 'none'; 
+            
+            // ★追加: どのモーダルが閉じられてもスクロールロックを必ず解除！
+            document.body.classList.remove('modal-open'); 
+            
             // ★追加: モーダルが閉じたら戻るボタンを再表示
             if (document.body.classList.contains('detail-view')) {
                 const backBtn = document.getElementById('back-button-fixed');
@@ -3634,6 +3638,9 @@ function openMemoModal() {
 
 function closeMemoModal() {
     document.getElementById('memo-modal').style.display = 'none';
+    
+    // ★追加: スクロールロック解除
+    document.body.classList.remove('modal-open');
 
     // ★追加: 戻るボタンを再表示
     if (document.body.classList.contains('detail-view')) {
@@ -3741,6 +3748,9 @@ function openSongDetailModal(songName) {
 
 function closeSongDetailModal() {
     document.getElementById('song-detail-modal').style.display = 'none';
+
+    // ★追加: スクロールロック解除
+    document.body.classList.remove('modal-open');
 
     // ★追加: 戻るボタンを再表示
     if (document.body.classList.contains('detail-view')) {
