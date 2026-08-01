@@ -1357,9 +1357,20 @@ function showLiveDetail(rec) {
     }
     // --- ジャケット画像エリア生成 (End) ---
 
-    // ★修正: 曲名エリアの幅を「65%」に変更して、画像を少し右へ移動させます。(数字を大きくするとさらに右へ行きます)
-    // ★修正: 曲名をタップして詳細モーダルを開けるようにスタイルとイベントを追加
-    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 65%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title cursor-pointer hover:text-aiko-red transition-colors active:scale-95 inline-block font-bold decoration-dashed decoration-gray-300 underline-offset-4" style="text-decoration-line: underline;" onclick="openSongDetailModal('${cleanSong.replace(/'/g, "\\'")}')">${cleanSong}</span></div>${jacketsHtml}${timeline}</div>`;
+    // ★追加: 再生ボタンのHTML生成
+    let playBtnHtml = '';
+    // songInfoにpreviewUrlが存在し、かつ "NOT_FOUND" ではない場合のみボタンを表示
+    if (songInfo && songInfo.previewUrl && songInfo.previewUrl !== 'NOT_FOUND') {
+        playBtnHtml = `
+          <div class="cursor-pointer shrink-0 mr-1 flex items-center justify-center tap-trigger" style="width:24px; height:24px;" onclick="togglePlay(this, '${songInfo.previewUrl}')">
+            <i data-lucide="play-circle" class="w-5 h-5 text-aiko-red play-icon transition-transform active:scale-90"></i>
+          </div>`;
+    } else {
+        playBtnHtml = `<div class="shrink-0 mr-1" style="width:24px; height:24px;"></div>`; // URLがない曲の余白
+    }
+
+    // ★修正: 幅を58%に変更し、${playBtnHtml} を ${jacketsHtml} の直前に挿入
+    setlistHtml += `<div class="setlist-item${inMedley ? ' setlist-medley' : ''}${currentEncore > 0 ? ' setlist-encore' : ''}"><div class="setlist-left-content" style="width: 58%;"><span class="setlist-item-number">${inMedley ? `(${medleyNum++})` : `${songNum++}.`}</span><span class="setlist-item-title cursor-pointer hover:text-aiko-red transition-colors active:scale-95 inline-block font-bold decoration-dashed decoration-gray-300 underline-offset-4" style="text-decoration-line: underline;" onclick="openSongDetailModal('${cleanSong.replace(/'/g, "\\'")}')">${cleanSong}</span></div>${playBtnHtml}${jacketsHtml}${timeline}</div>`;
   });
 
   // 凡例(legendHtml)は削除しました。
@@ -3968,3 +3979,54 @@ function showModal(songName, type) {
     document.getElementById('modal-overlay').style.display = 'flex';
 }
 
+// -----------------------------------------------------------
+// Music Player (Preview)
+// -----------------------------------------------------------
+let currentPlayingBtn = null;
+
+window.togglePlay = function(btnElement, url) {
+    // 伝播を止める（詳細モーダルや行のクリックイベントが発動するのを防ぐ）
+    if(event) event.stopPropagation(); 
+    
+    const player = document.getElementById('global-audio-player');
+    const icon = btnElement.querySelector('.play-icon');
+
+    // すでに同じ曲を再生中の場合は一時停止
+    if (player.src === url && !player.paused) {
+        player.pause();
+        icon.setAttribute('data-lucide', 'play-circle');
+        lucide.createIcons();
+        return;
+    }
+
+    // 他の曲が再生中だった場合、前のボタンを「再生アイコン（赤色）」に戻す
+    if (currentPlayingBtn && currentPlayingBtn !== btnElement) {
+        const prevIcon = currentPlayingBtn.querySelector('.play-icon');
+        if(prevIcon) {
+            prevIcon.setAttribute('data-lucide', 'play-circle');
+            prevIcon.classList.remove('text-blue-500');
+            prevIcon.classList.add('text-aiko-red');
+        }
+    }
+
+    // 新しい曲を再生
+    player.src = url;
+    player.play();
+    
+    // 押したボタンを「一時停止アイコン（青色）」に変更して再生中であることを分かりやすくする
+    icon.setAttribute('data-lucide', 'pause-circle');
+    icon.classList.remove('text-aiko-red');
+    icon.classList.add('text-blue-500');
+    lucide.createIcons();
+    
+    currentPlayingBtn = btnElement;
+
+    // 30秒経って曲が終わったら、アイコンを「再生ボタン（赤色）」に自動で戻す
+    player.onended = () => {
+        icon.setAttribute('data-lucide', 'play-circle');
+        icon.classList.remove('text-blue-500');
+        icon.classList.add('text-aiko-red');
+        lucide.createIcons();
+        currentPlayingBtn = null;
+    };
+};
