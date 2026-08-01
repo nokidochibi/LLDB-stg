@@ -58,7 +58,7 @@ let isVoteRankingLoaded = false; // ★追加: 投票ランキングの取得状
 // --- Initialization ---
 
 document.addEventListener('DOMContentLoaded', () => {
-    const CURRENT_VERSION = 'v4.4.7'; 
+    const CURRENT_VERSION = 'v7.0.0'; 
     const VERSION_KEY = 'lldb_installed_version';
     
     const savedVersion = localStorage.getItem(VERSION_KEY);
