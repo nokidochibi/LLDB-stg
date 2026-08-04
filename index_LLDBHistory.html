@@ -180,7 +180,7 @@
         @media (orientation: landscape) {
             .max-w-lg { max-width: none !important; }
             .mx-auto { margin-left: 0; margin-right: 0; }
-            .disco-grid { width: 100vw; } /* 画面幅いっぱい */
+            .disco-grid { width: 100%; } /* 画面幅いっぱい */
             
             /* ★NEW: ヘッダー・フッター・ヒントを非表示にして領域最大化 */
             #input-area { display: none !important; }
@@ -1248,6 +1248,21 @@
                 console.warn('GA4 Tracking Error:', e);
             }
         }
+
+        // 横向き（リサイズ）時のiOSタップ座標ズレを防ぐための強制リフロー処理
+        window.addEventListener('resize', () => {
+            const mapTab = document.getElementById('view-map');
+            if (mapTab && !mapTab.classList.contains('hidden')) {
+                setTimeout(() => {
+                    const grid = document.getElementById('grid-container');
+                    if (grid) {
+                        grid.style.display = 'none';
+                        grid.offsetHeight; // リフローを強制
+                        grid.style.display = 'grid';
+                    }
+                }, 50);
+            }
+        });
     </script>
 </body>
 </html>
