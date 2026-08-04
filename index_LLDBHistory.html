@@ -182,11 +182,16 @@
             .mx-auto { margin-left: 0; margin-right: 0; }
             .disco-grid { width: 100%; } /* 画面幅いっぱい */
             
-            /* ★NEW: ヘッダー・フッター・ヒントを非表示にして領域最大化 */
-            #input-area { display: none !important; }
-            nav { display: none !important; }
+            /* ★修正: display: none はiOSでタップ領域のズレバグを引き起こすため、絶対配置で画面外へ隠す */
+            #input-area, nav, #view-map .text-center { 
+                position: absolute !important; 
+                top: -9999px !important; 
+                opacity: 0 !important; 
+                pointer-events: none !important; 
+                height: 0 !important;
+                overflow: hidden !important;
+            }
             body { padding-bottom: env(safe-area-inset-bottom) !important; }
-            #view-map .text-center { display: none !important; } /* 「横向きにしてね」のヒントも消す */
         }
 
         .disco-grid {
@@ -1239,6 +1244,7 @@
             return age;
         }
         
+        JavaScript
         function safeTrackEvent(eventName, params) {
             try {
                 if (typeof gtag === 'function') {
@@ -1248,22 +1254,6 @@
                 console.warn('GA4 Tracking Error:', e);
             }
         }
-
-        // 横向き（リサイズ）時のiOSタップ座標ズレを防ぐためのグリッド再描画処理
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            // 画面の回転アニメーションが完全に終わるのを待ってから処理を実行 (400ms)
-            resizeTimer = setTimeout(() => {
-                const mapTab = document.getElementById('view-map');
-                if (mapTab && !mapTab.classList.contains('hidden')) {
-                    if (allData && allData.listData) {
-                        // DOMを完全に作り直すことで、ブラウザにタップ座標を強制的に再計算させる
-                        renderGrid(allData.listData, allData.historyData);
-                    }
-                }
-            }, 400); 
-        });
     </script>
 </body>
 </html>
