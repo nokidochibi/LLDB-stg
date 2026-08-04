@@ -3080,9 +3080,9 @@ function showAnniversaryModal(events) {
             
             let imagesHtml = '';
             if (validImages.length === 0) {
-                imagesHtml = `<img src="https://placehold.jp/150x150.png?text=No%20Image" class="w-[60%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square">`;
+                imagesHtml = `<img src="https://placehold.jp/150x150.png?text=No%20Image" class="w-[45%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square">`;
             } else if (validImages.length === 1) {
-                imagesHtml = `<img src="${validImages[0]}" class="w-[60%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.src='https://placehold.jp/150x150.png?text=No%20Image'">`;
+                imagesHtml = `<img src="${validImages[0]}" class="w-[45%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.src='https://placehold.jp/150x150.png?text=No%20Image'">`;
             } else {
                 imagesHtml = `
                         <img src="${validImages[0]}" class="w-[45%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.src='https://placehold.jp/150x150.png?text=No%20Image'">
