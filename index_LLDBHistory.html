@@ -432,19 +432,8 @@
 
                     <div class="p-5">
                         <!-- ジャケット画像 (初回・通常 並列 / 帯なし) -->
-                        <div class="flex gap-4 mb-6">
-                            <div class="flex-1">
-                                <div class="cd-jacket-container relative group w-full">
-                                    <img id="match-img-first" src="" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                </div>
-                            </div>
-                            <div class="flex-1">
-                                <div class="cd-jacket-container relative group w-full">
-                                    <img id="match-img-regular" src="" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                </div>
-                            </div>
+                        <div id="match-images-container" class="mb-6 flex justify-center w-full">
                         </div>
-
                         <!-- 収録曲 -->
                         <div class="mb-6">
                             <h4 class="text-xs font-bold text-gray-400 border-b border-gray-100 pb-1 mb-2 flex items-center gap-1">
@@ -856,14 +845,45 @@
                 }
             });
 
-            if (bestMatch) {
+           if (bestMatch) {
                 document.getElementById('match-cd-title').innerText = bestMatch.title || 'Unknown Title';
                 document.getElementById('match-cd-type').innerText = bestMatch.type || 'CD';
                 
-                const img1 = document.getElementById('match-img-first');
-                const img2 = document.getElementById('match-img-regular');
-                img1.src = bestMatch.img1 || '';
-                img2.src = bestMatch.img2 || '';
+                let validMatchImages = [];
+                if (bestMatch.img1 && !bestMatch.img1.includes('No+Image') && !bestMatch.img1.includes('No%20Image')) validMatchImages.push(bestMatch.img1);
+                if (bestMatch.img2 && !bestMatch.img2.includes('No+Image') && !bestMatch.img2.includes('No%20Image')) validMatchImages.push(bestMatch.img2);
+                
+                let matchImagesHtml = '';
+                if (validMatchImages.length === 0) {
+                    matchImagesHtml = `
+                        <div class="w-[45%] mx-auto">
+                            <div class="cd-jacket-container relative group w-full">
+                                <img src="https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image" class="cd-jacket">
+                            </div>
+                        </div>`;
+                } else if (validMatchImages.length === 1) {
+                    matchImagesHtml = `
+                        <div class="w-[45%] mx-auto">
+                            <div class="cd-jacket-container relative group w-full">
+                                <img src="${validMatchImages[0]}" class="cd-jacket" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                            </div>
+                        </div>`;
+                } else {
+                    matchImagesHtml = `
+                        <div class="flex gap-4 w-full">
+                            <div class="flex-1">
+                                <div class="cd-jacket-container relative group w-full">
+                                    <img src="${validMatchImages[0]}" class="cd-jacket" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="cd-jacket-container relative group w-full">
+                                    <img src="${validMatchImages[1]}" class="cd-jacket" onerror="this.style.display='none'">
+                                </div>
+                            </div>
+                        </div>`;
+                }
+                document.getElementById('match-images-container').innerHTML = matchImagesHtml;
 
                 let tracksHtml = '';
                 if (bestMatch.tracks) {
@@ -1093,6 +1113,41 @@
                         }
                     } else { tracksHtml = '<span class="text-gray-400">情報なし</span>'; }
 
+                    let validImages = [];
+                    if (data.img1 && !data.img1.includes('No+Image') && !data.img1.includes('No%20Image')) validImages.push(data.img1);
+                    if (data.img2 && !data.img2.includes('No+Image') && !data.img2.includes('No%20Image')) validImages.push(data.img2);
+                    
+                    let imagesHtml = '';
+                    if (validImages.length === 0) {
+                        imagesHtml = `
+                            <div class="w-[45%] mx-auto">
+                                <div class="cd-jacket-container relative group w-full">
+                                    <img src="https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image" class="cd-jacket">
+                                </div>
+                            </div>`;
+                    } else if (validImages.length === 1) {
+                        imagesHtml = `
+                            <div class="w-[45%] mx-auto">
+                                <div class="cd-jacket-container relative group w-full">
+                                    <img src="${validImages[0]}" class="cd-jacket" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                                </div>
+                            </div>`;
+                    } else {
+                        imagesHtml = `
+                            <div class="flex gap-3 w-full">
+                                <div class="flex-1">
+                                    <div class="cd-jacket-container relative group w-full">
+                                        <img src="${validImages[0]}" class="cd-jacket" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="cd-jacket-container relative group w-full">
+                                        <img src="${validImages[1]}" class="cd-jacket" onerror="this.style.display='none'">
+                                    </div>
+                                </div>
+                            </div>`;
+                    }
+
                     const cardHtml = `
                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                             <div class="bg-gray-50 px-4 py-3 border-b border-gray-100 flex justify-between items-center">
@@ -1102,19 +1157,9 @@
                             <div class="p-4">
                                 <h3 class="text-lg font-bold text-gray-800 leading-tight mb-4 text-center">${data.title}</h3>
                                 
-                                <div class="flex gap-3 mb-5">
-                                    <div class="flex-1">
-                                        <div class="cd-jacket-container relative group w-full">
-                                            <img src="${data.img1 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="初回盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                        </div>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="cd-jacket-container relative group w-full">
-                                            <img src="${data.img2 || 'https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'}" class="cd-jacket" alt="通常盤" onerror="this.src='https://placehold.co/200x200/e2e8f0/94a3b8?text=No+Image'">
-                                        </div>
-                                    </div>
+                                <div class="mb-5 flex justify-center">
+                                    ${imagesHtml}
                                 </div>
-
                                 <div class="bg-[#e0f2f1]/50 rounded-lg p-3 text-xs flex justify-between items-center mb-4">
                                     <span class="font-bold text-[#1F7A6F] opacity-70">当時のaiko</span>
                                     <span class="font-bold text-[#2A9D8F] text-right">${aikoAge}</span>
