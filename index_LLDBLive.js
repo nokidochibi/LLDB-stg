@@ -3073,9 +3073,21 @@ function showAnniversaryModal(events) {
             const d2 = new Date(rYear, rMonth - 1, rDay, 12, 0, 0);
             const diffTime = Math.abs(d2 - d1);
             const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
-
-            const img1 = item.img1 || 'https://placehold.jp/150x150.png?text=No%20Image';
-            const img2 = item.img2; 
+            
+            let validImages = [];
+            if (item.img1) validImages.push(item.img1);
+            if (item.img2) validImages.push(item.img2);
+            
+            let imagesHtml = '';
+            if (validImages.length === 0) {
+                imagesHtml = `<img src="https://placehold.jp/150x150.png?text=No%20Image" class="w-[60%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square">`;
+            } else if (validImages.length === 1) {
+                imagesHtml = `<img src="${validImages[0]}" class="w-[60%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.src='https://placehold.jp/150x150.png?text=No%20Image'">`;
+            } else {
+                imagesHtml = `
+                        <img src="${validImages[0]}" class="w-[45%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.src='https://placehold.jp/150x150.png?text=No%20Image'">
+                        <img src="${validImages[1]}" class="w-[45%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.style.display='none'">`;
+            }
 
             html += `
                 <h2 class="font-bold text-center text-xl mb-4 text-aiko-pink">🎂 ${yearsAgoText}今日は何の日？</h2>
@@ -3083,6 +3095,10 @@ function showAnniversaryModal(events) {
                     <div class="flex justify-between items-center mb-4">
                         <span class="border border-gray-300 px-2 py-0.5 rounded text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-white">${item.type}</span>
                         <span class="text-xs text-gray-400 font-mono tracking-widest">${rYear}.${rMonth}.${rDay}</span>
+                    </div>
+                    <h3 class="text-center font-bold text-gray-800 text-xl mb-5 leading-tight">${item.title}</h3>
+                    <div class="flex justify-center gap-3 mb-6">
+                        ${imagesHtml}
                     </div>
 
                     <h3 class="text-center font-bold text-gray-800 text-xl mb-5 leading-tight">${item.title}</h3>
