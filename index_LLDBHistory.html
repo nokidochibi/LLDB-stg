@@ -182,16 +182,11 @@
             .mx-auto { margin-left: 0; margin-right: 0; }
             .disco-grid { width: 100%; } /* 画面幅いっぱい */
             
-            /* ★修正: display: none はiOSでタップ領域のズレバグを引き起こすため、絶対配置で画面外へ隠す */
-            #input-area, nav, #view-map .text-center { 
-                position: absolute !important; 
-                top: -9999px !important; 
-                opacity: 0 !important; 
-                pointer-events: none !important; 
-                height: 0 !important;
-                overflow: hidden !important;
-            }
+            /* ★NEW: ヘッダー・フッター・ヒントを非表示にして領域最大化 */
+            #input-area { display: none !important; }
+            nav { display: none !important; }
             body { padding-bottom: env(safe-area-inset-bottom) !important; }
+            #view-map .text-center { display: none !important; } /* 「横向きにしてね」のヒントも消す */
         }
 
         .disco-grid {
@@ -1244,7 +1239,6 @@
             return age;
         }
         
-        JavaScript
         function safeTrackEvent(eventName, params) {
             try {
                 if (typeof gtag === 'function') {
@@ -1254,6 +1248,20 @@
                 console.warn('GA4 Tracking Error:', e);
             }
         }
+
+        // iOS特有の「画面回転時にタップ判定座標が古いままになるバグ」を直すための軽量な処理
+        let orientationTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(orientationTimer);
+            orientationTimer = setTimeout(() => {
+                // 1pxだけ余白を足してすぐに戻すことで、負荷をかけずにブラウザのタップ判定エリアを強制リセットする
+                const body = document.body;
+                const oldPadding = body.style.paddingTop;
+                body.style.paddingTop = '1px';
+                body.offsetHeight; // リフローを強制
+                body.style.paddingTop = oldPadding;
+            }, 400); // 回転アニメーションが終わる頃に実行
+        });
     </script>
 </body>
 </html>
