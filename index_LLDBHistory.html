@@ -180,9 +180,9 @@
         @media (orientation: landscape) {
             .max-w-lg { max-width: none !important; }
             .mx-auto { margin-left: 0; margin-right: 0; }
-            .disco-grid { width: 100%; } /* 画面幅いっぱい（横スクロール防止） */
+            .disco-grid { width: 100%; } /* 画面幅いっぱい（横スクロール防止のため100%に変更） */
             
-            /* ★修正: display: noneはタップ領域ズレを引き起こすため、画面外へ飛ばして隠す */
+            /* ★修正: display: none はiOSでタップ領域ズレを起こすため、画面外へ飛ばして隠す */
             #input-area, nav, #view-map .text-center { 
                 position: absolute !important; 
                 top: -9999px !important; 
@@ -1253,18 +1253,17 @@
             }
         }
 
-        // iOS特有の「画面回転時にタップ判定座標が古いままになるバグ」を直すための軽量な処理
-        let orientationTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(orientationTimer);
-            orientationTimer = setTimeout(() => {
-                // 1pxだけ余白を足してすぐに戻すことで、負荷をかけずにブラウザのタップ判定エリアを強制リセットする
-                const body = document.body;
-                const oldPadding = body.style.paddingTop;
-                body.style.paddingTop = '1px';
-                body.offsetHeight; // リフローを強制
-                body.style.paddingTop = oldPadding;
-            }, 400); // 回転アニメーションが終わる頃に実行
+        // スマホの画面を回転させた時だけ実行し、iOSのタップ領域ズレバグをリセットする
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                const grid = document.getElementById('grid-container');
+                if (grid) {
+                    const currentDisplay = grid.style.display;
+                    grid.style.display = 'none';
+                    grid.offsetHeight; // ブラウザに座標の再計算を強制
+                    grid.style.display = currentDisplay || 'grid';
+                }
+            }, 300); // 回転アニメーションが終わる頃に実行
         });
     </script>
 </body>
