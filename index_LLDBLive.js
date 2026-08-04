@@ -3075,8 +3075,8 @@ function showAnniversaryModal(events) {
             const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
             
             let validImages = [];
-            if (item.img1) validImages.push(item.img1);
-            if (item.img2) validImages.push(item.img2);
+            if (item.img1 && !item.img1.includes('No%20Image')) validImages.push(item.img1);
+            if (item.img2 && !item.img2.includes('No%20Image')) validImages.push(item.img2);
             
             let imagesHtml = '';
             if (validImages.length === 0) {
@@ -3100,14 +3100,6 @@ function showAnniversaryModal(events) {
                     <div class="flex justify-center gap-3 mb-6">
                         ${imagesHtml}
                     </div>
-
-                    <h3 class="text-center font-bold text-gray-800 text-xl mb-5 leading-tight">${item.title}</h3>
-
-                    <div class="flex justify-center gap-3 mb-6">
-                        <img src="${img1}" class="${img2 ? 'w-[45%]' : 'w-[60%]'} rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.src='https://placehold.jp/150x150.png?text=No%20Image'">
-                        ${img2 ? `<img src="${img2}" class="w-[45%] rounded-lg shadow-sm border border-gray-100 object-cover aspect-square" onerror="this.style.display='none'">` : ''}
-                    </div>
-
                     <div class="bg-[#EFF8F7] rounded-xl p-3 mb-5 flex justify-between items-center">
                         <span class="text-xs font-bold text-[#4A8078]">当時のaiko</span>
                         <div class="text-right">
@@ -3119,7 +3111,6 @@ function showAnniversaryModal(events) {
                             </div>
                         </div>
                     </div>
-
                     <div class="text-left">
                         <p class="text-[10px] text-gray-400 mb-1 flex items-center gap-1 font-bold">
                             <i data-lucide="music" class="w-3 h-3"></i> 収録曲
