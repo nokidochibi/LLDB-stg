@@ -1249,19 +1249,20 @@
             }
         }
 
-        // 横向き（リサイズ）時のiOSタップ座標ズレを防ぐための強制リフロー処理
+        // 横向き（リサイズ）時のiOSタップ座標ズレを防ぐためのグリッド再描画処理
+        let resizeTimer;
         window.addEventListener('resize', () => {
-            const mapTab = document.getElementById('view-map');
-            if (mapTab && !mapTab.classList.contains('hidden')) {
-                setTimeout(() => {
-                    const grid = document.getElementById('grid-container');
-                    if (grid) {
-                        grid.style.display = 'none';
-                        grid.offsetHeight; // リフローを強制
-                        grid.style.display = 'grid';
+            clearTimeout(resizeTimer);
+            // 画面の回転アニメーションが完全に終わるのを待ってから処理を実行 (400ms)
+            resizeTimer = setTimeout(() => {
+                const mapTab = document.getElementById('view-map');
+                if (mapTab && !mapTab.classList.contains('hidden')) {
+                    if (allData && allData.listData) {
+                        // DOMを完全に作り直すことで、ブラウザにタップ座標を強制的に再計算させる
+                        renderGrid(allData.listData, allData.historyData);
                     }
-                }, 50);
-            }
+                }
+            }, 400); 
         });
     </script>
 </body>
