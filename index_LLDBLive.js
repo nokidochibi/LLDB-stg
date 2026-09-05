@@ -3116,7 +3116,7 @@ function showAnniversaryModal(events) {
                             <i data-lucide="music" class="w-3 h-3"></i> 収録曲
                         </p>
                         <div class="border border-dashed border-gray-200 rounded-xl p-3 bg-gray-50 text-sm text-gray-700 leading-relaxed">
-                            ${item.tracks ? item.tracks.replace(/\//g, '<br>') : '収録曲情報なし'}
+                            ${item.tracks ? item.tracks : '収録曲情報なし'}
                         </div>
                     </div>
                 </div>
