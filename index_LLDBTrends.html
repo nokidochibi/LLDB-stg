@@ -878,14 +878,11 @@
         thFirst.style.cursor = 'pointer';
         thFirst.onclick = toggleCompareMode;
         
-        // ON時：「比較
-
-        OFF」（グレー文字色） / OFF時：「比較中」（山吹色文字色）
+        // ON時：「比較<br>OFF」（グレー文字色） / OFF時：「比較中」（山吹色文字色）
         if (isCompareMode) {
-        thFirst.innerHTML = `比較
-        
-        
-        OFF; } else { thFirst.innerHTML = 比較中`;
+            thFirst.innerHTML = `<span class="compare-toggle-btn mode-on">比較<br>OFF</span>`;
+        } else {
+            thFirst.innerHTML = `<span class="compare-toggle-btn mode-off">比較中</span>`;
         }
         thead.appendChild(thFirst);
 
