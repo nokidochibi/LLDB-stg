@@ -118,7 +118,74 @@
             box-shadow: 0 2px 4px rgba(29, 53, 87, 0.3);
         }
         .category-checkbox-hidden { display: none; }
-
+        /* 比較モード用コントロールバナー */
+        #compareBanner {
+            display: none;
+            margin: 8px 10px 12px 10px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 1px solid #fde68a;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            animation: fadeIn 0.3s ease-out;
+        }
+        #compareBanner.active {
+            display: flex;
+        }
+        .compare-hint-text {
+            font-size: 11px;
+            font-weight: 700;
+            color: #b45309;
+            line-height: 1.4;
+        }
+        .btn-compare-launch {
+            background-color: #f59e0b;
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 13px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+            cursor: pointer;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+        .btn-compare-launch:active {
+            transform: scale(0.96);
+            background-color: #d97706;
+        }
+        .compare-toggle-btn {
+            font-size: 11px;
+            font-weight: 900;
+            padding: 3px 6px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background-color: #ffffff;
+            color: #64748b;
+            cursor: pointer;
+            display: inline-block;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .compare-toggle-btn.active {
+            background-color: #f59e0b;
+            color: #ffffff;
+            border-color: #d97706;
+            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+        }
+        .compare-check-input {
+            width: 20px;
+            height: 20px;
+            accent-color: #f59e0b;
+            cursor: pointer;
+        }
         /* テーブルコンテナ */
         .table-container {
             position: relative;
@@ -482,6 +549,18 @@
             </div>
         </div>
 
+        <!-- 比較モードバナー（比較モード時に表示） -->
+        <div id="compareBanner">
+            <div class="compare-hint-text">
+                【比較モード】<br>
+                10個までの動画を選んで<br>ボタンを押してね →
+            </div>
+            <button class="btn-compare-launch" onclick="openCompareGraph()">
+                <i data-lucide="line-chart" class="w-4 h-4"></i>
+                選んだ動画のグラフを表示 (<span id="compareCountDisplay">0</span>)
+            </button>
+        </div>
+
         <!-- 左寄せ (固定ヘッダーから出してスクロールで流れるように変更) -->
         <span class="subtitle">「視聴回数」とかタップしたら順番入れ替わるで</span>
         
@@ -577,6 +656,23 @@
     let followersDataLoaded = false;
     let dailyViewsChartInstance = null;
     let chartInstances = { youtube: null, twitter: null };
+
+    // 比較モード用State
+    let isCompareMode = false;
+    const selectedCompareUrls = new Set();
+    const MAX_COMPARE_LIMIT = 10;
+    const COMPARE_COLORS = [
+        '#e11d48', // Rose
+        '#2563eb', // Blue
+        '#059669', // Emerald
+        '#d97706', // Amber
+        '#7c3aed', // Purple
+        '#db2777', // Pink
+        '#0891b2', // Cyan
+        '#4b5563', // Slate
+        '#ca8a04', // Yellow
+        '#4f46e5'  // Indigo
+    ];
 
     document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
@@ -750,37 +846,92 @@
         displayData(adaptedData);
     }
 
-    function displayData(data) {
-        videoData = data.data;
-        tableHeaders = data.headers;
-        maxTotalViews = data.maxTotalViews;
+    function toggleCompareMode() {
+        isCompareMode = !isCompareMode;
+        
+        const banner = document.getElementById('compareBanner');
+        if (banner) {
+            banner.classList.toggle('active', isCompareMode);
+        }
+        
+        safeTrackEvent('select_content', {
+            content_type: 'trends_compare_mode',
+            status: isCompareMode ? 'open' : 'close'
+        });
+        
+        updateTableHeader();
+        updateTableBody(filteredVideoData);
+        updateStickyOffset();
+    }
 
+    function handleCompareCheckbox(checkbox, url) {
+        if (checkbox.checked) {
+            if (selectedCompareUrls.size >= MAX_COMPARE_LIMIT) {
+                checkbox.checked = false;
+                showToast(`比較できる動画は最大${MAX_COMPARE_LIMIT}個までです`);
+                return;
+            }
+            selectedCompareUrls.add(url);
+        } else {
+            selectedCompareUrls.delete(url);
+        }
+        updateCompareCountDisplay();
+    }
+
+    function updateCompareCountDisplay() {
+        const display = document.getElementById('compareCountDisplay');
+        if (display) {
+            display.textContent = selectedCompareUrls.size;
+        }
+    }
+
+    function updateTableHeader() {
         const thead = document.getElementById('tableHeader');
-        thead.innerHTML = '<th style="cursor:default; width:4%;">#</th>';
+        if (!thead) return;
+        thead.innerHTML = '';
+        
+        const thFirst = document.createElement('th');
+        thFirst.style.cursor = 'pointer';
+        thFirst.onclick = toggleCompareMode;
+        
+        if (isCompareMode) {
+            thFirst.innerHTML = `比較`;
+        } else {
+            thFirst.innerHTML = `比較`;
+        }
+        thead.appendChild(thFirst);
+
         tableHeaders.forEach(h => {
             const th = document.createElement('th');
             th.innerHTML = h.text;
             if(h.key !== 'url') {
                 th.classList.add('sortable');
+                if (currentSortColumn === h.key) {
+                    th.classList.add(currentSortDirection);
+                }
                 th.onclick = () => {
                     const dir = (currentSortColumn === h.key && currentSortDirection === 'asc') ? 'desc' :
                                 (currentSortColumn === h.key && currentSortDirection === 'desc') ? 'asc' :
                                 (h.key === 'publishedDate') ? 'asc' : 'desc';
                     
-                    // ★追加: ソート操作の計測
                     safeTrackEvent('select_content', {
                         content_type: 'trends_sort',
                         item_id: h.key,
                         item_category: dir
                     });
-
                     sortTable(h.key, h.type, dir);
                 };
             }
             thead.appendChild(th);
         });
+    }
 
-        // 更新日時の表示処理
+    function displayData(data) {
+        videoData = data.data;
+        tableHeaders = data.headers;
+        maxTotalViews = data.maxTotalViews;
+        updateTableHeader();
+
         const timeDisplay = document.getElementById('lastUpdateTimeDisplay');
         if(data.lastUpdateTime) {
             timeDisplay.textContent = `※${data.lastUpdateTime}更新`;
@@ -788,7 +939,6 @@
         } else {
             timeDisplay.style.display = 'none';
         }
-
         document.getElementById('loading').style.display = 'none';
         document.getElementById('tableContainer').style.display = 'block';
         
@@ -853,7 +1003,18 @@
 
         data.forEach((row, i) => {
             const tr = document.createElement('tr');
-            tr.innerHTML += `<td style="text-align:center; font-weight:bold; color:#94a3b8;">${i+1}</td>`;
+            
+            // 1列目: 通常時は順位、比較モード時はチェックボックス
+            if (isCompareMode) {
+                const isChecked = selectedCompareUrls.has(row.url) ? 'checked' : '';
+                tr.innerHTML += `
+                    <td style="text-align:center; padding:4px;">
+                        <input type="checkbox" class="compare-check-input" ${isChecked} onchange="handleCompareCheckbox(this, '${row.url.replace(/'/g, "\\'")}')">
+                    </td>
+                `;
+            } else {
+                tr.innerHTML += `<td style="text-align:center; font-weight:bold; color:#94a3b8;">${i+1}</td>`;
+            }
             
             tableHeaders.forEach(h => {
                 let td = document.createElement('td');
@@ -914,7 +1075,6 @@
     }
 
     async function openGraph(url, title) {
-        // GA4 Tracking
         safeTrackEvent('select_content', {
             content_type: 'trend_graph',
             item_name: title
@@ -925,14 +1085,11 @@
         if(dailyViewsChartInstance) { dailyViewsChartInstance.destroy(); dailyViewsChartInstance = null; }
         
         try {
-            // ★変更: 通信せずに、ローカルに保持した全データから該当URLのデータを探す
             if (fullTrendGraphsData && fullTrendGraphsData[url] && fullTrendGraphsData[url].length > 0) {
                 document.getElementById('graphLoading').style.display = 'none';
                 document.getElementById('dailyViewsChart').style.display = 'block';
                 document.getElementById('noGraphData').style.display = 'none';
                 
-                // GASで軽量化した配列形式 [["2024/01/01", 100], ...] を
-                // Chart.jsで使えるオブジェクト形式 [{date: "2024/01/01", views: 100}, ...] に戻す
                 const formattedData = fullTrendGraphsData[url].map(d => ({
                     date: d[0],
                     views: d[1]
@@ -948,6 +1105,138 @@
             console.error("グラフ描画エラー:", e);
             document.getElementById('graphLoading').textContent = "エラーが発生しました";
         }
+    }
+
+    function openCompareGraph() {
+        if (selectedCompareUrls.size === 0) {
+            showToast("比較したい動画を1つ以上選んでね");
+            return;
+        }
+
+        const selectedUrls = Array.from(selectedCompareUrls);
+        const selectedTitles = selectedUrls.map(url => {
+            const row = videoData.find(v => v.url === url);
+            return row ? row.title : '不明な動画';
+        });
+
+        safeTrackEvent('select_content', {
+            content_type: 'compare_graph',
+            item_name: selectedTitles.join(' / ')
+        });
+
+        document.getElementById('graphModal').classList.add('open');
+        document.getElementById('graphTitle').textContent = `動画推移の比較 (${selectedUrls.length}曲)`;
+        
+        if(dailyViewsChartInstance) { dailyViewsChartInstance.destroy(); dailyViewsChartInstance = null; }
+
+        if (!fullTrendGraphsData) {
+            document.getElementById('graphLoading').textContent = "データを読み込み中です...";
+            return;
+        }
+
+        // 全日付のユニーク配列を作成（時系列昇順）
+        const allDatesSet = new Set();
+        selectedUrls.forEach(url => {
+            const history = fullTrendGraphsData[url] || [];
+            history.forEach(d => allDatesSet.add(d[0]));
+        });
+        const sortedDates = Array.from(allDatesSet).sort((a, b) => new Date(a) - new Date(b));
+
+        if (sortedDates.length === 0) {
+            document.getElementById('graphLoading').style.display = 'none';
+            document.getElementById('dailyViewsChart').style.display = 'none';
+            document.getElementById('noGraphData').style.display = 'block';
+            return;
+        }
+
+        // 各曲のデータセットを生成
+        const datasets = selectedUrls.map((url, index) => {
+            const vRow = videoData.find(v => v.url === url);
+            let displayTitle = vRow ? vRow.title : `動画 ${index + 1}`;
+            // タイトルを短縮表示（『曲名』部分を優先）
+            const bracketMatch = displayTitle.match(/[『「]([^』」]+)[』」]/);
+            if (bracketMatch && bracketMatch[1]) {
+                displayTitle = bracketMatch[1];
+            } else {
+                displayTitle = displayTitle.substring(0, 14);
+            }
+
+            const rawData = fullTrendGraphsData[url] || [];
+            const dataMap = {};
+            rawData.forEach(d => { dataMap[d[0]] = d[1]; });
+
+            const dataPoints = sortedDates.map(date => (dataMap[date] !== undefined ? dataMap[date] : null));
+            const color = COMPARE_COLORS[index % COMPARE_COLORS.length];
+
+            return {
+                label: displayTitle,
+                data: dataPoints,
+                borderColor: color,
+                backgroundColor: color + '20',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.2,
+                pointRadius: 2,
+                spanGaps: true
+            };
+        });
+
+        document.getElementById('graphLoading').style.display = 'none';
+        document.getElementById('dailyViewsChart').style.display = 'block';
+        document.getElementById('noGraphData').style.display = 'none';
+
+        const ctx = document.getElementById('dailyViewsChart').getContext('2d');
+        dailyViewsChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: sortedDates,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            boxWidth: 12,
+                            font: { size: 11, weight: 'bold' }
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(ctx) {
+                                const val = ctx.parsed.y;
+                                return `\({ctx.dataset.label}:\){val !== null ? val.toLocaleString() + ' 回' : '記録なし'}`;
+                            }
+                        }
+                    },
+                    zoom: {
+                        pan: { enabled: true, mode: 'x' },
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            mode: 'x'
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { maxTicksLimit: 6 } },
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                if (value >= 10000000) return (value / 10000000).toFixed(0) + '千万';
+                                if (value >= 10000) return (value / 10000).toFixed(0) + '万';
+                                return value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 
     function renderGraph(data) {
