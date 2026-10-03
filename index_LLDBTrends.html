@@ -162,27 +162,34 @@
             background-color: #d97706;
         }
         .compare-toggle-btn {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 900;
-            padding: 3px 6px;
+            padding: 3px 2px;
             border-radius: 6px;
-            border: 1px solid #cbd5e1;
-            background-color: #ffffff;
-            color: #64748b;
             cursor: pointer;
             display: inline-block;
             transition: all 0.2s;
             user-select: none;
+            line-height: 1.15;
+            width: 100%;
+            max-width: 36px;
+            box-sizing: border-box;
         }
-        .compare-toggle-btn.active {
-            background-color: #f59e0b;
-            color: #ffffff;
-            border-color: #d97706;
-            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+        /* 比較モードONの時：グレー文字色 */
+        .compare-toggle-btn.mode-on {
+            background-color: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+        }
+        /* 比較モードOFFの時：山吹色文字色 */
+        .compare-toggle-btn.mode-off {
+            background-color: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
         }
         .compare-check-input {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             accent-color: #f59e0b;
             cursor: pointer;
         }
@@ -207,7 +214,6 @@
             padding: 0 4px;
             border-radius: 4px;
         }
-
         /* テーブルスタイル */
         table {
             width: 100%;
@@ -249,7 +255,6 @@
         
         th:first-child { border-top-left-radius: 12px; }
         th:last-child { border-top-right-radius: 12px; }
-
         td {
             padding: 10px 4px;
             border-bottom: 1px solid #f1f5f9;
@@ -260,11 +265,9 @@
             text-overflow: ellipsis;
             background-color: white;
         }
-
         tr:nth-child(even) td { background-color: #fcfcfc; }
         tr:last-child td:first-child { border-bottom-left-radius: 12px; }
         tr:last-child td:last-child { border-bottom-right-radius: 12px; }
-
         /* ソートアイコン */
         .sortable th::after {
             content: ''; display: inline-block; vertical-align: middle; margin-left: 2px;
@@ -277,50 +280,43 @@
         .sortable th.desc::after {
             border-top: 4px solid var(--accent-color); border-bottom: none;
         }
-
         /* =========================================
-           ★ 列幅設定 (User's Favorite Layout)
+           ★ 列幅設定（1列目を「公開日」の2/3程度に設定）
            ========================================= */
         
-        /* 基本設定：1列目は最低幅を確保 */
-        th:nth-child(1), td:nth-child(1) { white-space: nowrap; min-width: 36px; }
-
-        /* PC (>= 1025px) - 境界を変更 */
+        /* 基本設定：1列目は折り返しを制御 */
+        th:nth-child(1), td:nth-child(1) { white-space: nowrap; }
+        /* PC (>= 1025px): 公開日12.5% → 1列目約8.3% (2/3) */
         @media (min-width: 1025px) {
             th { font-size: 0.9em; }
             td { font-size: 1em; }
-
-            th:nth-child(1), td:nth-child(1) { width: 8%; text-align: center; font-weight: bold; color: #94a3b8; }
-            th:nth-child(2), td:nth-child(2) { width: 39.5%; text-align: left; padding-right: 15px; }
+            th:nth-child(1), td:nth-child(1) { width: 8.3%; text-align: center; font-weight: bold; color: #94a3b8; padding: 12px 1px; }
+            th:nth-child(2), td:nth-child(2) { width: 39.2%; text-align: left; padding-right: 15px; }
             th:nth-child(3), td:nth-child(3) { width: 15%; text-align: right; font-weight: bold; padding: 0 10px; }
             th:nth-child(4), td:nth-child(4) { width: 12.5%; text-align: center; }
             th:nth-child(5), td:nth-child(5) { width: 12.5%; text-align: right; }
             th:nth-child(6), td:nth-child(6) { width: 12.5%; text-align: right; }
         }
-
-        /* Tablet & Mobile Landscape (max 1024px) - 範囲を広げて大型スマホ横向きに対応 */
+        /* Tablet & Mobile Landscape (max 1024px): 公開日10% → 1列目約6.7% (2/3) */
         @media (max-width: 1024px) {
             .table-container { margin: 25px 2px 0 2px; }
             th { font-size: 0.8em; padding: 8px 1px; }
             td { font-size: 0.9em; }
             
-            /* # 6% (5%だと厳しいので微増+min-width確保) */
             th:nth-child(1), td:nth-child(1) { 
-                width: 6%; 
-                min-width: 40px; /* 3桁確保用 */
+                width: 6.7%; 
                 text-align: center; 
                 font-weight: bold; 
                 color: #94a3b8;
-                text-overflow: clip; /* 省略記号回避 */
+                text-overflow: clip; 
+                padding: 8px 1px;
             }
-            /* タイトル 34% (35%から微調整) */
             th:nth-child(2), td:nth-child(2) { 
-                width: 34%; 
+                width: 33.3%; 
                 text-align: left; 
                 padding-right: 4px; 
                 line-height: 1.4; 
             }
-            /* 視聴回数 30% */
             th:nth-child(3), td:nth-child(3) { 
                 width: 30%; 
                 text-align: right; 
@@ -328,56 +324,38 @@
                 padding: 0 4px; 
                 white-space: nowrap; 
             }
-            /* 公開日 10% */
             th:nth-child(4), td:nth-child(4) { width: 10%; text-align: center; }
-            /* 平均/日（全） 10% */
             th:nth-child(5), td:nth-child(5) { width: 10%; text-align: right; padding-right: 2px; }
-            /* 平均/日（7日） 10% */
             th:nth-child(6), td:nth-child(6) { width: 10%; text-align: right; padding-right: 2px; }
         }
-
-        /* Mobile Portrait (max 480px) */
+        /* Mobile Portrait (max 480px): 公開日13% → 1列目約8.7% (2/3) */
         @media (max-width: 480px) {
-            /* ベースの文字サイズを統一 */
             th { font-size: 11px; padding: 12px 1px; }
             td { font-size: 12px; padding: 8px 1px; }
-
-            /* ★ 3桁対応：幅を広げて、省略記号(...)を強制無効化 */
             th:nth-child(1), td:nth-child(1) { 
-                width: 18%; /* 余裕を持って広げる */
+                width: 8.7%; 
                 text-align: center; 
                 font-weight: bold; 
                 color: #94a3b8; 
                 font-size: 11px; 
-                text-overflow: clip; /* ...を表示させない */
+                text-overflow: clip; 
+                padding: 12px 1px;
             }
-            
-            /* タイトル列：幅を調整 */
             th:nth-child(2), td:nth-child(2) { 
-                width: 26%; /* バランス調整 */
-                font-size: 13px; /* タイトルは読みやすく少し大きく */
+                width: 35.3%; 
+                font-size: 13px; 
                 line-height: 1.4;
             }
-            
-            /* 視聴回数列 */
             th:nth-child(3), td:nth-child(3) { 
                 width: 19%; 
                 font-weight: bold;
             }
-            
-            /* 公開日列 */
             th:nth-child(4), td:nth-child(4) { 
                 width: 13%; 
-                font-size: 11px; /* 日付は小さめでOK */
+                font-size: 11px; 
             }
-            
-            /* 平均/日列 - スマホでは中央揃えに */
             th:nth-child(5), td:nth-child(5) { width: 12%; text-align: center; }
-            
-            /* 平均/7日列 - スマホでは中央揃えに */
             th:nth-child(6), td:nth-child(6) { width: 12%; text-align: center; }
-            
-            /* スマホでは絵文字と数値を中央揃えにする */
             .emoji-number-container {
                 align-items: center !important;
             }
@@ -849,6 +827,12 @@
     function toggleCompareMode() {
         isCompareMode = !isCompareMode;
         
+        // OFFからONに切り替えたときは前回のチェックをすべてクリア
+        if (isCompareMode) {
+            selectedCompareUrls.clear();
+            updateCompareCountDisplay();
+        }
+        
         const banner = document.getElementById('compareBanner');
         if (banner) {
             banner.classList.toggle('active', isCompareMode);
@@ -894,10 +878,14 @@
         thFirst.style.cursor = 'pointer';
         thFirst.onclick = toggleCompareMode;
         
+        // ON時：「比較
+
+        OFF」（グレー文字色） / OFF時：「比較中」（山吹色文字色）
         if (isCompareMode) {
-            thFirst.innerHTML = `比較`;
-        } else {
-            thFirst.innerHTML = `比較`;
+        thFirst.innerHTML = `比較
+        
+        
+        OFF; } else { thFirst.innerHTML = 比較中`;
         }
         thead.appendChild(thFirst);
 
