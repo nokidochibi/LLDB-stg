@@ -199,40 +199,52 @@
     </main>
     
     <!-- ★新機能：感情プレイリストビュー -->
-    <main id="container-emotion" class="flex-1 overflow-hidden relative hidden bg-white flex-col">
+    <main id="container-emotion" class="flex-1 overflow-y-auto relative hidden bg-white flex-col pb-32">
         <div class="p-4 bg-orange-50 border-b border-orange-100 shrink-0 shadow-sm z-10">
             <h2 class="font-bold text-orange-800 mb-2 flex items-center gap-2">
                 <i data-lucide="sparkles" class="w-5 h-5 text-orange-500"></i> 今の気分は？
             </h2>
             <div class="flex flex-wrap gap-2 mb-4" id="lldb-emotion-checkboxes">
                 <div>
-                    <input type="checkbox" id="chk-setsunasa" value="切なさ" class="peer hidden lldb-emotion-chk">
+                    <input type="checkbox" id="chk-etsubou" value="熱望・執着" class="peer hidden lldb-emotion-chk">
+                    <label for="chk-etsubou" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
+                        熱望・執着
+                    </label>
+                </div>
+                <div>
+                    <input type="checkbox" id="chk-takou" value="多幸・高揚" class="peer hidden lldb-emotion-chk">
+                    <label for="chk-takou" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
+                        多幸・高揚
+                    </label>
+                </div>
+                <div>
+                    <input type="checkbox" id="chk-fuan" value="不安・猜疑" class="peer hidden lldb-emotion-chk">
+                    <label for="chk-fuan" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
+                        不安・猜疑
+                    </label>
+                </div>
+                <div>
+                    <input type="checkbox" id="chk-setsunasa" value="切なさ・孤独" class="peer hidden lldb-emotion-chk">
                     <label for="chk-setsunasa" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        切なさ
+                        切なさ・孤独
                     </label>
                 </div>
                 <div>
-                    <input type="checkbox" id="chk-itoshisa" value="愛しさ" class="peer hidden lldb-emotion-chk">
-                    <label for="chk-itoshisa" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        愛しさ
-                    </label>
-                </div>
-                <div>
-                    <input type="checkbox" id="chk-tsuyogari" value="強がり" class="peer hidden lldb-emotion-chk">
+                    <input type="checkbox" id="chk-tsuyogari" value="強がり・あまのじゃく" class="peer hidden lldb-emotion-chk">
                     <label for="chk-tsuyogari" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        強がり・前向き
+                        強がり・あまのじゃく
                     </label>
                 </div>
                 <div>
-                    <input type="checkbox" id="chk-shousoukan" value="焦燥感" class="peer hidden lldb-emotion-chk">
-                    <label for="chk-shousoukan" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        焦燥感・苦しさ
+                    <input type="checkbox" id="chk-kenage" value="健気・献身" class="peer hidden lldb-emotion-chk">
+                    <label for="chk-kenage" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
+                        健気・献身
                     </label>
                 </div>
                 <div>
-                    <input type="checkbox" id="chk-atatakasa" value="温かさ" class="peer hidden lldb-emotion-chk">
-                    <label for="chk-atatakasa" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        温かさ
+                    <input type="checkbox" id="chk-miren" value="未練・ノスタルジー" class="peer hidden lldb-emotion-chk">
+                    <label for="chk-miren" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
+                        未練・ノスタルジー
                     </label>
                 </div>
             </div>
@@ -240,7 +252,7 @@
                 <i data-lucide="list-music" class="w-5 h-5"></i> プレイリストを作る
             </button>
         </div>
-        <div class="flex-1 overflow-y-auto p-4 pb-32 bg-gray-50 no-scrollbar">
+        <div class="flex-1 overflow-y-auto p-4 bg-gray-50 no-scrollbar">
             <div id="lldb-emotion-playlist" class="space-y-2">
                 <div class="text-center py-10 text-gray-400 text-xs">
                     気分を選んでプレイリストを作ろう🎧<br>※一部の楽曲のサンプルデータです
@@ -490,15 +502,15 @@
     <!-- ★新機能：レーダーチャート表示用モーダル -->
     <div id="lldb-emotion-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="lldbCloseEmotionModal()"></div>
-        <div class="bg-white rounded-2xl shadow-xl p-6 w-[85%] max-w-sm relative z-10 transform transition-all scale-100 animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-[90%] max-w-md relative z-10 transform transition-all scale-100 animate-fade-in max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-2">
                 <h3 id="lldb-emotion-modal-title" class="font-bold text-gray-800 text-lg"></h3>
                 <button onclick="lldbCloseEmotionModal()" class="text-gray-400 hover:text-gray-600 p-1 bg-gray-50 rounded-full">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <p class="text-[10px] text-gray-400 font-bold mb-4 text-center">感情パラメータ</p>
-            <div class="w-full aspect-square relative flex justify-center items-center">
+            <p class="text-[10px] text-gray-400 font-bold mb-2 text-center">感情パラメータ</p>
+            <div class="w-full aspect-square relative flex justify-center items-center max-h-[350px]">
                 <canvas id="lldb-emotion-radar-chart"></canvas>
             </div>
             <div class="mt-4 pt-4 border-t border-gray-100">
@@ -515,16 +527,16 @@
         // 新機能：感情プレイリスト用サンプルデータ
         // =========================================
         const lldbEmotionData = [
-          { "title": "カブトムシ", "emotions": { "切なさ": 90, "愛しさ": 95, "強がり": 10, "焦燥感": 40, "温かさ": 70 } },
-          { "title": "花火", "emotions": { "切なさ": 85, "愛しさ": 70, "強がり": 30, "焦燥感": 60, "温かさ": 40 } },
-          { "title": "ボーイフレンド", "emotions": { "切なさ": 20, "愛しさ": 80, "強がり": 90, "焦燥感": 10, "温かさ": 85 } },
-          { "title": "キラキラ", "emotions": { "切なさ": 30, "愛しさ": 75, "強がり": 85, "焦燥感": 20, "温かさ": 90 } },
-          { "title": "えりあし", "emotions": { "切なさ": 95, "愛しさ": 85, "強がり": 20, "焦燥感": 70, "温かさ": 50 } },
-          { "title": "ストロー", "emotions": { "切なさ": 15, "愛しさ": 90, "強がり": 80, "焦燥感": 10, "温かさ": 95 } },
-          { "title": "三国駅", "emotions": { "切なさ": 80, "愛しさ": 80, "強がり": 40, "焦燥感": 30, "温かさ": 85 } },
-          { "title": "桜の時", "emotions": { "切なさ": 40, "愛しさ": 90, "強がり": 70, "焦燥感": 20, "温かさ": 80 } },
-          { "title": "蝶々結び", "emotions": { "切なさ": 85, "愛しさ": 90, "強がり": 50, "焦燥感": 60, "温かさ": 70 } },
-          { "title": "milk", "emotions": { "切なさ": 70, "愛しさ": 80, "強がり": 60, "焦燥感": 80, "温かさ": 30 } }
+          { "title": "私生活", "emotions": { "熱望・執着": 95, "多幸・高揚": 20, "不安・猜疑": 60, "切なさ・孤独": 70, "強がり・あまのじゃく": 10, "健気・献身": 40, "未練・ノスタルジー": 30 } },
+          { "title": "ボーイフレンド", "emotions": { "熱望・執着": 30, "多幸・高揚": 95, "不安・猜疑": 10, "切なさ・孤独": 10, "強がり・あまのじゃく": 20, "健気・献身": 60, "未練・ノスタルジー": 5 } },
+          { "title": "愛の病", "emotions": { "熱望・執着": 80, "多幸・高揚": 40, "不安・猜疑": 90, "切なさ・孤独": 50, "強がり・あまのじゃく": 15, "健気・献身": 30, "未練・ノスタルジー": 10 } },
+          { "title": "ナキ・ムシ", "emotions": { "熱望・執着": 40, "多幸・高揚": 10, "不安・猜疑": 50, "切なさ・孤独": 90, "強がり・あまのじゃく": 70, "健気・献身": 80, "未練・ノスタルジー": 20 } },
+          { "title": "光のさすあしもと", "emotions": { "熱望・執着": 10, "多幸・高揚": 5, "不安・猜疑": 30, "切なさ・孤独": 80, "強がり・あまのじゃく": 95, "健気・献身": 40, "未練・ノスタルジー": 60 } },
+          { "title": "be master of life", "emotions": { "熱望・執着": 20, "多幸・高揚": 60, "不安・猜疑": 10, "切なさ・孤独": 15, "強がり・あまのじゃく": 40, "健気・献身": 95, "未練・ノスタルジー": 5 } },
+          { "title": "えりあし", "emotions": { "熱望・執着": 50, "多幸・高揚": 10, "不安・猜疑": 20, "切なさ・孤独": 85, "強がり・あまのじゃく": 30, "健気・献身": 60, "未練・ノスタルジー": 95 } },
+          { "title": "カブトムシ", "emotions": { "熱望・執着": 60, "多幸・高揚": 70, "不安・猜疑": 50, "切なさ・孤独": 80, "強がり・あまのじゃく": 20, "健気・献身": 85, "未練・ノスタルジー": 40 } },
+          { "title": "ストロー", "emotions": { "熱望・執着": 20, "多幸・高揚": 85, "不安・猜疑": 10, "切なさ・孤独": 15, "強がり・あまのじゃく": 10, "健気・献身": 90, "未練・ノスタルジー": 5 } },
+          { "title": "愛の世界", "emotions": { "熱望・執着": 90, "多幸・高揚": 60, "不安・猜疑": 40, "切なさ・孤独": 30, "強がり・あまのじゃく": 10, "健気・献身": 50, "未練・ノスタルジー": 20 } }
         ];
 
         let lldbEmotionChart = null;
@@ -557,7 +569,7 @@
             let html = '';
             scoredSongs.forEach((song, index) => {
                 html += `
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform" onclick="lldbOpenEmotionModal('${song.title}')">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform mb-2" onclick="lldbOpenEmotionModal('${song.title}')">
                     <div class="flex items-center gap-3">
                         <span class="font-bold text-gray-300 w-5 text-center">${index + 1}</span>
                         <span class="font-bold text-gray-700">${song.title}</span>
@@ -584,7 +596,7 @@
                 lldbEmotionChart.destroy();
             }
             
-            const labels = ["切なさ", "愛しさ", "強がり", "焦燥感", "温かさ"];
+            const labels = ["熱望・執着", "多幸・高揚", "不安・猜疑", "切なさ・孤独", "強がり・あまのじゃく", "健気・献身", "未練・ノスタルジー"];
             const dataPoints = labels.map(label => song.emotions[label] || 0);
             
             lldbEmotionChart = new Chart(ctx, {
@@ -611,7 +623,7 @@
                             angleLines: { color: 'rgba(0,0,0,0.05)' },
                             grid: { color: 'rgba(0,0,0,0.05)' },
                             pointLabels: {
-                                font: { family: "'Noto Sans JP', sans-serif", size: 10, weight: 'bold' },
+                                font: { family: "'Noto Sans JP', sans-serif", size: 9, weight: 'bold' },
                                 color: '#64748b'
                             },
                             ticks: {
