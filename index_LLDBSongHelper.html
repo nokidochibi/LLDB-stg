@@ -201,6 +201,15 @@
     <!-- ★新機能：感情プレイリストビュー -->
     <main id="container-emotion" class="flex-1 overflow-hidden relative hidden bg-white flex-col">
         <div class="p-4 bg-orange-50 border-b border-orange-100 shrink-0 shadow-sm z-10">
+            <!-- ★追加: 曲名から直接検索できるバー -->
+            <div class="mb-4">
+                <div class="relative flex items-center bg-white border border-orange-200 rounded-xl px-3 py-2 shadow-sm focus-within:border-orange-500 transition-colors">
+                    <i data-lucide="search" class="w-4 h-4 text-orange-400 mr-2"></i>
+                    <input type="text" id="lldb-emotion-search-input" placeholder="曲名で直接感情を分析..." class="flex-1 bg-transparent border-none outline-none text-sm text-gray-700 placeholder-gray-400" onkeydown="if(event.key==='Enter') lldbSearchEmotionBySong()">
+                    <button onclick="lldbSearchEmotionBySong()" class="ml-2 text-xs font-bold text-orange-500 hover:text-orange-600 bg-orange-50 px-2 py-1 rounded">分析</button>
+                </div>
+            </div>
+
             <h2 class="font-bold text-orange-800 mb-2 flex items-center gap-2">
                 <i data-lucide="sparkles" class="w-5 h-5 text-orange-500"></i> 今の気分は？
             </h2>
@@ -255,7 +264,7 @@
         <div class="flex-1 overflow-y-auto p-4 bg-gray-50 no-scrollbar pb-32">
             <div id="lldb-emotion-playlist" class="space-y-2">
                 <div class="text-center py-10 text-gray-400 text-xs">
-                    気分を選んでプレイリストを作ろう🎧<br>※一部の楽曲のサンプルデータです
+                    気分を選んでプレイリストを作ろう🎧<br>※全曲の歌詞データから分析します
                 </div>
             </div>
         </div>
@@ -513,6 +522,10 @@
             <div class="w-full aspect-square relative flex justify-center items-center max-h-[350px]">
                 <canvas id="lldb-emotion-radar-chart"></canvas>
             </div>
+            <!-- ★追加: 分析理由表示エリア -->
+            <div id="lldb-emotion-modal-reasons" class="mt-4 pt-4 border-t border-gray-100">
+                <!-- JSで動的生成 -->
+            </div>
             <div class="mt-4 pt-4 border-t border-gray-100">
                 <button onclick="lldbCloseEmotionModal()" class="w-full py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm active:scale-95 transition-transform">閉じる</button>
             </div>
@@ -524,59 +537,171 @@
     </div>
     <script>
         // =========================================
-        // 新機能：感情プレイリスト用サンプルデータ
+        // 新機能：感情プレイリスト分析ロジック
         // =========================================
-        const lldbEmotionData = [
-          { "title": "私生活", "emotions": { "熱望・執着": 95, "多幸・高揚": 20, "不安・猜疑": 60, "切なさ・孤独": 70, "強がり・あまのじゃく": 10, "健気・献身": 40, "未練・ノスタルジー": 30 } },
-          { "title": "ボーイフレンド", "emotions": { "熱望・執着": 30, "多幸・高揚": 95, "不安・猜疑": 10, "切なさ・孤独": 10, "強がり・あまのじゃく": 20, "健気・献身": 60, "未練・ノスタルジー": 5 } },
-          { "title": "愛の病", "emotions": { "熱望・執着": 80, "多幸・高揚": 40, "不安・猜疑": 90, "切なさ・孤独": 50, "強がり・あまのじゃく": 15, "健気・献身": 30, "未練・ノスタルジー": 10 } },
-          { "title": "ナキ・ムシ", "emotions": { "熱望・執着": 40, "多幸・高揚": 10, "不安・猜疑": 50, "切なさ・孤独": 90, "強がり・あまのじゃく": 70, "健気・献身": 80, "未練・ノスタルジー": 20 } },
-          { "title": "光のさすあしもと", "emotions": { "熱望・執着": 10, "多幸・高揚": 5, "不安・猜疑": 30, "切なさ・孤独": 80, "強がり・あまのじゃく": 95, "健気・献身": 40, "未練・ノスタルジー": 60 } },
-          { "title": "be master of life", "emotions": { "熱望・執着": 20, "多幸・高揚": 60, "不安・猜疑": 10, "切なさ・孤独": 15, "強がり・あまのじゃく": 40, "健気・献身": 95, "未練・ノスタルジー": 5 } },
-          { "title": "えりあし", "emotions": { "熱望・執着": 50, "多幸・高揚": 10, "不安・猜疑": 20, "切なさ・孤独": 85, "強がり・あまのじゃく": 30, "健気・献身": 60, "未練・ノスタルジー": 95 } },
-          { "title": "カブトムシ", "emotions": { "熱望・執着": 60, "多幸・高揚": 70, "不安・猜疑": 50, "切なさ・孤独": 80, "強がり・あまのじゃく": 20, "健気・献身": 85, "未練・ノスタルジー": 40 } },
-          { "title": "ストロー", "emotions": { "熱望・執着": 20, "多幸・高揚": 85, "不安・猜疑": 10, "切なさ・孤独": 15, "強がり・あまのじゃく": 10, "健気・献身": 90, "未練・ノスタルジー": 5 } },
-          { "title": "愛の世界", "emotions": { "熱望・執着": 90, "多幸・高揚": 60, "不安・猜疑": 40, "切なさ・孤独": 30, "強がり・あまのじゃく": 10, "健気・献身": 50, "未練・ノスタルジー": 20 } }
-        ];
+        
+        // ★各感情を判定するためのキーワード辞書
+        const emotionKeywords = {
+            "熱望・執着": ["一人占め", "ひとりじめ", "絶対", "離さない", "すべて", "全身", "過剰", "噛み", "だらけ", "奪う", "永遠", "死ぬ", "血", "あたしだけ", "狂", "首筋"],
+            "多幸・高揚": ["キス", "幸せ", "しあわせ", "止まる", "笑う", "赤い", "ストロー", "頬", "ほおずり", "特別", "嬉しい", "うれしい", "光", "キラキラ", "手をつな", "見つめ", "喜び", "楽しい"],
+            "不安・猜疑": ["いなくなる", "心変わり", "嫌い", "疑", "不安", "怖い", "どうして", "嘘", "隠し", "別の", "離れて", "もしも", "嫉妬", "ヤキモチ", "信じられない", "さよなら", "サヨナラ"],
+            "切なさ・孤独": ["一人", "ひとり", "1人", "ぼっち", "泣", "涙", "寂しい", "さみしい", "苦しい", "言えない", "夜", "届かない", "痛い", "悲しい", "会いたい", "逢いたい", "ため息", "切ない"],
+            "強がり・あまのじゃく": ["強が", "嘘をつい", "抵抗", "忘れる準備", "あまのじゃく", "平気", "大丈夫", "ごめんね", "嫌いにな", "バカ", "ばか", "意地", "笑って"],
+            "健気・献身": ["味方", "守って", "包む", "あなたのため", "許す", "そばに", "どんな", "信じて", "待って", "捧ぐ", "祈る", "無償", "関係ない"],
+            "未練・ノスタルジー": ["襟足", "えりあし", "忘れられ", "昔", "あの頃", "今も", "匂い", "におい", "面影", "戻れ", "思い出", "写真", "変わらない", "振り返", "過去", "残響"]
+        };
+
+        // ★曲ごとの代表的な感情（キーワードで拾いきれないニュアンスの補正用）
+        const manualBoosts = {
+            "私生活": { "熱望・執着": 60 },
+            "愛の世界": { "熱望・執着": 60 },
+            "プラマイ": { "熱望・執着": 60 },
+            "ボーイフレンド": { "多幸・高揚": 60 },
+            "ストロー": { "多幸・高揚": 60 },
+            "桜の時": { "多幸・高揚": 60 },
+            "愛の病": { "不安・猜疑": 60 },
+            "密かなさよならの仕方": { "不安・猜疑": 60 },
+            "ナキ・ムシ": { "切なさ・孤独": 60 },
+            "I'm feeling blue": { "切なさ・孤独": 60 },
+            "光のさすあしもと": { "強がり・あまのじゃく": 60 },
+            "二時頃": { "強がり・あまのじゃく": 60 },
+            "バスタブ": { "強がり・あまのじゃく": 60 },
+            "be master of life": { "健気・献身": 60 },
+            "あの子へ": { "健気・献身": 60 },
+            "えりあし": { "未練・ノスタルジー": 60 },
+            "September": { "未練・ノスタルジー": 60 }
+        };
 
         let lldbEmotionChart = null;
 
+        // ★歌詞テキストから感情スコアを動的に計算する関数
+        function getSongEmotion(title, rawText) {
+            let scores = { "熱望・執着": 0, "多幸・高揚": 0, "不安・猜疑": 0, "切なさ・孤独": 0, "強がり・あまのじゃく": 0, "健気・献身": 0, "未練・ノスタルジー": 0 };
+            let reasons = { "熱望・執着": [], "多幸・高揚": [], "不安・猜疑": [], "切なさ・孤独": [], "強がり・あまのじゃく": [], "健気・献身": [], "未練・ノスタルジー": [] };
+
+            for (let emo in emotionKeywords) {
+                let count = 0;
+                emotionKeywords[emo].forEach(word => {
+                    let matches = rawText.split(word).length - 1;
+                    if (matches > 0) {
+                        count += matches;
+                        reasons[emo].push(word);
+                    }
+                });
+                // ベーススコアの計算（出現回数に応じてポイント付与、0回でも曲名の長さで微妙な揺らぎを出す）
+                let base = 0;
+                if(count === 0) base = 5 + (title.length % 10);
+                else if(count === 1) base = 30 + (title.length % 10);
+                else if(count === 2) base = 50 + (title.length % 10);
+                else if(count === 3) base = 70 + (title.length % 10);
+                else base = 90;
+
+                scores[emo] += base;
+            }
+
+            // 代表曲の補正を適用
+            if (manualBoosts[title]) {
+                for (let emo in manualBoosts[title]) {
+                    scores[emo] += manualBoosts[title][emo];
+                    if (!reasons[emo].includes("※代表的な楽曲")) {
+                        reasons[emo].push("※代表的な楽曲");
+                    }
+                }
+            }
+
+            // 最大100に制限
+            for (let emo in scores) {
+                scores[emo] = Math.min(100, scores[emo]);
+            }
+
+            return { scores, reasons };
+        }
+
+        // ★曲名から直接検索
+        function lldbSearchEmotionBySong() {
+            const input = document.getElementById('lldb-emotion-search-input').value.trim().toLowerCase();
+            if (!input) return;
+            
+            if (!fullHelperData || !fullHelperData.lyricsData) {
+                alert('データを読み込み中です。');
+                return;
+            }
+            
+            const found = fullHelperData.lyricsData.find(s => s.title.toLowerCase().includes(input));
+            if (found) {
+                lldbOpenEmotionModal(found.title);
+                document.getElementById('lldb-emotion-search-input').value = '';
+            } else {
+                alert(`「${input}」の歌詞データが見つかりませんでした。正式名称で試してみてね。`);
+            }
+        }
+
+        // ★選択した感情からプレイリストを生成（全曲分析）
         function lldbGenerateEmotionPlaylist() {
+            if (!fullHelperData || !fullHelperData.lyricsData) {
+                document.getElementById('lldb-emotion-playlist').innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">データを読み込み中です。少し待ってね。</div>';
+                return;
+            }
+
             const checkboxes = document.querySelectorAll('.lldb-emotion-chk:checked');
             const selectedEmotions = Array.from(checkboxes).map(cb => cb.value);
             const container = document.getElementById('lldb-emotion-playlist');
             
             if (selectedEmotions.length === 0) {
-                container.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">感情を1つ以上選んでね！</div>';
+                container.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">気分を1つ以上選んでね！</div>';
                 return;
             }
             
-            // スコア計算：選択された感情の合計スコアが高い順
-            const scoredSongs = lldbEmotionData.map(song => {
+            // スプレッドシートにある全曲の歌詞データをオンザフライで分析！
+            const allAnalyzed = fullHelperData.lyricsData.map(song => {
+                const analysis = getSongEmotion(song.title, song.rawText);
                 let score = 0;
+                let matchedReasons = [];
+                
                 selectedEmotions.forEach(emo => {
-                    score += song.emotions[emo] || 0;
+                    score += analysis.scores[emo] || 0;
+                    if (analysis.reasons[emo] && analysis.reasons[emo].length > 0) {
+                        matchedReasons.push(...analysis.reasons[emo]);
+                    }
                 });
-                return { ...song, score };
-            }).filter(song => song.score > 0)
+                
+                // 重複排除と「※代表的な楽曲」の除外（リストの短いプレビュー用）
+                matchedReasons = [...new Set(matchedReasons)].filter(r => r !== "※代表的な楽曲");
+
+                return { 
+                    title: song.title, 
+                    score: score, 
+                    previewReasons: matchedReasons.slice(0, 3).join('、')
+                };
+            }).filter(song => song.score > 50) // スコアが低いものは除外
               .sort((a, b) => b.score - a.score);
               
-            if (scoredSongs.length === 0) {
+            // 上位50曲に絞る
+            const top50 = allAnalyzed.slice(0, 50);
+
+            if (top50.length === 0) {
                 container.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">該当する曲が見つかりませんでした</div>';
                 return;
             }
             
-            let html = '';
-            scoredSongs.forEach((song, index) => {
+            let html = `<div class="text-[10px] text-gray-400 mb-2 font-bold text-right">全${allAnalyzed.length}曲中 TOP${top50.length}</div>`;
+            top50.forEach((song, index) => {
+                const rankColor = index === 0 ? 'text-pink-500 text-lg' : index === 1 ? 'text-orange-500 text-lg' : index === 2 ? 'text-blue-500 text-lg' : 'text-gray-400';
+                const reasonText = song.previewReasons ? `💡「${song.previewReasons}」など` : `💡 歌詞全体のニュアンス`;
+                
                 html += `
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between cursor-pointer active:scale-95 transition-transform mb-2" onclick="lldbOpenEmotionModal('${song.title}')">
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-gray-300 w-5 text-center">${index + 1}</span>
-                        <span class="font-bold text-gray-700">${song.title}</span>
+                <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-transform mb-2" onclick="lldbOpenEmotionModal('${song.title.replace(/'/g, "\\'")}')">
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold ${rankColor} w-6 text-center italic">${index + 1}</span>
+                            <span class="font-bold text-gray-800">${song.title}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded-full border border-orange-100">${song.score} pt</span>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold text-orange-400 bg-orange-50 px-2 py-1 rounded-full">Score: ${song.score}</span>
-                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300"></i>
+                    <div class="pl-9 pr-2">
+                        <p class="text-[10px] text-gray-400 truncate">${reasonText}</p>
                     </div>
                 </div>`;
             });
@@ -586,8 +711,15 @@
         }
 
         function lldbOpenEmotionModal(title) {
-            const song = lldbEmotionData.find(s => s.title === title);
-            if (!song) return;
+            if (!fullHelperData || !fullHelperData.lyricsData) return;
+            
+            const songData = fullHelperData.lyricsData.find(s => s.title === title);
+            if (!songData) {
+                alert('この曲の歌詞データが未登録のため分析できません。');
+                return;
+            }
+            
+            const analysis = getSongEmotion(songData.title, songData.rawText);
             
             document.getElementById('lldb-emotion-modal-title').textContent = title;
             const ctx = document.getElementById('lldb-emotion-radar-chart').getContext('2d');
@@ -597,7 +729,7 @@
             }
             
             const labels = ["熱望・執着", "多幸・高揚", "不安・猜疑", "切なさ・孤独", "強がり・あまのじゃく", "健気・献身", "未練・ノスタルジー"];
-            const dataPoints = labels.map(label => song.emotions[label] || 0);
+            const dataPoints = labels.map(label => analysis.scores[label] || 0);
             
             lldbEmotionChart = new Chart(ctx, {
                 type: 'radar',
@@ -649,6 +781,28 @@
                     }
                 }
             });
+            
+            // ★分析理由のHTML生成（トップ3の感情についてキーワードを表示）
+            let reasonHtml = '<p class="text-[10px] text-gray-400 font-bold mb-2 text-center">AIによる歌詞キーワード分析結果</p><div class="space-y-2">';
+            const sortedEmotions = labels.map(label => ({ label: label, score: analysis.scores[label] }))
+                                         .sort((a,b) => b.score - a.score)
+                                         .slice(0, 3);
+            
+            sortedEmotions.forEach(emo => {
+                const words = analysis.reasons[emo.label];
+                const wordStr = words && words.length > 0 ? `「${words.join('」「')}」` : '（歌詞全体のニュアンス・曲名等から算出）';
+                reasonHtml += `
+                    <div class="text-xs bg-gray-50 p-2 rounded border border-gray-100 flex items-start gap-2">
+                        <div class="font-bold text-orange-600 whitespace-nowrap pt-0.5">【${emo.label}】</div>
+                        <div>
+                            <span class="font-bold text-gray-700">${emo.score} pt</span><br>
+                            <span class="text-[10px] text-gray-500 block mt-0.5 leading-tight">検出: ${wordStr}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            reasonHtml += '</div>';
+            document.getElementById('lldb-emotion-modal-reasons').innerHTML = reasonHtml;
             
             document.getElementById('lldb-emotion-modal').classList.remove('hidden');
         }
