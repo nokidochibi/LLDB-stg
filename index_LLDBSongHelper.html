@@ -21,7 +21,6 @@
     <title>LLDB Song Helper</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* =========================================
@@ -187,6 +186,7 @@
             </div>
         </div>
     </main>
+
     <main id="chat-container-title" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-48 hidden"> 
         <div class="flex items-start space-x-2">
             <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()" alt="icon">
@@ -197,79 +197,20 @@
             </div>
         </div>
     </main>
-    
-    <!-- ★新機能：感情プレイリストビュー -->
-    <main id="container-emotion" class="flex-1 overflow-hidden relative hidden bg-white flex-col">
-        <div class="p-4 bg-orange-50 border-b border-orange-100 shrink-0 shadow-sm z-10">
-            <!-- ★追加: 曲名から直接検索できるバー -->
-            <div class="mb-4">
-                <div class="relative flex items-center bg-white border border-orange-200 rounded-xl px-3 py-2 shadow-sm focus-within:border-orange-500 transition-colors">
-                    <i data-lucide="search" class="w-4 h-4 text-orange-400 mr-2"></i>
-                    <input type="text" id="lldb-emotion-search-input" placeholder="曲名で直接感情を分析..." class="flex-1 bg-transparent border-none outline-none text-sm text-gray-700 placeholder-gray-400" onkeydown="if(event.key==='Enter') lldbSearchEmotionBySong()">
-                    <button onclick="lldbSearchEmotionBySong()" class="ml-2 text-xs font-bold text-orange-500 hover:text-orange-600 bg-orange-50 px-2 py-1 rounded">分析</button>
-                </div>
-            </div>
 
-            <h2 class="font-bold text-orange-800 mb-2 flex items-center gap-2">
-                <i data-lucide="sparkles" class="w-5 h-5 text-orange-500"></i> 今の気分は？
-            </h2>
-            <div class="flex flex-wrap gap-2 mb-4" id="lldb-emotion-checkboxes">
-                <div>
-                    <input type="checkbox" id="chk-etsubou" value="熱望・執着" class="peer hidden lldb-emotion-chk">
-                    <label for="chk-etsubou" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        熱望・執着
-                    </label>
-                </div>
-                <div>
-                    <input type="checkbox" id="chk-takou" value="多幸・高揚" class="peer hidden lldb-emotion-chk">
-                    <label for="chk-takou" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        多幸・高揚
-                    </label>
-                </div>
-                <div>
-                    <input type="checkbox" id="chk-fuan" value="不安・猜疑" class="peer hidden lldb-emotion-chk">
-                    <label for="chk-fuan" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        不安・猜疑
-                    </label>
-                </div>
-                <div>
-                    <input type="checkbox" id="chk-setsunasa" value="切なさ・孤独" class="peer hidden lldb-emotion-chk">
-                    <label for="chk-setsunasa" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        切なさ・孤独
-                    </label>
-                </div>
-                <div>
-                    <input type="checkbox" id="chk-tsuyogari" value="強がり・あまのじゃく" class="peer hidden lldb-emotion-chk">
-                    <label for="chk-tsuyogari" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        強がり・あまのじゃく
-                    </label>
-                </div>
-                <div>
-                    <input type="checkbox" id="chk-kenage" value="健気・献身" class="peer hidden lldb-emotion-chk">
-                    <label for="chk-kenage" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        健気・献身
-                    </label>
-                </div>
-                <div>
-                    <input type="checkbox" id="chk-miren" value="未練・ノスタルジー" class="peer hidden lldb-emotion-chk">
-                    <label for="chk-miren" class="inline-flex items-center bg-white border border-orange-200 px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 cursor-pointer select-none peer-checked:bg-orange-500 peer-checked:text-white peer-checked:border-orange-500 transition-colors shadow-sm">
-                        未練・ノスタルジー
-                    </label>
-                </div>
-            </div>
-            <button onclick="lldbGenerateEmotionPlaylist()" class="w-full bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md hover:bg-orange-600 active:scale-95 transition-transform flex items-center justify-center gap-2">
-                <i data-lucide="list-music" class="w-5 h-5"></i> プレイリストを作る
-            </button>
-        </div>
-        <div class="flex-1 overflow-y-auto p-4 bg-gray-50 no-scrollbar pb-32">
-            <div id="lldb-emotion-playlist" class="space-y-2">
-                <div class="text-center py-10 text-gray-400 text-xs">
-                    気分を選んでプレイリストを作ろう🎧<br>※全曲の歌詞データから分析します
-                </div>
+    <main id="chat-container-ai" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-48 hidden"> 
+        <div class="flex items-start space-x-2">
+            <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()" alt="icon">
+            <div class="bubble bubble-left bg-white p-3 shadow-sm max-w-[80%]">
+                <p class="text-sm leading-relaxed">
+                    「好きな人から連絡が来て嬉しい時の気持ちにぴったりのaikoの曲は？」<br>
+                    「aikoの曲の中で動物が出てくる曲は？」<br><br>
+                    など、aikoの歌詞に関してなんでも質問してね！
+                </p>
             </div>
         </div>
     </main>
-    
+
     <main id="container-list" class="flex-1 overflow-hidden relative hidden bg-white">
         <div id="filter-bar" class="hidden px-4 py-2 bg-orange-50 border-b border-orange-100 flex items-center justify-between text-xs text-orange-700">
             <span id="active-filter-count">フィルタ適用中</span>
@@ -304,6 +245,7 @@
             </div>
         </div>
     </main>
+
     <!-- 開発者用ビュー -->
     <main id="container-dev" class="flex-1 overflow-hidden relative hidden bg-white">
         <!-- パスコード画面 -->
@@ -318,6 +260,7 @@
                 <p id="dev-passcode-error" class="text-xs text-red-500 mt-3 hidden">パスコードが違います</p>
             </div>
         </div>
+
         <!-- インデックス（デンモク）画面 -->
         <div id="dev-view-index" class="absolute inset-0 bg-white z-20 flex flex-col transition-transform duration-300 translate-x-full">
             <div class="bg-gray-800 text-white p-4 flex items-center justify-center shadow-md relative z-10 shrink-0">
@@ -329,6 +272,7 @@
                 </div>
             </div>
         </div>
+
         <!-- 曲リスト画面 -->
         <div id="dev-view-songlist" class="absolute inset-0 bg-gray-50 z-30 flex flex-col transition-transform duration-300 translate-x-full">
             <div class="bg-gray-800 text-white p-4 flex items-center justify-between shadow-md relative z-10 shrink-0">
@@ -342,6 +286,7 @@
                 <!-- JSで動的生成 -->
             </div>
         </div>
+
         <!-- 歌詞画面 -->
         <div id="dev-view-lyrics" class="absolute inset-0 bg-white z-40 flex flex-col transition-transform duration-300 translate-x-full">
             <div class="bg-gray-800 text-white p-4 flex items-center justify-between shadow-md relative z-10 shrink-0">
@@ -356,6 +301,7 @@
             </div>
         </div>
     </main>
+
     <main id="chat-container-shiritori" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-48 hidden"> 
         <div class="flex items-start space-x-2">
             <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()" alt="icon">
@@ -364,6 +310,7 @@
             </div>
         </div>
     </main>
+
     <footer>
         <form id="search-form">
             <div class="flex items-center gap-2 w-full">
@@ -393,25 +340,23 @@
                 <span class="text-[10px] font-bold">楽曲</span>
             </button>
             <div class="w-[1px] bg-gray-50 my-3"></div>
+            <button id="tab-ai" data-tab="ai" onclick="switchTab('ai')" class="tab-btn">
+                <i data-lucide="sparkles" class="w-6 h-6"></i>
+                <span class="text-[10px] font-bold">AI相談</span>
+            </button>
+            <div class="w-[1px] bg-gray-50 my-3"></div>
             <button id="tab-list" data-tab="list" onclick="switchTab('list')" class="tab-btn">
                 <i data-lucide="list-music" class="w-6 h-6"></i>
                 <span class="text-[10px] font-bold">一覧</span>
             </button>
             <div class="w-[1px] bg-gray-50 my-3"></div>
-            
-            <!-- ★感情タブの追加 -->
-            <button id="tab-emotion" data-tab="emotion" onclick="switchTab('emotion')" class="tab-btn">
-                <i data-lucide="heart" class="w-6 h-6"></i>
-                <span class="text-[10px] font-bold">感情</span>
-            </button>
-            <div class="w-[1px] bg-gray-50 my-3"></div>
-            
             <button id="tab-dev" data-tab="dev" onclick="switchTab('dev')" class="tab-btn">
                 <i data-lucide="terminal" class="w-6 h-6"></i>
                 <span class="text-[10px] font-bold">開発者用</span>
             </button>
         </div>
     </footer>
+
     <div id="filter-modal" class="fixed inset-0 z-50 hidden">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeFilterModal()"></div>
         <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] flex flex-col shadow-xl transform transition-transform duration-300 translate-y-full" id="filter-modal-content">
@@ -451,6 +396,7 @@
             </div>
         </div>
     </div>
+
     <div id="readme-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="toggleModal(false)"></div>
         <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white w-[90%] max-w-sm rounded-2xl shadow-xl p-6 transition-all scale-100">
@@ -489,6 +435,7 @@
             </div>
         </div>
     </div>
+
     <div id="confirm-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="closeConfirmModal()"></div>
         <div class="bg-white rounded-2xl shadow-xl p-6 w-[85%] max-w-sm relative transform transition-all scale-100 animate-fade-in">
@@ -507,313 +454,12 @@
             </div>
         </div>
     </div>
-    
-    <!-- ★新機能：レーダーチャート表示用モーダル -->
-    <div id="lldb-emotion-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onclick="lldbCloseEmotionModal()"></div>
-        <div class="bg-white rounded-2xl shadow-xl p-6 w-[90%] max-w-md relative z-10 transform transition-all scale-100 animate-fade-in max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-start mb-2">
-                <h3 id="lldb-emotion-modal-title" class="font-bold text-gray-800 text-lg"></h3>
-                <button onclick="lldbCloseEmotionModal()" class="text-gray-400 hover:text-gray-600 p-1 bg-gray-50 rounded-full">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <p class="text-[10px] text-gray-400 font-bold mb-2 text-center">感情パラメータ</p>
-            <div class="w-full aspect-square relative flex justify-center items-center max-h-[350px]">
-                <canvas id="lldb-emotion-radar-chart"></canvas>
-            </div>
-            <!-- ★追加: 分析理由表示エリア -->
-            <div id="lldb-emotion-modal-reasons" class="mt-4 pt-4 border-t border-gray-100">
-                <!-- JSで動的生成 -->
-            </div>
-            <div class="mt-4 pt-4 border-t border-gray-100">
-                <button onclick="lldbCloseEmotionModal()" class="w-full py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm active:scale-95 transition-transform">閉じる</button>
-            </div>
-        </div>
-    </div>
 
     <div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 bg-gray-800/80 backdrop-blur text-white text-xs py-2 px-4 rounded-full opacity-0 transition-opacity duration-300 pointer-events-none z-50 shadow-lg">
         コピーしました！
     </div>
+
     <script>
-        // =========================================
-        // 新機能：感情プレイリスト分析ロジック
-        // =========================================
-        
-        // ★各感情を判定するためのキーワード辞書
-        const emotionKeywords = {
-            "熱望・執着": ["一人占め", "ひとりじめ", "絶対", "離さない", "すべて", "全身", "過剰", "噛み", "だらけ", "奪う", "永遠", "死ぬ", "血", "あたしだけ", "狂", "首筋"],
-            "多幸・高揚": ["キス", "幸せ", "しあわせ", "止まる", "笑う", "赤い", "ストロー", "頬", "ほおずり", "特別", "嬉しい", "うれしい", "光", "キラキラ", "手をつな", "見つめ", "喜び", "楽しい"],
-            "不安・猜疑": ["いなくなる", "心変わり", "嫌い", "疑", "不安", "怖い", "どうして", "嘘", "隠し", "別の", "離れて", "もしも", "嫉妬", "ヤキモチ", "信じられない", "さよなら", "サヨナラ"],
-            "切なさ・孤独": ["一人", "ひとり", "1人", "ぼっち", "泣", "涙", "寂しい", "さみしい", "苦しい", "言えない", "夜", "届かない", "痛い", "悲しい", "会いたい", "逢いたい", "ため息", "切ない"],
-            "強がり・あまのじゃく": ["強が", "嘘をつい", "抵抗", "忘れる準備", "あまのじゃく", "平気", "大丈夫", "ごめんね", "嫌いにな", "バカ", "ばか", "意地", "笑って"],
-            "健気・献身": ["味方", "守って", "包む", "あなたのため", "許す", "そばに", "どんな", "信じて", "待って", "捧ぐ", "祈る", "無償", "関係ない"],
-            "未練・ノスタルジー": ["襟足", "えりあし", "忘れられ", "昔", "あの頃", "今も", "匂い", "におい", "面影", "戻れ", "思い出", "写真", "変わらない", "振り返", "過去", "残響"]
-        };
-
-        // ★曲ごとの代表的な感情（キーワードで拾いきれないニュアンスの補正用）
-        const manualBoosts = {
-            "私生活": { "熱望・執着": 60 },
-            "愛の世界": { "熱望・執着": 60 },
-            "プラマイ": { "熱望・執着": 60 },
-            "ボーイフレンド": { "多幸・高揚": 60 },
-            "ストロー": { "多幸・高揚": 60 },
-            "桜の時": { "多幸・高揚": 60 },
-            "愛の病": { "不安・猜疑": 60 },
-            "密かなさよならの仕方": { "不安・猜疑": 60 },
-            "ナキ・ムシ": { "切なさ・孤独": 60 },
-            "I'm feeling blue": { "切なさ・孤独": 60 },
-            "光のさすあしもと": { "強がり・あまのじゃく": 60 },
-            "二時頃": { "強がり・あまのじゃく": 60 },
-            "バスタブ": { "強がり・あまのじゃく": 60 },
-            "be master of life": { "健気・献身": 60 },
-            "あの子へ": { "健気・献身": 60 },
-            "えりあし": { "未練・ノスタルジー": 60 },
-            "September": { "未練・ノスタルジー": 60 }
-        };
-
-        let lldbEmotionChart = null;
-
-        // ★歌詞テキストから感情スコアを動的に計算する関数
-        function getSongEmotion(title, rawText) {
-            let scores = { "熱望・執着": 0, "多幸・高揚": 0, "不安・猜疑": 0, "切なさ・孤独": 0, "強がり・あまのじゃく": 0, "健気・献身": 0, "未練・ノスタルジー": 0 };
-            let reasons = { "熱望・執着": [], "多幸・高揚": [], "不安・猜疑": [], "切なさ・孤独": [], "強がり・あまのじゃく": [], "健気・献身": [], "未練・ノスタルジー": [] };
-
-            for (let emo in emotionKeywords) {
-                let count = 0;
-                emotionKeywords[emo].forEach(word => {
-                    let matches = rawText.split(word).length - 1;
-                    if (matches > 0) {
-                        count += matches;
-                        reasons[emo].push(word);
-                    }
-                });
-                // ベーススコアの計算（出現回数に応じてポイント付与、0回でも曲名の長さで微妙な揺らぎを出す）
-                let base = 0;
-                if(count === 0) base = 5 + (title.length % 10);
-                else if(count === 1) base = 30 + (title.length % 10);
-                else if(count === 2) base = 50 + (title.length % 10);
-                else if(count === 3) base = 70 + (title.length % 10);
-                else base = 90;
-
-                scores[emo] += base;
-            }
-
-            // 代表曲の補正を適用
-            if (manualBoosts[title]) {
-                for (let emo in manualBoosts[title]) {
-                    scores[emo] += manualBoosts[title][emo];
-                    if (!reasons[emo].includes("※代表的な楽曲")) {
-                        reasons[emo].push("※代表的な楽曲");
-                    }
-                }
-            }
-
-            // 最大100に制限
-            for (let emo in scores) {
-                scores[emo] = Math.min(100, scores[emo]);
-            }
-
-            return { scores, reasons };
-        }
-
-        // ★曲名から直接検索
-        function lldbSearchEmotionBySong() {
-            const input = document.getElementById('lldb-emotion-search-input').value.trim().toLowerCase();
-            if (!input) return;
-            
-            if (!fullHelperData || !fullHelperData.lyricsData) {
-                alert('データを読み込み中です。');
-                return;
-            }
-            
-            const found = fullHelperData.lyricsData.find(s => s.title.toLowerCase().includes(input));
-            if (found) {
-                lldbOpenEmotionModal(found.title);
-                document.getElementById('lldb-emotion-search-input').value = '';
-            } else {
-                alert(`「${input}」の歌詞データが見つかりませんでした。正式名称で試してみてね。`);
-            }
-        }
-
-        // ★選択した感情からプレイリストを生成（全曲分析）
-        function lldbGenerateEmotionPlaylist() {
-            if (!fullHelperData || !fullHelperData.lyricsData) {
-                document.getElementById('lldb-emotion-playlist').innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">データを読み込み中です。少し待ってね。</div>';
-                return;
-            }
-
-            const checkboxes = document.querySelectorAll('.lldb-emotion-chk:checked');
-            const selectedEmotions = Array.from(checkboxes).map(cb => cb.value);
-            const container = document.getElementById('lldb-emotion-playlist');
-            
-            if (selectedEmotions.length === 0) {
-                container.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">気分を1つ以上選んでね！</div>';
-                return;
-            }
-            
-            // スプレッドシートにある全曲の歌詞データをオンザフライで分析！
-            const allAnalyzed = fullHelperData.lyricsData.map(song => {
-                const analysis = getSongEmotion(song.title, song.rawText);
-                let score = 0;
-                let matchedReasons = [];
-                
-                selectedEmotions.forEach(emo => {
-                    score += analysis.scores[emo] || 0;
-                    if (analysis.reasons[emo] && analysis.reasons[emo].length > 0) {
-                        matchedReasons.push(...analysis.reasons[emo]);
-                    }
-                });
-                
-                // 重複排除と「※代表的な楽曲」の除外（リストの短いプレビュー用）
-                matchedReasons = [...new Set(matchedReasons)].filter(r => r !== "※代表的な楽曲");
-
-                return { 
-                    title: song.title, 
-                    score: score, 
-                    previewReasons: matchedReasons.slice(0, 3).join('、')
-                };
-            }).filter(song => song.score > 50) // スコアが低いものは除外
-              .sort((a, b) => b.score - a.score);
-              
-            // 上位50曲に絞る
-            const top50 = allAnalyzed.slice(0, 50);
-
-            if (top50.length === 0) {
-                container.innerHTML = '<div class="text-center py-10 text-gray-400 text-xs">該当する曲が見つかりませんでした</div>';
-                return;
-            }
-            
-            let html = `<div class="text-[10px] text-gray-400 mb-2 font-bold text-right">全${allAnalyzed.length}曲中 TOP${top50.length}</div>`;
-            top50.forEach((song, index) => {
-                const rankColor = index === 0 ? 'text-pink-500 text-lg' : index === 1 ? 'text-orange-500 text-lg' : index === 2 ? 'text-blue-500 text-lg' : 'text-gray-400';
-                const reasonText = song.previewReasons ? `💡「${song.previewReasons}」など` : `💡 歌詞全体のニュアンス`;
-                
-                html += `
-                <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 cursor-pointer active:scale-95 transition-transform mb-2" onclick="lldbOpenEmotionModal('${song.title.replace(/'/g, "\\'")}')">
-                    <div class="flex items-center justify-between mb-1">
-                        <div class="flex items-center gap-3">
-                            <span class="font-bold ${rankColor} w-6 text-center italic">${index + 1}</span>
-                            <span class="font-bold text-gray-800">${song.title}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-1 rounded-full border border-orange-100">${song.score} pt</span>
-                        </div>
-                    </div>
-                    <div class="pl-9 pr-2">
-                        <p class="text-[10px] text-gray-400 truncate">${reasonText}</p>
-                    </div>
-                </div>`;
-            });
-            
-            container.innerHTML = html;
-            lucide.createIcons();
-        }
-
-        function lldbOpenEmotionModal(title) {
-            if (!fullHelperData || !fullHelperData.lyricsData) return;
-            
-            const songData = fullHelperData.lyricsData.find(s => s.title === title);
-            if (!songData) {
-                alert('この曲の歌詞データが未登録のため分析できません。');
-                return;
-            }
-            
-            const analysis = getSongEmotion(songData.title, songData.rawText);
-            
-            document.getElementById('lldb-emotion-modal-title').textContent = title;
-            const ctx = document.getElementById('lldb-emotion-radar-chart').getContext('2d');
-            
-            if (lldbEmotionChart) {
-                lldbEmotionChart.destroy();
-            }
-            
-            const labels = ["熱望・執着", "多幸・高揚", "不安・猜疑", "切なさ・孤独", "強がり・あまのじゃく", "健気・献身", "未練・ノスタルジー"];
-            const dataPoints = labels.map(label => analysis.scores[label] || 0);
-            
-            lldbEmotionChart = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: '感情バランス',
-                        data: dataPoints,
-                        backgroundColor: 'rgba(249, 115, 22, 0.2)',
-                        borderColor: 'rgba(249, 115, 22, 1)',
-                        pointBackgroundColor: 'rgba(249, 115, 22, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(249, 115, 22, 1)',
-                        borderWidth: 2,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            angleLines: { color: 'rgba(0,0,0,0.05)' },
-                            grid: { color: 'rgba(0,0,0,0.05)' },
-                            pointLabels: {
-                                font: { family: "'Noto Sans JP', sans-serif", size: 9, weight: 'bold' },
-                                color: '#64748b'
-                            },
-                            ticks: {
-                                display: false,
-                                min: 0,
-                                max: 100,
-                                stepSize: 20
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: 'rgba(0,0,0,0.8)',
-                            titleFont: { family: "'Noto Sans JP', sans-serif", size: 12 },
-                            bodyFont: { family: "'Noto Sans JP', sans-serif", size: 12 },
-                            callbacks: {
-                                label: function(context) {
-                                    return context.raw + ' pt';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // ★分析理由のHTML生成（トップ3の感情についてキーワードを表示）
-            let reasonHtml = '<p class="text-[10px] text-gray-400 font-bold mb-2 text-center">AIによる歌詞キーワード分析結果</p><div class="space-y-2">';
-            const sortedEmotions = labels.map(label => ({ label: label, score: analysis.scores[label] }))
-                                         .sort((a,b) => b.score - a.score)
-                                         .slice(0, 3);
-            
-            sortedEmotions.forEach(emo => {
-                const words = analysis.reasons[emo.label];
-                const wordStr = words && words.length > 0 ? `「${words.join('」「')}」` : '（歌詞全体のニュアンス・曲名等から算出）';
-                reasonHtml += `
-                    <div class="text-xs bg-gray-50 p-2 rounded border border-gray-100 flex items-start gap-2">
-                        <div class="font-bold text-orange-600 whitespace-nowrap pt-0.5">【${emo.label}】</div>
-                        <div>
-                            <span class="font-bold text-gray-700">${emo.score} pt</span><br>
-                            <span class="text-[10px] text-gray-500 block mt-0.5 leading-tight">検出: ${wordStr}</span>
-                        </div>
-                    </div>
-                `;
-            });
-            reasonHtml += '</div>';
-            document.getElementById('lldb-emotion-modal-reasons').innerHTML = reasonHtml;
-            
-            document.getElementById('lldb-emotion-modal').classList.remove('hidden');
-        }
-
-        function lldbCloseEmotionModal() {
-            document.getElementById('lldb-emotion-modal').classList.add('hidden');
-        }
-        
-        // =========================================
-        // 既存ロジック
-        // =========================================
         const APP_VERSION = 'v3.0.0';
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec"; 
         const ICON_URL = `https://unavatar.io/twitter/noki_dochibi?v=${APP_VERSION}`;
@@ -829,26 +475,31 @@
         let currentSort = { column: null, order: 'asc' };
         let targetSongForSearch = '';
         let isLoadingList = false;
+
         // 開発者モード State
         let isDevUnlocked = false;
         let devCurrentView = 'passcode';
+
         // 💡 爆速検索用データ
         let fullHelperData = null;
+
         const LOADING_MESSAGES = {
             lyrics: ["aikoからのtelepathyを受信中...", "そんなことよりパーティ抜け出さない？"],
             title: ["おっ！その曲なら確かね...", "俺もそれ好きだよ！待ってて..."],
+            ai: ["aikoソムリエが回答を考え中...", "歌詞の記憶をたどっています..."],
             shiritori: ["俺に勝負を仕掛けるとはいい度胸だ。", "なるほど、そう来たか..."],
             list: ["データを読み込んでいます..."]
         };
+
         const dom = {
             body: document.getElementById('app-body'),
             containers: {
                 lyrics: document.getElementById('chat-container-lyrics'),
                 title: document.getElementById('chat-container-title'),
+                ai: document.getElementById('chat-container-ai'),
                 dev: document.getElementById('container-dev'),
                 shiritori: document.getElementById('chat-container-shiritori'),
-                list: document.getElementById('container-list'),
-                emotion: document.getElementById('container-emotion') // ★追加
+                list: document.getElementById('container-list')
             },
             searchForm: document.getElementById('search-form'),
             searchInput: document.getElementById('search-input'),
@@ -858,6 +509,7 @@
             botIcons: document.querySelectorAll('.bot-icon'),
             footerTabs: document.getElementById('footer-tab-area')
         };
+
         window.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             dom.botIcons.forEach(img => img.src = ICON_URL);
@@ -865,6 +517,7 @@
             setupDevSwipeEvents();
             fetchFullData();
         });
+
         async function fetchFullData() {
             try {
                 const res = await fetch("https://lldb.noki-dochibi.workers.dev/song");
@@ -876,6 +529,7 @@
                 console.error("Cloudflareデータ取得エラー:", e);
             }
         }
+
         function setupAutoResizeTextarea() {
             const el = dom.searchInput;
             el.addEventListener('input', () => {
@@ -883,10 +537,12 @@
                 el.style.height = (el.scrollHeight) + 'px';
             });
         }
+
         function resetTextareaHeight() {
             const el = dom.searchInput;
             el.style.height = 'auto';
         }
+
         window.switchTab = function(mode) {
             if (currentMode === mode) return;
             currentMode = mode;
@@ -895,17 +551,17 @@
                 btn.classList.toggle('active', btn.dataset.tab === mode);
             });
             Object.keys(dom.containers).forEach(key => {
-                if(dom.containers[key]) {
-                    dom.containers[key].classList.toggle('hidden', key !== mode);
-                }
+                dom.containers[key].classList.toggle('hidden', key !== mode);
             });
+
             if (mode === 'shiritori') {
                 document.documentElement.style.setProperty('--bubble-color', '#ec4899');
             } else {
                 document.documentElement.style.setProperty('--bubble-color', '#F4A261');
             }
+
             // モードごとのフォーム制御
-            if (mode === 'list' || mode === 'dev' || mode === 'emotion') {
+            if (mode === 'list' || mode === 'dev') {
                 dom.searchForm.classList.add('hidden-form'); // フォーム隠す
                 
                 if (mode === 'list') {
@@ -928,6 +584,8 @@
                     dom.searchInput.placeholder = "例：あれは";
                 } else if (mode === 'title') {
                     dom.searchInput.placeholder = "例：ポニーテール";
+                } else if (mode === 'ai') {
+                    dom.searchInput.placeholder = "歌詞や曲について質問してね";
                 } else if (mode === 'shiritori') {
                     dom.searchInput.placeholder = "曲名を入力してね";
                 }
@@ -936,6 +594,7 @@
                 activeContainer.scrollTop = activeContainer.scrollHeight;
             }
         };
+
         window.activateSecretMode = function() {
             if (currentMode === 'shiritori') {
                 isDarkMode = false;
@@ -955,10 +614,12 @@
                 switchTab('shiritori');
             }
         };
+
         window.restartShiritori = function() {
             addMessage("望むところだ！<br>最初の曲名を入力してみよ。", 'bot', true);
             dom.searchInput.focus();
         };
+
         dom.searchForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const query = dom.searchInput.value.trim();
@@ -969,6 +630,12 @@
             dom.searchInput.value = '';
             resetTextareaHeight(); 
             
+            // AI相談モードの場合はWorker APIにリクエストを送信
+            if (currentMode === 'ai') {
+                sendAiConsultation(query);
+                return;
+            }
+
             if (!fullHelperData) {
                 addMessage("データを読み込み中です。もう数秒待ってから試してみてね！", 'bot');
                 return;
@@ -982,6 +649,7 @@
                     if (currentMode === 'lyrics') data = localSearchLyrics(query);
                     else if (currentMode === 'title') data = localSearchTitle(query);
                     else if (currentMode === 'shiritori') data = localPlayShiritori(query);
+
                     if (data && data.status === 'success') {
                         if (currentMode === 'lyrics') handleLyricsResults(data);
                         else if (currentMode === 'title') handleTitleResults(data);
@@ -995,6 +663,34 @@
                 }
             }, 50);
         });
+
+        // ↓ Cloudflare WorkerのURLを指定してください
+        const WORKER_AI_URL = "https://lldb.noki-dochibi.workers.dev/ai-chat";
+
+        async function sendAiConsultation(query) {
+            const loadingId = addLoading();
+            try {
+                const response = await fetch(WORKER_AI_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: query })
+                });
+
+                removeLoading(loadingId);
+
+                if (!response.ok) {
+                    throw new Error('API Request Failed');
+                }
+
+                const data = await response.json();
+                addMessage(data.reply || "ごめんね、返答を取得できなかったよ💦", 'bot', true);
+            } catch (error) {
+                console.error('AI Consultation Error:', error);
+                removeLoading(loadingId);
+                addMessage("ごめんなさい、通信エラーが発生しちゃいました💦 しばらく経ってからもう一度送ってみてね。", 'bot');
+            }
+        }
+
         window.sendShiritoriAnswer = function(answer) {
              const query = answer;
              if (!query) return;
@@ -1013,6 +709,7 @@
                  else addMessage("ごめんね、うまく探せなかったみたい...", 'bot');
              }, 50);
         };
+
         function handleLyricsResults(data) {
             if (!data.results || data.results.length === 0) {
                 addMessage(`「${data.query}」は見つからなかったよ。歌詞カードと同じ表記にしてみて！`, 'bot');
@@ -1046,6 +743,7 @@
             addMessage(html, 'bot', true, 'start');
             lucide.createIcons();
         }
+
         function handleTitleResults(data) {
              if ((!data.songs || data.songs.length === 0) && (!data.albums || data.albums.length === 0)) {
                 addMessage(`「${data.query}」は見つからなかったよ。正式名称で教えてね！`, 'bot');
@@ -1090,6 +788,7 @@
             addMessage(html, 'bot', true, 'start');
             lucide.createIcons();
         }
+
         function handleShiritoriResults(data) {
             let messageContent = data.message;
             if (data.result === 'continue' && data.all_candidates && data.all_candidates.length > 0) {
@@ -1129,6 +828,7 @@
                 }
             }
         }
+
         function addMessage(content, type, isHtml = false, scrollType = 'bottom') {
             const container = dom.containers[currentMode];
             const div = document.createElement('div');
@@ -1151,6 +851,7 @@
                 div.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
+
         function addLoading() {
             const id = 'loading-' + Date.now();
             const container = dom.containers[currentMode];
@@ -1163,6 +864,7 @@
             scrollToBottom();
             return id;
         }
+
         function removeLoading(id) { const el = document.getElementById(id); if (el) el.remove(); }
         function scrollToBottom() { const c = dom.containers[currentMode]; c.scrollTop = c.scrollHeight; }
         
@@ -1171,6 +873,7 @@
             else dom.modal.classList.add('hidden');
             lucide.createIcons();
         };
+
         function copyToClipboard(text) {
             const cleanText = text.replace(/<br>/g, '\n');
             if (navigator.clipboard) navigator.clipboard.writeText(cleanText).then(() => showToast("コピーしたよ！"));
@@ -1181,6 +884,7 @@
             }
             safeTrackEvent('share', { method: 'clipboard', content_type: 'lyrics_phrase', item_name: text.substring(0, 20) });
         }
+
         // --- List Feature ---
         function loadSongsData() {
             if (isLoadingList) return;
@@ -1234,6 +938,7 @@
                     isLoadingList = false;
                 });
         }
+
         function getDurationBucket(timeStr) {
             if (!timeStr || timeStr === '-' || timeStr === '不明') return 'Unknown';
             const parts = timeStr.split(':');
@@ -1243,6 +948,7 @@
             if (min >= 6) return '6:00~';
             return `${min}:00~${min}:59`;
         }
+
         function renderSongList() {
             const tbody = document.getElementById('song-list-body');
             tbody.innerHTML = '';
@@ -1315,11 +1021,13 @@
             });
             lucide.createIcons();
         }
+
         function parseDuration(timeStr) {
             if (!timeStr || timeStr === '-' || timeStr === '不明') return 0;
             const parts = timeStr.split(':');
             return parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
         }
+
         function updateHeaderIcons() {
             const map = { era: 'icon-filter-era', title: 'icon-filter-title', arranger: 'icon-filter-arranger', duration: 'icon-filter-duration' };
             
@@ -1340,20 +1048,24 @@
             });
             lucide.createIcons();
         }
+
         function applySort(order) {
             currentSort = { column: currentFilterColumn, order: order };
             renderSongList();
             closeFilterModal();
         }
+
         function openConfirmModal(title) {
             targetSongForSearch = title;
             document.getElementById('confirm-song-title').textContent = title;
             document.getElementById('confirm-modal').classList.remove('hidden');
         }
+
         function closeConfirmModal() {
             document.getElementById('confirm-modal').classList.add('hidden');
             targetSongForSearch = '';
         }
+
         function executeSearchFromList() {
             if (!targetSongForSearch) return;
             
@@ -1366,6 +1078,7 @@
                 dom.searchForm.dispatchEvent(new Event('submit', { cancelable: true }));
             }, 100); 
         }
+
         window.openFilterModal = function(column) {
             currentFilterColumn = column;
             const modal = document.getElementById('filter-modal');
@@ -1376,6 +1089,7 @@
             let options = new Set();
             let msg = "";
             let colLabel = "";
+
             if (column === 'era') {
                 allSongs.forEach(s => options.add(s.era));
                 msg = "アルバムに含まれる表題曲のカップリングも含んでるよ";
@@ -1393,7 +1107,9 @@
                 msg = "特定の曲だけも選べるよ";
                 colLabel = "曲名 (TITLE)";
             }
+
             const sortedOptions = Array.from(options).sort();
+
             list.innerHTML = sortedOptions.map(opt => {
                 const isChecked = activeFilters[column].includes(opt);
                 return `
@@ -1403,6 +1119,7 @@
                     </label>
                 `;
             }).join('');
+
             helperMsg.innerHTML = msg;
             colNameDisplay.textContent = colLabel;
             
@@ -1411,6 +1128,7 @@
                 content.style.transform = 'translateY(0)';
             }, 10);
         };
+
         window.closeFilterModal = function() {
             const modal = document.getElementById('filter-modal');
             const content = document.getElementById('filter-modal-content');
@@ -1419,9 +1137,11 @@
                 modal.classList.add('hidden');
             }, 300);
         };
+
         window.toggleAllFilters = function(check) {
             document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = check);
         };
+
         window.applyFilter = function() {
             const checkboxes = document.querySelectorAll('.filter-checkbox:checked');
             const selectedValues = Array.from(checkboxes).map(cb => cb.value);
@@ -1429,14 +1149,17 @@
             renderSongList();
             closeFilterModal();
         };
+
         window.clearAllFilters = function() {
             activeFilters = { era: [], title: [], arranger: [], duration: [] };
             renderSongList();
         };
+
         function showToast(msg) {
             dom.toast.textContent = msg; dom.toast.classList.remove('opacity-0');
             setTimeout(() => dom.toast.classList.add('opacity-0'), 2000);
         }
+
         function safeTrackEvent(eventName, params) {
             try {
                 if (typeof gtag === 'function') {
@@ -1446,12 +1169,14 @@
                 console.warn('GA4 Tracking Error:', e);
             }
         }
+
         window.addEventListener('message', (event) => {
             if (event.data.type === 'forceUpdateData') {
                 console.log("Received update command from Hub.", event.data.newVersion);
                 fetchAndHotSwap();
             }
         });
+
         async function fetchAndHotSwap() {
             try {
                 const response = await fetch(`${GAS_API_URL}?action=get_data`);
@@ -1471,6 +1196,7 @@
                 console.error("Hot swap failed:", e);
             }
         }
+
         // ======================================================================
         // 開発者用ビューのロジック (Dev Mode Logic)
         // ======================================================================
@@ -1486,6 +1212,7 @@
                 devNavTo('index');
             }
         }
+
         window.checkDevPasscode = function() {
             const input = document.getElementById('dev-passcode-input').value;
             if (input === '1122') {
@@ -1498,6 +1225,7 @@
                 document.getElementById('dev-passcode-error').classList.remove('hidden');
             }
         };
+
         function devNavTo(targetView) {
             document.getElementById('dev-view-passcode').style.transform = 'translateY(100%)';
             
@@ -1517,6 +1245,7 @@
                 devCurrentView = 'lyrics';
             }
         }
+
         window.devNavBack = function(targetView) {
             if (targetView === 'index') {
                 document.getElementById('dev-view-songlist').style.transform = 'translateX(100%)';
@@ -1527,6 +1256,7 @@
                 devCurrentView = 'songlist';
             }
         };
+
         function buildDevIndex() {
             const grid = document.getElementById('dev-index-grid');
             const gojuon = [
@@ -1576,6 +1306,7 @@
                         });
                         count = countedSongs.size;
                     }
+
                     if (count > 0) {
                         html += `
                             <button onclick="openDevSongList('${char}')" class="bg-white hover:bg-orange-50 active:bg-orange-100 text-gray-700 py-2 rounded-xl shadow-sm border border-gray-200 transition-colors flex flex-col items-center justify-center">
@@ -1596,6 +1327,7 @@
             
             grid.innerHTML = html;
         }
+
         function getMatchingChars(char) {
             const map = {
                 'か': ['か','が'], 'き': ['き','ぎ'], 'く': ['く','ぐ'], 'け': ['け','げ'], 'こ': ['こ','ご'],
@@ -1607,15 +1339,18 @@
             };
             return map[char] || [char];
         }
+
         window.openDevSongList = function(charLabel) {
             if (!fullHelperData || !fullHelperData.songData || !fullHelperData.lyricsData) {
                 alert('データを読み込み中です');
                 return;
             }
+
             document.getElementById('dev-songlist-title').textContent = `${charLabel} から始まる曲`;
             const content = document.getElementById('dev-songlist-content');
             
             const matchChars = getMatchingChars(charLabel);
+
             // 歌詞データに存在するユニークな曲名を取得
             const availableLyricsTitles = new Set();
             fullHelperData.lyricsData.forEach(item => {
@@ -1623,11 +1358,13 @@
                     availableLyricsTitles.add(item.title);
                 }
             });
+
             // 曲の絞り込み (重複排除のためMapを使用)
             const songsSet = new Map();
             fullHelperData.songData.forEach(song => {
                 // 歌詞データに存在しない曲はスキップ
                 if (!availableLyricsTitles.has(song.songName)) return;
+
                 const kana = song.songKana;
                 if (!kana) return;
                 const firstChar = kana.charAt(0);
@@ -1636,7 +1373,9 @@
                     songsSet.set(song.songName, song);
                 }
             });
+
             const songs = Array.from(songsSet.values()).sort((a, b) => a.songKana.localeCompare(b.songKana, 'ja'));
+
             if (songs.length === 0) {
                 content.innerHTML = '<div class="p-6 text-center text-gray-400">該当する曲がありません</div>';
             } else {
@@ -1656,9 +1395,11 @@
                 devNavTo('songlist');
             }, 20);
         };
+
         window.openDevLyrics = function(songName) {
             document.getElementById('dev-lyrics-title').textContent = songName;
             const content = document.getElementById('dev-lyrics-content');
+
             // 歌詞データの取得
             let lyricsHtml = "";
             if (fullHelperData && fullHelperData.lyricsData) {
@@ -1678,6 +1419,7 @@
                         .join('<br>'); // 抽出したフレーズを改行でつなぐ
                 }
             }
+
             if (lyricsHtml) {
                 content.innerHTML = lyricsHtml; 
             } else {
@@ -1685,24 +1427,29 @@
             }
             
             content.scrollTop = 0; // スクロール位置のリセット
+
             // DOMの描画を待ってから遷移アニメーションを開始し、カクつきを防ぐ
             setTimeout(() => {
                 devNavTo('lyrics');
             }, 20);
         };
+
         // スワイプバック処理 (右スワイプで戻る)
         function setupDevSwipeEvents() {
             let startX = 0;
             let currentX = 0;
             let isSwiping = false;
+
             const handleTouchStart = (e) => {
                 startX = e.touches[0].clientX;
                 isSwiping = true;
             };
+
             const handleTouchMove = (e) => {
                 if (!isSwiping) return;
                 currentX = e.touches[0].clientX;
             };
+
             const handleTouchEnd = () => {
                 if (!isSwiping) return;
                 isSwiping = false;
@@ -1718,11 +1465,13 @@
                     }
                 }
             };
+
             const devContainer = document.getElementById('container-dev');
             devContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
             devContainer.addEventListener('touchmove', handleTouchMove, { passive: true });
             devContainer.addEventListener('touchend', handleTouchEnd);
         }
+
         // ======================================================================
         // 💡 爆速検索エンジン (Client-side Search Logic)
         // ======================================================================
@@ -1734,12 +1483,14 @@
             let fuzzyType = null;
             let actualQuery = null;
             const lyricsData = fullHelperData.lyricsData;
+
             for(let item of lyricsData) {
                 if(item.rawText.toLowerCase().includes(qLower)) {
                     let phrase = item.phrases.reduce((a, b) => a.length > b.length ? a : b, "");
                     results.push({ title: item.title, phrase: phrase, display_text: `${phrase}（${item.title}）`});
                 }
             }
+
             if(results.length === 0 && qNormalized.length > 0) {
                 for(let item of lyricsData) {
                     const norm = _normalizeString(item.rawText);
@@ -1753,6 +1504,7 @@
                     }
                 }
             }
+
             if(results.length === 0 && query.length >= 2) {
                 for(let item of lyricsData) {
                     if(_hasMostChars(query, item.rawText)) {
@@ -1764,6 +1516,7 @@
                     }
                 }
             }
+
             let randomMsg = "";
             if(lyricsData.length > 0) {
                 const rnd = lyricsData[Math.floor(Math.random() * lyricsData.length)];
@@ -1771,16 +1524,19 @@
             }
             return { status: 'success', mode: 'lyrics', results, query, random_message: randomMsg, fuzzy_type: fuzzyType, actual_query: actualQuery };
         }
+
         function localSearchTitle(query) {
             const qLower = query.toLowerCase();
             let songMatches = [];
             let diskMatches = [];
             const songData = fullHelperData.songData;
+
             for(let row of songData) {
                 const sName = row.songName.toLowerCase();
                 const sKana = row.songKana;
                 const albTitle = row.albumTitle.toLowerCase();
                 const sglTitle = row.singleTitle.toLowerCase();
+
                 if(sName.includes(qLower) || sKana.includes(qLower)) {
                     let releaseDateStr = (row.singleReleaseDate && row.singleReleaseDate !== '不明' && row.singleReleaseDate !== '') ? row.singleReleaseDate : row.albumReleaseDate;
                     songMatches.push({
@@ -1797,6 +1553,7 @@
                 if(albTitle.includes(qLower) && row.albumTitle !== '未収録' && row.albumTitle !== '') diskMatches.push({type:'album', name:row.albumTitle, row});
                 else if(sglTitle.includes(qLower) && row.singleTitle !== '未収録' && row.singleTitle !== '') diskMatches.push({type:'single', name:row.singleTitle, row});
             }
+
             const uniqueDiskNames = [...new Set(diskMatches.map(m=>m.name))];
             let albums = [];
             uniqueDiskNames.forEach(diskName => {
@@ -1810,11 +1567,14 @@
                     songs: songsInDisk.map(r => ({title: r.songName, order: isAlbum ? r.albumTrackNo : r.singleTrackNo}))
                 });
             });
+
             return { status:'success', mode:'title', query, songs: songMatches, albums };
         }
+
         function localPlayShiritori(query) {
             const data = fullHelperData.songData;
             if(!data || data.length === 0) return { status: 'success', mode: 'shiritori', result: 'unknown_song', message: 'データベースが空っぽみたい...' };
+
             let userSong = null;
             for(let row of data) {
                 if(row.songName === query || row.songKana === query) {
@@ -1822,9 +1582,12 @@
                     break;
                 }
             }
+
             if(!userSong) return { status: 'success', mode: 'shiritori', result: 'unknown_song', message: `「${query}」！？未発表曲かも...🤔<br>正式名称で教えてね！` };
+
             let userLastChar = _getLastChar(userSong.kana);
             if(userLastChar === 'ん') return { status: 'success', mode: 'shiritori', result: 'user_lose', user_song: userSong, message: `ああっ！「${userSong.title}」は「ん」で終わるよ！<br>俺の勝ち😎` };
+
             let botCandidates = [];
             for(let row of data) {
                 if(row.songName === userSong.title) continue;
@@ -1833,7 +1596,9 @@
                     botCandidates.push({ title: row.songName, kana: row.songKana });
                 }
             }
+
             if(botCandidates.length === 0) return { status: 'success', mode: 'shiritori', result: 'user_win', user_song: userSong, message: `「${userSong.title}」...！<br>「${userLastChar}」から始まる曲が思いつかない...<br>ぐぬぬ...！君の勝ちだ😎` };
+
             let safeCandidates = [];
             let killerCandidates = [];
             botCandidates.forEach(botCand => {
@@ -1842,20 +1607,26 @@
                 if(hasNext) safeCandidates.push(botCand);
                 else killerCandidates.push(botCand);
             });
+
             let selectedSong, isKillerMove = false;
             if(safeCandidates.length > 0) selectedSong = safeCandidates[Math.floor(Math.random() * safeCandidates.length)];
             else { selectedSong = killerCandidates[Math.floor(Math.random() * killerCandidates.length)]; isKillerMove = true; }
+
             const botLastChar = _getLastChar(selectedSong.kana);
             if(isKillerMove) return { status: 'success', mode: 'shiritori', result: 'user_lose', user_song: userSong, bot_song: selectedSong, message: `「${userSong.title}」だね。<br>それなら...「${selectedSong.title}」！<br>...おっと、「${botLastChar}」から始まる曲はもうないみたい。<br>俺の勝ちだね😎` };
+
             let nextHints = [];
             for(let row of data) {
                 if(row.songName === selectedSong.title || row.songName.includes('(') || row.songName.includes('（')) continue;
                 if(row.songKana.startsWith(botLastChar)) nextHints.push({ title: row.songName, kana: row.songKana });
             }
+
             const allCandidates = nextHints.map(h => h.title);
             nextHints = _shuffleArray(nextHints).slice(0, 5);
+
             return { status: 'success', mode: 'shiritori', result: 'continue', user_song: userSong, bot_song: selectedSong, next_char: botLastChar, hints: nextHints, all_candidates: allCandidates, message: `「${userSong.title}」だね。<br>それなら...「${selectedSong.title}」！<br>次は「${botLastChar}」から始まる曲だよ！` };
         }
+
         // --- Helpers ---
         function _normalizeString(str) {
             if (!str) return "";
@@ -1863,6 +1634,7 @@
             s = s.toLowerCase().replace(/[\u30a1-\u30f6]/g, function(match) { return String.fromCharCode(match.charCodeAt(0) - 0x60); });
             return s;
         }
+
         function _hasMostChars(query, target) {
             let matchCount = 0;
             let targetArr = target.split('');
@@ -1876,6 +1648,7 @@
             }
             return (matchCount / query.length) >= 0.8;
         }
+
         function _getLastChar(kana) {
             if (!kana) return '';
             kana = kana.trim();
@@ -1885,6 +1658,7 @@
             if (smallMap[last]) last = smallMap[last];
             return last;
         }
+
         function _shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -1892,6 +1666,7 @@
             }
             return array;
         }
+
         function _calculateAikoAgeLocal(dateStr) {
             if (!dateStr || dateStr === '不明' || dateStr === '未収録') return null;
             const birthDate = new Date(1975, 10, 22);
