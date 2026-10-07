@@ -672,14 +672,18 @@
             try {
                 const response = await fetch(WORKER_AI_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ message: query })
                 });
 
                 removeLoading(loadingId);
 
                 if (!response.ok) {
-                    throw new Error('API Request Failed');
+                    const errData = await response.json().catch(() => ({}));
+                    console.error(`API Request Failed [HTTP ${response.status}]:`, errData);
+                    throw new Error(`HTTP Error ${response.status}`);
                 }
 
                 const data = await response.json();
