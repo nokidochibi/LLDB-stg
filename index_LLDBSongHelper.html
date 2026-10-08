@@ -665,17 +665,57 @@
         });
 
         // ↓ Cloudflare WorkerのURLを指定してください
-        const WORKER_AI_URL = "https://lldb.noki-dochibi.workers.dev/ai-chat";
+        const WORKER_AI_URL = "https://lldb.noki-dochibi.workers.dev/";
 
         async function sendAiConsultation(query) {
             const loadingId = addLoading();
+
+            // --- 💡 RAG: ブラウザに保持されている全歌詞データから関連歌詞をピックアップ ---
+            let contextLyrics = [];
+            if (fullHelperData && fullHelperData.lyricsData) {
+                const qLower = query.toLowerCase();
+                const keywords = [query];
+
+                // 動物キーワードの拡張判定例
+                if (query.includes("動物") || query.includes("生き物")) {
+                    keywords.push("犬", "猫", "カブトムシ", "虫", "鳥", "小鳥", "鳩", "蝶", "魚", "兎", "うさぎ", "へび", "亀");
+                }
+
+                const matchedMap = new Map();
+                for (const item of fullHelperData.lyricsData) {
+                    if (!item.title || !item.rawText) continue;
+                    const textLower = item.rawText.toLowerCase();
+
+                    // キーワードが含まれるかチェック
+                    const isHit = keywords.some(kw => textLower.includes(kw.toLowerCase()));
+                    if (isHit) {
+                        if (!matchedMap.has(item.title)) {
+                            matchedMap.set(item.title, []);
+                        }
+                        let phrase = item.phrases ? item.phrases.reduce((a, b) => a.length > b.length ? a : b, "") : item.rawText;
+                        matchedMap.get(item.title).push(phrase);
+                    }
+                }
+
+                // 上位15曲分に絞り込んでテキスト化
+                let count = 0;
+                for (const [title, phrases] of matchedMap.entries()) {
+                    if (count >= 15) break;
+                    contextLyrics.push(`【曲名: ${title}】\n${phrases.slice(0, 3).join("\n")}`);
+                    count++;
+                }
+            }
+
             try {
                 const response = await fetch(WORKER_AI_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ message: query })
+                    body: JSON.stringify({
+                        message: query,
+                        contextLyrics: contextLyrics.join("\n\n") // 抽出された本物の歌詞のみを送信
+                    })
                 });
 
                 removeLoading(loadingId);
