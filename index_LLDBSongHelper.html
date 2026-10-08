@@ -670,22 +670,19 @@
         async function sendAiConsultation(query) {
             const loadingId = addLoading();
 
-            // --- 💡 賢いキーワード抽出＆歌詞ピックアップ ---
+            // --- 💡 複数曲を精度よく抽出するRAG処理 ---
             let contextLyrics = [];
             if (fullHelperData && fullHelperData.lyricsData) {
-                // 1. 質問文から余計な定型句を除外
                 let cleanQuery = query.replace(/(にぴったりの|の気持ち|の曲は|な曲|教えて|について|aiko|ですか|？|\?)/g, "");
 
-                // 2. 連想キーワードマップ（心境やテーマから歌詞検索語を自動拡張）
                 const keywordMap = {
-                    "連絡": ["連絡", "電話", "ベル", "コール", "鳴る", "メール", "声", "話す", "届く", "返事", "ライン"],
-                    "嬉しい": ["嬉しい", "うれしい", "シアワセ", "幸せ", "笑顔", "跳ねる", "ルンルン", "飛び跳ね"],
+                    "連絡": ["連絡", "電話", "ベル", "コール", "鳴る", "メール", "声", "話す", "届く", "返事", "ライン", "夜"],
+                    "嬉しい": ["嬉しい", "シアワセ", "幸せ", "笑顔", "跳ねる", "ルンルン", "胸", "鳴る"],
                     "好き": ["好き", "大すき", "大好き", "愛おしい", "愛しい", "特別", "一番"],
                     "動物": ["犬", "猫", "カブトムシ", "むし", "鳥", "小鳥", "鳩", "蝶", "魚", "兎", "うさぎ", "へび", "カモメ", "ひつじ"],
                     "会いたい": ["会いたい", "逢いたい", "あいたい", "顔が見たい", "声が聞きたい"]
                 };
 
-                // 検索に使用する単語リストを構築
                 let searchWords = [cleanQuery];
                 Object.keys(keywordMap).forEach(key => {
                     if (query.includes(key)) {
@@ -693,7 +690,6 @@
                     }
                 });
 
-                // 3. 歌詞データとのマッチング検索
                 const matchedMap = new Map();
                 for (const item of fullHelperData.lyricsData) {
                     if (!item.title || !item.rawText) continue;
@@ -705,13 +701,12 @@
                             matchedMap.set(item.title, []);
                         }
                         let phrase = item.phrases ? item.phrases.reduce((a, b) => a.length > b.length ? a : b, "") : text;
-                        matchedMap.get(item.title).push(phrase);
+                        if (phrase) matchedMap.get(item.title).push(phrase);
                     }
                 }
 
-                // 4. 万が一キーワード検索で0件だった場合、代表曲の歌詞を補テン（空で渡さない）
                 if (matchedMap.size === 0) {
-                    const fallbackTitles = ["ボーイフレンド", "カブトムシ", "花火", "キラキラ", "ストロー", "シアワセ", "初恋"];
+                    const fallbackTitles = ["二時頃", "リップ", "4秒", "天の川", "ボーイフレンド", "シアワセ"];
                     for (const item of fullHelperData.lyricsData) {
                         if (fallbackTitles.includes(item.title)) {
                             if (!matchedMap.has(item.title)) matchedMap.set(item.title, []);
@@ -721,11 +716,11 @@
                     }
                 }
 
-                // 上位12曲分をコンテキストテキスト化
+                // 関連度が高い順に最大5曲分を抽出
                 let count = 0;
                 for (const [title, phrases] of matchedMap.entries()) {
-                    if (count >= 12) break;
-                    contextLyrics.push(`【曲名: ${title}】\n${phrases.slice(0, 3).join("\n")}`);
+                    if (count >= 5) break;
+                    contextLyrics.push(`【曲名: ${title}】\n${phrases.slice(0, 3).map(p => `「${p}」`).join("\n")}`);
                     count++;
                 }
             }
@@ -733,9 +728,7 @@
             try {
                 const response = await fetch(WORKER_AI_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         message: query,
                         contextLyrics: contextLyrics.join("\n\n")
