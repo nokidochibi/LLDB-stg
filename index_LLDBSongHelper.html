@@ -198,19 +198,6 @@
         </div>
     </main>
 
-    <main id="chat-container-ai" class="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-48 hidden"> 
-        <div class="flex items-start space-x-2">
-            <img class="bot-icon w-10 h-10 rounded-full border border-gray-200 bg-white shadow-sm z-10 trigger-secret cursor-pointer" onclick="activateSecretMode()" alt="icon">
-            <div class="bubble bubble-left bg-white p-3 shadow-sm max-w-[80%]">
-                <p class="text-sm leading-relaxed">
-                    「好きな人から連絡が来て嬉しい時の気持ちにぴったりのaikoの曲は？」<br>
-                    「aikoの曲の中で動物が出てくる曲は？」<br><br>
-                    など、aikoの歌詞に関してなんでも質問してね！
-                </p>
-            </div>
-        </div>
-    </main>
-
     <main id="container-list" class="flex-1 overflow-hidden relative hidden bg-white">
         <div id="filter-bar" class="hidden px-4 py-2 bg-orange-50 border-b border-orange-100 flex items-center justify-between text-xs text-orange-700">
             <span id="active-filter-count">フィルタ適用中</span>
@@ -338,11 +325,6 @@
             <button id="tab-title" data-tab="title" onclick="switchTab('title')" class="tab-btn">
                 <i data-lucide="disc" class="w-6 h-6"></i>
                 <span class="text-[10px] font-bold">楽曲</span>
-            </button>
-            <div class="w-[1px] bg-gray-50 my-3"></div>
-            <button id="tab-ai" data-tab="ai" onclick="switchTab('ai')" class="tab-btn">
-                <i data-lucide="sparkles" class="w-6 h-6"></i>
-                <span class="text-[10px] font-bold">AI相談</span>
             </button>
             <div class="w-[1px] bg-gray-50 my-3"></div>
             <button id="tab-list" data-tab="list" onclick="switchTab('list')" class="tab-btn">
@@ -486,7 +468,6 @@
         const LOADING_MESSAGES = {
             lyrics: ["aikoからのtelepathyを受信中...", "そんなことよりパーティ抜け出さない？"],
             title: ["おっ！その曲なら確かね...", "俺もそれ好きだよ！待ってて..."],
-            ai: ["aikoソムリエが回答を考え中...", "歌詞の記憶をたどっています..."],
             shiritori: ["俺に勝負を仕掛けるとはいい度胸だ。", "なるほど、そう来たか..."],
             list: ["データを読み込んでいます..."]
         };
@@ -496,7 +477,6 @@
             containers: {
                 lyrics: document.getElementById('chat-container-lyrics'),
                 title: document.getElementById('chat-container-title'),
-                ai: document.getElementById('chat-container-ai'),
                 dev: document.getElementById('container-dev'),
                 shiritori: document.getElementById('chat-container-shiritori'),
                 list: document.getElementById('container-list')
@@ -584,8 +564,6 @@
                     dom.searchInput.placeholder = "例：あれは";
                 } else if (mode === 'title') {
                     dom.searchInput.placeholder = "例：ポニーテール";
-                } else if (mode === 'ai') {
-                    dom.searchInput.placeholder = "歌詞や曲について質問してね";
                 } else if (mode === 'shiritori') {
                     dom.searchInput.placeholder = "曲名を入力してね";
                 }
@@ -630,12 +608,6 @@
             dom.searchInput.value = '';
             resetTextareaHeight(); 
             
-            // AI相談モードの場合はWorker APIにリクエストを送信
-            if (currentMode === 'ai') {
-                sendAiConsultation(query);
-                return;
-            }
-
             if (!fullHelperData) {
                 addMessage("データを読み込み中です。もう数秒待ってから試してみてね！", 'bot');
                 return;
@@ -664,91 +636,6 @@
             }, 50);
         });
 
-        // ↓ Cloudflare WorkerのURLを指定してください
-        const WORKER_AI_URL = "https://lldb.noki-dochibi.workers.dev/ai-chat";
-
-        async function sendAiConsultation(query) {
-            const loadingId = addLoading();
-
-            try {
-                // --- 💡 アルゴリズムベースのコンテキスト抽出（脱・手動辞書） ---
-                let contextLyrics = [];
-                if (fullHelperData && fullHelperData.aiLyricsData) {
-                    // 質問文から不要な語句を削除し、純粋なキーワードだけを残す
-                    let cleanQuery = query.replace(/(にぴったりの|の気持ち|の曲は|な曲|教えて|について|aiko|ですか|？|\?)/g, "").trim();
-
-                    // 質問文を2文字ずつに分解（N-gram）して検索網を広げる
-                    let searchWords = [cleanQuery];
-                    if (cleanQuery.length >= 2) {
-                        for(let i = 0; i < cleanQuery.length - 1; i++){
-                            searchWords.push(cleanQuery.substring(i, i + 2));
-                        }
-                    }
-                    searchWords = [...new Set(searchWords.filter(w => w.trim().length > 1))];
-
-                    const songScores = [];
-
-                    for (const item of fullHelperData.aiLyricsData) {
-                        if (!item.title || !item.rawText) continue;
-                        const text = item.rawText;
-                        let score = 0;
-
-                        // 抽出した文字列が歌詞に含まれているか純粋にスコアリング
-                        searchWords.forEach(word => {
-                            const safeWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                            const count = (text.match(new RegExp(safeWord, 'g')) || []).length;
-                            if (count > 0) {
-                                // 質問文全体に一致すれば高得点、部分一致なら通常得点
-                                score += (word === cleanQuery) ? count * 10 : count * 2;
-                            }
-                        });
-
-                        // AIの本来の理解力を引き出すための揺らぎ（スコア0の曲も少し混ぜてコンテキストを広げる）
-                        score += Math.random() * 3;
-
-                        songScores.push({ title: item.title, text: item.rawText, score: score });
-                    }
-
-                    // スコアの降順にソートし、上位30曲を抽出（抽出枠を広げてAIに判断を委ねる）
-                    songScores.sort((a, b) => b.score - a.score);
-                    const topSongs = songScores.slice(0, 30);
-                    
-                    topSongs.forEach(song => {
-                        contextLyrics.push(`【曲名: ${song.title}】\n--- 歌詞本文 ---\n${song.text}\n--- 歌詞終了 ---`);
-                    });
-                }
-
-                const response = await fetch(WORKER_AI_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: query,
-                        contextLyrics: contextLyrics.join("\n\n")
-                    })
-                });
-
-                removeLoading(loadingId);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP Error ${response.status}`);
-                }
-
-                const data = await response.json();
-                let replyText = data.reply || "ごめんね、返答を取得できなかったよ💦";
-                
-                // AIが出力したMarkdown記法をHTMLに変換して視認性を高める
-                replyText = replyText.replace(/\*\*(.*?)\*\*/g, '<b class="text-gray-800">$1</b>'); // 太字の変換
-                replyText = replyText.replace(/\n/g, '<br>'); // 改行の変換
-                
-                addMessage(replyText, 'bot', true);
-
-            } catch (error) {
-                // フロントエンドのフリーズを確実に防ぐエラーハンドリング
-                console.error('AI Consultation Error:', error);
-                removeLoading(loadingId);
-                addMessage(`ごめんなさい、通信中にエラーが発生しちゃいました💦<br>エラー詳細: ${error.message}`, 'bot', true);
-            }
-        }
         window.sendShiritoriAnswer = function(answer) {
              const query = answer;
              if (!query) return;
@@ -1461,12 +1348,20 @@
             // 歌詞データの取得
             let lyricsHtml = "";
             if (fullHelperData && fullHelperData.lyricsData) {
-                // 新しいデータは1曲＝1オブジェクトの構造なので find で取得
-                const songItem = fullHelperData.lyricsData.find(l => l.title === songName);
+                // filterを使って、該当する曲名の行を全て抽出する
+                const lyricsRows = fullHelperData.lyricsData.filter(l => l.title === songName);
                 
-                if (songItem && songItem.phrases && songItem.phrases.length > 0) {
-                    // 抽出したフレーズ配列を改行でつなぐ
-                    lyricsHtml = songItem.phrases.join('<br>');
+                if (lyricsRows && lyricsRows.length > 0) {
+                    // 各行のフレーズを結合（スプレッドシート上ではB列に歌詞が縦に並んでいる構造のため）
+                    lyricsHtml = lyricsRows
+                        .map(row => {
+                            if (row.phrases && row.phrases.length > 0) {
+                                return row.phrases[0].trim();
+                            }
+                            return "";
+                        })
+                        .filter(p => p !== "")
+                        .join('<br>'); // 抽出したフレーズを改行でつなぐ
                 }
             }
 
@@ -1730,3 +1625,5 @@
     </script>
 </body>
 </html>
+
+
