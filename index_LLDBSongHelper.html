@@ -677,9 +677,11 @@
 
                 // 意図に沿った歌詞キーワードの拡張定義
                 const keywordMap = {
-                    "連絡": ["電話", "声", "話す", "ベル", "コール", "鳴る", "メール", "文字", "返事", "ライン", "届く"],
-                    "嬉しい": ["嬉し", "うれしい", "幸せ", "シアワセ", "好き", "愛おしい", "胸が", "ドキドキ", "笑"],
-                    "動物": ["犬", "猫", "カブトムシ", "むし", "鳥", "小鳥", "鳩", "蝶", "魚", "兎", "うさぎ", "へび", "カモメ", "ひつじ"]
+                    "連絡": ["電話", "声", "受話器", "ベル", "コール", "鳴る", "メール", "着信", "返事", "ライン", "届く"],
+                    "嬉しい": ["嬉し", "うれしい", "幸せ", "シアワセ", "好き", "愛おしい", "胸が", "ドキドキ", "高鳴る", "笑"],
+                    "悲しい": ["悲しい", "涙", "泣く", "切ない", "苦しい", "痛い", "さよなら", "別れ", "一人"],
+                    "動物": ["犬", "猫", "カブトムシ", "鳥", "小鳥", "鳩", "蝶", "魚", "兎", "うさぎ", "へび", "カモメ"],
+                    "季節": ["春", "夏", "秋", "冬", "桜", "雪", "花火"]
                 };
 
                 let searchWords = [cleanQuery];
@@ -689,46 +691,54 @@
                     }
                 });
 
-                const matchedMap = new Map();
+                // クエリ内の2文字以上の部分文字列も検索ワードに追加してヒット率を上げる
+                if (cleanQuery.length >= 2) {
+                    for(let i=0; i<cleanQuery.length-1; i++){
+                        searchWords.push(cleanQuery.substring(i, i+2));
+                    }
+                }
+
+                // 空文字と重複を排除
+                searchWords = [...new Set(searchWords.filter(w => w && w.length > 1))];
+
+                const songScores = [];
+
                 for (const item of fullHelperData.lyricsData) {
                     if (!item.title || !item.rawText) continue;
                     const text = item.rawText;
+                    let score = 0;
 
-                    // 検索キーワードにヒットしたか判定
-                    const isHit = searchWords.some(word => word && word.length > 0 && text.includes(word));
-                    if (isHit) {
-                        if (!matchedMap.has(item.title)) {
-                            matchedMap.set(item.title, []);
+                    // 検索キーワードの出現数でスコアリング
+                    searchWords.forEach(word => {
+                        // 特殊文字をエスケープしてカウント
+                        const safeWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        const count = (text.match(new RegExp(safeWord, 'g')) || []).length;
+                        if (count > 0) {
+                            // ユーザー入力に直接含まれる単語は高得点
+                            score += query.includes(word) ? count * 5 : count * 2;
                         }
-                        let phrase = item.phrases ? item.phrases.reduce((a, b) => a.length > b.length ? a : b, "") : text;
-                        if (phrase) matchedMap.get(item.title).push(phrase);
-                    }
-                }
+                    });
 
-                // 質問の意図に近い代表曲をフォローバックとして優先候補に含める
-                if (query.includes("連絡") || query.includes("電話")) {
-                    const phoneTitles = ["二時頃", "リップ", "4秒", "天の川", "恋のスーパーボール"];
-                    for (const item of fullHelperData.lyricsData) {
+                    // 質問の意図に近い代表曲をフォローバックとして優先候補に含める（大幅加点）
+                    if (query.includes("連絡") || query.includes("電話")) {
+                        const phoneTitles = ["二時頃", "リップ", "4秒", "天の川", "恋のスーパーボール"];
                         if (phoneTitles.includes(item.title)) {
-                            if (!matchedMap.has(item.title)) matchedMap.set(item.title, []);
-                            let phrase = item.phrases ? item.phrases[0] : item.rawText;
-                            if (phrase) matchedMap.get(item.title).push(phrase);
+                            score += 100;
                         }
+                    }
+
+                    if (score > 0) {
+                        songScores.push({ title: item.title, text: item.rawText, score: score });
                     }
                 }
 
-                // マッチした上位4〜5曲分について、歌詞テキスト全体（rawText）を抽出して渡す
-            let count = 0;
-            for (const [title, phrases] of matchedMap.entries()) {
-                if (count >= 5) break;
+                // スコアの降順にソートし、上位15曲を抽出（Geminiのコンテキストに余裕を持たせる）
+                songScores.sort((a, b) => b.score - a.score);
+                const topSongs = songScores.slice(0, 15);
                 
-                // fullHelperData から対象曲の完全な歌詞データ（rawText）を取得
-                const songItem = fullHelperData.lyricsData.find(item => item.title === title);
-                const fullText = songItem ? songItem.rawText : phrases.join("\n");
-
-                contextLyrics.push(`【曲名: ${title}】\n${fullText}`);
-                count++;
-            }
+                topSongs.forEach(song => {
+                    contextLyrics.push(`【曲名: ${song.title}】\n${song.text}`);
+                });
             }
 
             try {
