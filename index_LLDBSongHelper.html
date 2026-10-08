@@ -1469,20 +1469,12 @@
             // 歌詞データの取得
             let lyricsHtml = "";
             if (fullHelperData && fullHelperData.lyricsData) {
-                // filterを使って、該当する曲名の行を全て抽出する
-                const lyricsRows = fullHelperData.lyricsData.filter(l => l.title === songName);
+                // 新しいデータは1曲＝1オブジェクトの構造なので find で取得
+                const songItem = fullHelperData.lyricsData.find(l => l.title === songName);
                 
-                if (lyricsRows && lyricsRows.length > 0) {
-                    // 各行のフレーズを結合（スプレッドシート上ではB列に歌詞が縦に並んでいる構造のため）
-                    lyricsHtml = lyricsRows
-                        .map(row => {
-                            if (row.phrases && row.phrases.length > 0) {
-                                return row.phrases[0].trim();
-                            }
-                            return "";
-                        })
-                        .filter(p => p !== "")
-                        .join('<br>'); // 抽出したフレーズを改行でつなぐ
+                if (songItem && songItem.phrases && songItem.phrases.length > 0) {
+                    // 抽出したフレーズ配列を改行でつなぐ
+                    lyricsHtml = songItem.phrases.join('<br>');
                 }
             }
 
