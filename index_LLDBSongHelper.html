@@ -670,37 +670,61 @@
         async function sendAiConsultation(query) {
             const loadingId = addLoading();
 
-            // --- 💡 RAG: ブラウザに保持されている全歌詞データから関連歌詞をピックアップ ---
+            // --- 💡 賢いキーワード抽出＆歌詞ピックアップ ---
             let contextLyrics = [];
             if (fullHelperData && fullHelperData.lyricsData) {
-                const qLower = query.toLowerCase();
-                const keywords = [query];
+                // 1. 質問文から余計な定型句を除外
+                let cleanQuery = query.replace(/(にぴったりの|の気持ち|の曲は|な曲|教えて|について|aiko|ですか|？|\?)/g, "");
 
-                // 動物キーワードの拡張判定例
-                if (query.includes("動物") || query.includes("生き物")) {
-                    keywords.push("犬", "猫", "カブトムシ", "虫", "鳥", "小鳥", "鳩", "蝶", "魚", "兎", "うさぎ", "へび", "亀");
-                }
+                // 2. 連想キーワードマップ（心境やテーマから歌詞検索語を自動拡張）
+                const keywordMap = {
+                    "連絡": ["連絡", "電話", "ベル", "コール", "鳴る", "メール", "声", "話す", "届く", "返事", "ライン"],
+                    "嬉しい": ["嬉しい", "うれしい", "シアワセ", "幸せ", "笑顔", "跳ねる", "ルンルン", "飛び跳ね"],
+                    "好き": ["好き", "大すき", "大好き", "愛おしい", "愛しい", "特別", "一番"],
+                    "動物": ["犬", "猫", "カブトムシ", "むし", "鳥", "小鳥", "鳩", "蝶", "魚", "兎", "うさぎ", "へび", "カモメ", "ひつじ"],
+                    "会いたい": ["会いたい", "逢いたい", "あいたい", "顔が見たい", "声が聞きたい"]
+                };
 
+                // 検索に使用する単語リストを構築
+                let searchWords = [cleanQuery];
+                Object.keys(keywordMap).forEach(key => {
+                    if (query.includes(key)) {
+                        searchWords.push(...keywordMap[key]);
+                    }
+                });
+
+                // 3. 歌詞データとのマッチング検索
                 const matchedMap = new Map();
                 for (const item of fullHelperData.lyricsData) {
                     if (!item.title || !item.rawText) continue;
-                    const textLower = item.rawText.toLowerCase();
+                    const text = item.rawText;
 
-                    // キーワードが含まれるかチェック
-                    const isHit = keywords.some(kw => textLower.includes(kw.toLowerCase()));
+                    const isHit = searchWords.some(word => word && word.length > 0 && text.includes(word));
                     if (isHit) {
                         if (!matchedMap.has(item.title)) {
                             matchedMap.set(item.title, []);
                         }
-                        let phrase = item.phrases ? item.phrases.reduce((a, b) => a.length > b.length ? a : b, "") : item.rawText;
+                        let phrase = item.phrases ? item.phrases.reduce((a, b) => a.length > b.length ? a : b, "") : text;
                         matchedMap.get(item.title).push(phrase);
                     }
                 }
 
-                // 上位15曲分に絞り込んでテキスト化
+                // 4. 万が一キーワード検索で0件だった場合、代表曲の歌詞を補テン（空で渡さない）
+                if (matchedMap.size === 0) {
+                    const fallbackTitles = ["ボーイフレンド", "カブトムシ", "花火", "キラキラ", "ストロー", "シアワセ", "初恋"];
+                    for (const item of fullHelperData.lyricsData) {
+                        if (fallbackTitles.includes(item.title)) {
+                            if (!matchedMap.has(item.title)) matchedMap.set(item.title, []);
+                            let phrase = item.phrases ? item.phrases[0] : item.rawText;
+                            matchedMap.get(item.title).push(phrase);
+                        }
+                    }
+                }
+
+                // 上位12曲分をコンテキストテキスト化
                 let count = 0;
                 for (const [title, phrases] of matchedMap.entries()) {
-                    if (count >= 15) break;
+                    if (count >= 12) break;
                     contextLyrics.push(`【曲名: ${title}】\n${phrases.slice(0, 3).join("\n")}`);
                     count++;
                 }
@@ -714,7 +738,7 @@
                     },
                     body: JSON.stringify({
                         message: query,
-                        contextLyrics: contextLyrics.join("\n\n") // 抽出された本物の歌詞のみを送信
+                        contextLyrics: contextLyrics.join("\n\n")
                     })
                 });
 
