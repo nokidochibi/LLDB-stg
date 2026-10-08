@@ -730,9 +730,9 @@
                     }
                 }
 
-                // スコアの降順にソートし、上位10曲を抽出（AIが最も一致度の高い3曲を厳選しやすいように最適化）
+                // スコアの降順にソートし、上位20曲を抽出（AIがより多くの楽曲から提案・箇条書きできるようにコンテキストを拡張）
                 songScores.sort((a, b) => b.score - a.score);
-                const topSongs = songScores.slice(0, 10);
+                const topSongs = songScores.slice(0, 20);
                 
                 topSongs.forEach(song => {
                     contextLyrics.push(`【曲名: ${song.title}】\n--- 歌詞本文 ---\n${song.text}\n--- 歌詞終了 ---`);
@@ -758,7 +758,13 @@
                 }
 
                 const data = await response.json();
-                addMessage(data.reply || "ごめんね、返答を取得できなかったよ💦", 'bot', true);
+                let replyText = data.reply || "ごめんね、返答を取得できなかったよ💦";
+                
+                // AIが出力したMarkdown記法をHTMLに変換して視認性を高める
+                replyText = replyText.replace(/\*\*(.*?)\*\*/g, '<b class="text-gray-800">$1</b>'); // 太字の変換
+                replyText = replyText.replace(/\n/g, '<br>'); // 改行の変換
+                
+                addMessage(replyText, 'bot', true);
             } catch (error) {
                 console.error('AI Consultation Error:', error);
                 removeLoading(loadingId);
