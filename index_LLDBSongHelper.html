@@ -703,9 +703,7 @@
                             }
                         });
 
-                        // 💡 AIの本来の理解力を引き出すためのスパイス（揺らぎ）
-                        // 手動辞書をなくした分、スコア0の曲もランダムに少しだけコンテキストに混ぜることで、
-                        // 「動物」などの抽象的な質問でも、AIが自力で該当する曲を見つけ出せる可能性を広げます
+                        // AIの本来の理解力を引き出すための揺らぎ（スコア0の曲も少し混ぜてコンテキストを広げる）
                         score += Math.random() * 3;
 
                         songScores.push({ title: item.title, text: item.rawText, score: score });
@@ -732,8 +730,6 @@
                 removeLoading(loadingId);
 
                 if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    console.error(`API Request Failed [HTTP ${response.status}]:`, errData);
                     throw new Error(`HTTP Error ${response.status}`);
                 }
 
@@ -745,10 +741,12 @@
                 replyText = replyText.replace(/\n/g, '<br>'); // 改行の変換
                 
                 addMessage(replyText, 'bot', true);
+
             } catch (error) {
+                // フロントエンドのフリーズを確実に防ぐエラーハンドリング
                 console.error('AI Consultation Error:', error);
                 removeLoading(loadingId);
-                addMessage("ごめんなさい、通信エラーが発生しちゃいました💦 しばらく経ってからもう一度送ってみてね。", 'bot');
+                addMessage(`ごめんなさい、通信中にエラーが発生しちゃいました💦<br>エラー詳細: ${error.message}`, 'bot', true);
             }
         }
         window.sendShiritoriAnswer = function(answer) {
