@@ -730,12 +730,12 @@
                     }
                 }
 
-                // スコアの降順にソートし、上位15曲を抽出（Geminiのコンテキストに十分な情報を持たせる）
+                // スコアの降順にソートし、上位12曲を抽出（正確性を高めるため絞り込み）
                 songScores.sort((a, b) => b.score - a.score);
-                const topSongs = songScores.slice(0, 15);
+                const topSongs = songScores.slice(0, 12);
                 
                 topSongs.forEach(song => {
-                    contextLyrics.push(`【曲名: ${song.title}】\n${song.text}`);
+                    contextLyrics.push(`【曲名: ${song.title}】\n--- 歌詞本文 ---\n${song.text}\n--- 歌詞終了 ---`);
                 });
             }
 
