@@ -730,9 +730,9 @@
                     }
                 }
 
-                // スコアの降順にソートし、上位12曲を抽出（正確性を高めるため絞り込み）
+                // スコアの降順にソートし、上位10曲を抽出（AIが最も一致度の高い3曲を厳選しやすいように最適化）
                 songScores.sort((a, b) => b.score - a.score);
-                const topSongs = songScores.slice(0, 12);
+                const topSongs = songScores.slice(0, 10);
                 
                 topSongs.forEach(song => {
                     contextLyrics.push(`【曲名: ${song.title}】\n--- 歌詞本文 ---\n${song.text}\n--- 歌詞終了 ---`);
