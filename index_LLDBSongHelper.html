@@ -717,14 +717,18 @@
                     }
                 }
 
-                // マッチした上位4〜5曲分を抽出
-                let count = 0;
-                for (const [title, phrases] of matchedMap.entries()) {
-                    if (count >= 5) break;
-                    const uniquePhrases = [...new Set(phrases)].slice(0, 3);
-                    contextLyrics.push(`【曲名: ${title}】\n${uniquePhrases.map(p => `「${p}」`).join(" ")}`);
-                    count++;
-                }
+                // マッチした上位4〜5曲分について、歌詞テキスト全体（rawText）を抽出して渡す
+            let count = 0;
+            for (const [title, phrases] of matchedMap.entries()) {
+                if (count >= 5) break;
+                
+                // fullHelperData から対象曲の完全な歌詞データ（rawText）を取得
+                const songItem = fullHelperData.lyricsData.find(item => item.title === title);
+                const fullText = songItem ? songItem.rawText : phrases.join("\n");
+
+                contextLyrics.push(`【曲名: ${title}】\n${fullText}`);
+                count++;
+            }
             }
 
             try {
