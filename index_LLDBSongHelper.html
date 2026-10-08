@@ -671,36 +671,20 @@
             const loadingId = addLoading();
 
             try {
-                // --- 💡 高精度キーワードマッピング & RAG抽出 ---
+                // --- 💡 アルゴリズムベースのコンテキスト抽出（脱・手動辞書） ---
                 let contextLyrics = [];
                 if (fullHelperData && fullHelperData.aiLyricsData) {
-                    let cleanQuery = query.replace(/(にぴったりの|の気持ち|の曲は|な曲|教えて|について|aiko|ですか|？|\?)/g, "");
+                    // 質問文から不要な語句を削除し、純粋なキーワードだけを残す
+                    let cleanQuery = query.replace(/(にぴったりの|の気持ち|の曲は|な曲|教えて|について|aiko|ですか|？|\?)/g, "").trim();
 
-                    // 意図に沿った歌詞キーワードの拡張定義
-                    const keywordMap = {
-                        "連絡": ["電話", "声", "受話器", "ベル", "コール", "鳴る", "メール", "着信", "返事", "ライン", "届く", "話す", "呼ぶ"],
-                        "嬉しい": ["嬉し", "うれしい", "幸せ", "シアワセ", "好き", "愛おしい", "胸が", "ドキドキ", "高鳴る", "笑", "ときめく"],
-                        "悲しい": ["悲しい", "涙", "泣く", "切ない", "苦しい", "痛い", "さよなら", "別れ", "一人", "寂しい"],
-                        "動物": ["犬", "猫", "カブトムシ", "鳥", "小鳥", "鳩", "蝶", "魚", "兎", "うさぎ", "へび", "カモメ"],
-                        "季節": ["春", "夏", "秋", "冬", "桜", "雪", "花火"]
-                    };
-
+                    // 質問文を2文字ずつに分解（N-gram）して検索網を広げる
                     let searchWords = [cleanQuery];
-                    Object.keys(keywordMap).forEach(key => {
-                        if (query.includes(key)) {
-                            searchWords.push(...keywordMap[key]);
-                        }
-                    });
-
-                    // クエリ内の2文字以上の部分文字列も検索ワードに追加してヒット率を上げる
                     if (cleanQuery.length >= 2) {
-                        for(let i=0; i<cleanQuery.length-1; i++){
-                            searchWords.push(cleanQuery.substring(i, i+2));
+                        for(let i = 0; i < cleanQuery.length - 1; i++){
+                            searchWords.push(cleanQuery.substring(i, i + 2));
                         }
                     }
-
-                    // 空文字と重複を排除
-                    searchWords = [...new Set(searchWords.filter(w => w && w.length > 1))];
+                    searchWords = [...new Set(searchWords.filter(w => w.trim().length > 1))];
 
                     const songScores = [];
 
@@ -709,31 +693,27 @@
                         const text = item.rawText;
                         let score = 0;
 
-                        // 検索キーワードの出現数でスコアリング
+                        // 抽出した文字列が歌詞に含まれているか純粋にスコアリング
                         searchWords.forEach(word => {
                             const safeWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                             const count = (text.match(new RegExp(safeWord, 'g')) || []).length;
                             if (count > 0) {
-                                score += query.includes(word) ? count * 5 : count * 2;
+                                // 質問文全体に一致すれば高得点、部分一致なら通常得点
+                                score += (word === cleanQuery) ? count * 10 : count * 2;
                             }
                         });
 
-                        // 質問の意図に近い代表曲をフォローバックとして優先候補に含める（大幅加点）
-                        if (query.includes("連絡") || query.includes("電話")) {
-                            const phoneTitles = ["二時頃", "リップ", "4秒", "天の川", "恋のスーパーボール"];
-                            if (phoneTitles.includes(item.title)) {
-                                score += 100;
-                            }
-                        }
+                        // 💡 AIの本来の理解力を引き出すためのスパイス（揺らぎ）
+                        // 手動辞書をなくした分、スコア0の曲もランダムに少しだけコンテキストに混ぜることで、
+                        // 「動物」などの抽象的な質問でも、AIが自力で該当する曲を見つけ出せる可能性を広げます
+                        score += Math.random() * 3;
 
-                        if (score > 0) {
-                            songScores.push({ title: item.title, text: item.rawText, score: score });
-                        }
+                        songScores.push({ title: item.title, text: item.rawText, score: score });
                     }
 
-                    // スコアの降順にソートし、上位20曲を抽出（AIがより多くの楽曲から提案・箇条書きできるようにコンテキストを拡張）
+                    // スコアの降順にソートし、上位30曲を抽出（抽出枠を広げてAIに判断を委ねる）
                     songScores.sort((a, b) => b.score - a.score);
-                    const topSongs = songScores.slice(0, 20);
+                    const topSongs = songScores.slice(0, 30);
                     
                     topSongs.forEach(song => {
                         contextLyrics.push(`【曲名: ${song.title}】\n--- 歌詞本文 ---\n${song.text}\n--- 歌詞終了 ---`);
