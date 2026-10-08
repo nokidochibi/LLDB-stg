@@ -672,7 +672,7 @@
 
             // --- 💡 高精度キーワードマッピング & RAG抽出 ---
             let contextLyrics = [];
-            if (fullHelperData && fullHelperData.lyricsData) {
+            if (fullHelperData && fullHelperData.aiLyricsData) {
                 let cleanQuery = query.replace(/(にぴったりの|の気持ち|の曲は|な曲|教えて|について|aiko|ですか|？|\?)/g, "");
 
                 // 意図に沿った歌詞キーワードの拡張定義
@@ -703,7 +703,7 @@
 
                 const songScores = [];
 
-                for (const item of fullHelperData.lyricsData) {
+                for (const item of fullHelperData.aiLyricsData) {
                     if (!item.title || !item.rawText) continue;
                     const text = item.rawText;
                     let score = 0;
