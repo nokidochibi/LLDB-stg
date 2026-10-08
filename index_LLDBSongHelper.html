@@ -670,17 +670,16 @@
         async function sendAiConsultation(query) {
             const loadingId = addLoading();
 
-            // --- 💡 複数曲を精度よく抽出するRAG処理 ---
+            // --- 💡 高精度キーワードマッピング & RAG抽出 ---
             let contextLyrics = [];
             if (fullHelperData && fullHelperData.lyricsData) {
                 let cleanQuery = query.replace(/(にぴったりの|の気持ち|の曲は|な曲|教えて|について|aiko|ですか|？|\?)/g, "");
 
+                // 意図に沿った歌詞キーワードの拡張定義
                 const keywordMap = {
-                    "連絡": ["連絡", "電話", "ベル", "コール", "鳴る", "メール", "声", "話す", "届く", "返事", "ライン", "夜"],
-                    "嬉しい": ["嬉しい", "シアワセ", "幸せ", "笑顔", "跳ねる", "ルンルン", "胸", "鳴る"],
-                    "好き": ["好き", "大すき", "大好き", "愛おしい", "愛しい", "特別", "一番"],
-                    "動物": ["犬", "猫", "カブトムシ", "むし", "鳥", "小鳥", "鳩", "蝶", "魚", "兎", "うさぎ", "へび", "カモメ", "ひつじ"],
-                    "会いたい": ["会いたい", "逢いたい", "あいたい", "顔が見たい", "声が聞きたい"]
+                    "連絡": ["電話", "声", "話す", "ベル", "コール", "鳴る", "メール", "文字", "返事", "ライン", "届く"],
+                    "嬉しい": ["嬉し", "うれしい", "幸せ", "シアワセ", "好き", "愛おしい", "胸が", "ドキドキ", "笑"],
+                    "動物": ["犬", "猫", "カブトムシ", "むし", "鳥", "小鳥", "鳩", "蝶", "魚", "兎", "うさぎ", "へび", "カモメ", "ひつじ"]
                 };
 
                 let searchWords = [cleanQuery];
@@ -695,6 +694,7 @@
                     if (!item.title || !item.rawText) continue;
                     const text = item.rawText;
 
+                    // 検索キーワードにヒットしたか判定
                     const isHit = searchWords.some(word => word && word.length > 0 && text.includes(word));
                     if (isHit) {
                         if (!matchedMap.has(item.title)) {
@@ -705,22 +705,24 @@
                     }
                 }
 
-                if (matchedMap.size === 0) {
-                    const fallbackTitles = ["二時頃", "リップ", "4秒", "天の川", "ボーイフレンド", "シアワセ"];
+                // 質問の意図に近い代表曲をフォローバックとして優先候補に含める
+                if (query.includes("連絡") || query.includes("電話")) {
+                    const phoneTitles = ["二時頃", "リップ", "4秒", "天の川", "恋のスーパーボール"];
                     for (const item of fullHelperData.lyricsData) {
-                        if (fallbackTitles.includes(item.title)) {
+                        if (phoneTitles.includes(item.title)) {
                             if (!matchedMap.has(item.title)) matchedMap.set(item.title, []);
                             let phrase = item.phrases ? item.phrases[0] : item.rawText;
-                            matchedMap.get(item.title).push(phrase);
+                            if (phrase) matchedMap.get(item.title).push(phrase);
                         }
                     }
                 }
 
-                // 関連度が高い順に最大5曲分を抽出
+                // マッチした上位4〜5曲分を抽出
                 let count = 0;
                 for (const [title, phrases] of matchedMap.entries()) {
                     if (count >= 5) break;
-                    contextLyrics.push(`【曲名: ${title}】\n${phrases.slice(0, 3).map(p => `「${p}」`).join("\n")}`);
+                    const uniquePhrases = [...new Set(phrases)].slice(0, 3);
+                    contextLyrics.push(`【曲名: ${title}】\n${uniquePhrases.map(p => `「${p}」`).join(" ")}`);
                     count++;
                 }
             }
@@ -751,7 +753,6 @@
                 addMessage("ごめんなさい、通信エラーが発生しちゃいました💦 しばらく経ってからもう一度送ってみてね。", 'bot');
             }
         }
-
         window.sendShiritoriAnswer = function(answer) {
              const query = answer;
              if (!query) return;
