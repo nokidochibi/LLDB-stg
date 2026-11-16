@@ -1379,43 +1379,50 @@
             }, 20);
         };
 
-        // スワイプバック処理 (右スワイプで戻る)
-        function setupDevSwipeEvents() {
-            let startX = 0;
-            let currentX = 0;
-            let isSwiping = false;
+// スワイプバック処理 (右スワイプで戻る)
+function setupDevSwipeEvents() {
+   let startX = 0;
+   let startY = 0;
+   let currentX = 0;
+   let currentY = 0;
+   let isSwiping = false;
 
-            const handleTouchStart = (e) => {
-                startX = e.touches[0].clientX;
-                isSwiping = true;
-            };
+     const handleTouchStart = (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        currentX = startX;
+        currentY = startY;
+        isSwiping = true;
+     };
 
-            const handleTouchMove = (e) => {
-                if (!isSwiping) return;
-                currentX = e.touches[0].clientX;
-            };
+     const handleTouchMove = (e) => {
+        if (!isSwiping) return;
+        currentX = e.touches[0].clientX;
+        currentY = e.touches[0].clientY;
+     };
 
-            const handleTouchEnd = () => {
-                if (!isSwiping) return;
-                isSwiping = false;
-                
-                const diffX = currentX - startX;
-                
-                // 右方向に70px以上スワイプされたら戻る処理
-                if (diffX > 70) {
-                    if (devCurrentView === 'lyrics') {
-                        devNavBack('songlist');
-                    } else if (devCurrentView === 'songlist') {
-                        devNavBack('index');
-                    }
-                }
-            };
+     const handleTouchEnd = () => {
+       if (!isSwiping) return;
+       isSwiping = false;
+          const diffX = currentX - startX;
+          const diffY = currentY - startY;
 
-            const devContainer = document.getElementById('container-dev');
-            devContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
-            devContainer.addEventListener('touchmove', handleTouchMove, { passive: true });
-            devContainer.addEventListener('touchend', handleTouchEnd);
-        }
+          // 右方向に120px以上スワイプされ、かつ縦方向の移動が40px未満のときだけ戻る処理（縦スクロール中の誤爆防止）
+          if (diffX > 120 && Math.abs(diffY) < 40) {
+              if (devCurrentView === 'lyrics') {
+                  devNavBack('songlist');
+              } else if (devCurrentView === 'songlist') {
+                  devNavBack('index');
+              }
+          }
+     };
+
+     const devContainer = document.getElementById('container-dev');
+     devContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+     devContainer.addEventListener('touchmove', handleTouchMove, { passive: true });
+     devContainer.addEventListener('touchend', handleTouchEnd);
+ }
+
 
         // ======================================================================
         // 💡 爆速検索エンジン (Client-side Search Logic)
