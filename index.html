@@ -58,6 +58,7 @@
         // 【0. GLOBAL】 共通定数設定
         // ==========================================================================
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzy7CNn83anQMEsvNxyK3zHMtTRtjHk6XZ-jWBNllRNxcXv41hKw-TenGoGjfpps6rLUw/exec";
+        const WORKER_API_URL = "https://lldb.noki-dochibi.workers.dev"; // ★追加: ユーザーデータの保存先（Cloudflare Worker）
         const ICON_URL = "https://unavatar.io/twitter/noki_dochibi";
         const APP_VERSION = "v4.7.3"; /* Major Update for Renewal */
     </script>
@@ -544,13 +545,9 @@
                 if(!confirm('新しい「LLDB ID」を発行しますか？\n(以前のデータがある場合、上書きされる可能性があります)')) return;
                 
                 try {
-                    // GASで確実に受け取れるよう form-urlencoded で送信
-                    const params = new URLSearchParams();
-                    params.append('action', 'generate_sync_id');
-
-                    const res = await fetch(GAS_API_URL, {
-                        method: 'POST',
-                        body: params
+                    // ★変更: ID発行はCloudflare Workerへ（待機ゼロ）
+                    const res = await fetch(WORKER_API_URL + '/user/generate', {
+                        method: 'POST'
                     });
                     const json = await res.json();
                     if (json.status === 'success') {
@@ -573,7 +570,12 @@
                 const input = document.getElementById('manual-sync-id');
                 const val = input.value.trim();
                 if (!val) return;
-                if (!confirm(`LLDB ID「${val}」を設定しますか。\n\n※OKを押した後、数秒お待ちください。\n　データをこの端末に復元します。`)) return;
+                // ★追加: IDの形式チェック（発行形式の8桁・英大文字と数字のみ）
+                if (!/^[A-Z0-9]{8}$/.test(val)) {
+                    alert('LLDB IDは8桁の英大文字と数字で入力してください。');
+                    return;
+                }
+                if (!confirm(`LLDB ID「${val}」を設定しますか。\n\nデータをこの端末に復元します。`)) return;
             
                 this.data.settings.syncId = val;
                 this.save(true); // 一旦保存(同期はしない)
@@ -594,35 +596,45 @@
                     // 圧縮された文字列をそのまま送る
                     const compressed = LZString.compressToUTF16(JSON.stringify(this.data));
                     
-                    const params = new URLSearchParams();
-                    params.append('action', 'save_user_data');
-                    params.append('syncId', this.data.settings.syncId);
-                    params.append('data', compressed);
+                    // ★変更: データの保存はCloudflare Workerへ（待機ゼロ）
+                    const res = await fetch(WORKER_API_URL + '/user/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ syncId: this.data.settings.syncId, data: compressed })
+                    });
+                    const json = await res.json();
+                    if (json.status !== 'success') {
+                        throw new Error(json.message);
+                    }
 
-                    // ★修正: 投票フラグがtrueの時だけ、投票データを送る
+                    // ★追加: 投票の時だけ、投票内容をGASへ送る（投票は今まで通りスプレッドシートに記録する）
                     if (isVote && window.lldbVotes) {
+                        const params = new URLSearchParams();
+                        params.append('action', 'save_user_data');
+                        params.append('syncId', this.data.settings.syncId);
+                        params.append('data', compressed);
                         params.append('isVoteUpdate', 'true');
                         params.append('q1', window.lldbVotes.q1 || '');
                         params.append('q2', window.lldbVotes.q2 || '');
                         params.append('q3', window.lldbVotes.q3 || '');
                         params.append('q4', window.lldbVotes.q4 || '');
                         params.append('q5', window.lldbVotes.q5 || '');
+
+                        const voteRes = await fetch(GAS_API_URL, {
+                            method: 'POST',
+                            body: params
+                        });
+                        const voteJson = await voteRes.json();
+                        if (voteJson.status !== 'success') {
+                            throw new Error(voteJson.message);
+                        }
                     }
 
-                    const res = await fetch(GAS_API_URL, {
-                        method: 'POST',
-                        body: params
-                    });
-                    const json = await res.json();
-                    if (json.status === 'success') {
                     this.data.settings.lastSync = new Date().toLocaleString();
                     this.save(true); // LastSync更新のため(再同期はしない)
                     this.updateUI();
                     if(!silent) alert('クラウドに保存しました！');
                     return true;
-                    } else {
-                        throw new Error(json.message);
-                    }
                 } catch(e) {
                     if(!silent) alert('保存に失敗しました: ' + e);
                     return false;
@@ -634,13 +646,11 @@
                 if (!silent && !confirm('クラウドからデータを読み込みますか？\n※現在の端末のデータは上書きされます。')) return false;
             
                 try {
-                    const params = new URLSearchParams();
-                    params.append('action', 'load_user_data');
-                    params.append('syncId', this.data.settings.syncId);
-            
-                    const res = await fetch(GAS_API_URL, {
+                    // ★変更: データの読み込みはCloudflare Workerから（待機ゼロ）
+                    const res = await fetch(WORKER_API_URL + '/user/load', {
                         method: 'POST',
-                        body: params
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ syncId: this.data.settings.syncId })
                     });
                     const json = await res.json();
             
@@ -654,22 +664,41 @@
                         this.broadcastData();
                         if(!silent) alert('復元が完了しました！');
                         
-                        // ★追加: 質問とお題を保持してモーダルを開く
-                        if (json.questions) {
-                            window.lldbQuestions = json.questions;
-                            window.lldbVotes = json.votes || {};
-                            window.lldbSongList = json.songList || [];
-                            openVoteModal();
-                        }
-                        
                         return true;
                     } else {
                         alert('データが見つかりませんでした。IDを確認してください。');
                         return false;
                     }
-                        } catch(e) {
-                alert('読み込みに失敗しました: ' + e);
-            }
+                } catch(e) {
+                    alert('読み込みに失敗しました: ' + e);
+                    return false;
+                }
+            },
+
+            // ★追加: 投票用データ（お題・前回の投票・曲リスト）をGASから取得する
+            fetchVoteData: async function() {
+                if (!this.data.settings.syncId) return false;
+                try {
+                    const params = new URLSearchParams();
+                    params.append('action', 'load_user_data');
+                    params.append('syncId', this.data.settings.syncId);
+            
+                    const res = await fetch(GAS_API_URL, {
+                        method: 'POST',
+                        body: params
+                    });
+                    const json = await res.json();
+                    if (json.status === 'success' && json.questions) {
+                        window.lldbQuestions = json.questions;
+                        window.lldbVotes = json.votes || {};
+                        window.lldbSongList = json.songList || [];
+                        return true;
+                    }
+                    return false;
+                } catch(e) {
+                    console.error(e);
+                    return false;
+                }
         },
         
         // ★追加: ログアウト（データ初期化）機能
@@ -850,7 +879,7 @@ const modal = document.getElementById('mylldb-modal');
       UserDataManager.init(); // 念の為UI最新化
 
       // ユーザー数を取得して表示
-      fetch(`${GAS_API_URL}?action=getUserCount`)
+      fetch(`${WORKER_API_URL}/user/count`)
         .then(res => res.json())
         .then(json => {
           if(json.status === 'success' && json.count) {
@@ -878,8 +907,12 @@ const modal = document.getElementById('mylldb-modal');
             btn.classList.add('opacity-70');
             btn.disabled = true; // 連打防止
             
-            // 裏側で通信を実行
+            // 裏側で通信を実行（データはWorkerから、投票用データはGASから取得する）
             await UserDataManager.loadFromCloud(true);
+            const voteReady = await UserDataManager.fetchVoteData();
+            if (voteReady) {
+                openVoteModal();
+            }
             
             // 通信が終わったら（モーダルが開く直前に）ボタンの見た目を元に戻す
             btn.innerHTML = originalHtml;
@@ -1000,9 +1033,11 @@ const modal = document.getElementById('mylldb-modal');
                 else if (event.data.type === 'openVoteModal') {
                     // もし同期IDが設定されていれば、裏側で最新の質問と選択肢を取ってきてからモーダルを開く
                     if (UserDataManager.data.settings.syncId) {
-                        UserDataManager.loadFromCloud(true).then(() => {
-                            openVoteModal();
-                        });
+                        UserDataManager.loadFromCloud(true)
+                            .then(() => UserDataManager.fetchVoteData())
+                            .then(() => {
+                                openVoteModal();
+                            });
                     } else {
                         // 未ログイン状態ならそのまま開く（開いた後に「設定が必要です」と促される）
                         openVoteModal();
