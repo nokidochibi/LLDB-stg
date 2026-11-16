@@ -257,7 +257,7 @@ try {
       return d > latest ? d : latest;
     }, new Date(0));
   if (!isNaN(asofLatest.getTime())) {
-    const asofText = `※ ${asofLatest.getMonth() + 1}月${asofLatest.getDate()}日時点`;
+    const asofText = `※${asofLatest.getFullYear()}/${('0' + (asofLatest.getMonth() + 1)).slice(-2)}/${('0' + asofLatest.getDate()).slice(-2)} 時点`;
     const songNote = document.getElementById('song-asof-note');
     if (songNote) songNote.textContent = asofText;
     const venueNote = document.getElementById('venue-asof-note');
