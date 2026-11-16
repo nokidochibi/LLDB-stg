@@ -248,8 +248,26 @@ function initializeApp(data, isFullLoad = true) {
     }
   }
 
-  // フィルタの準備とリスト表示はStep1でも必ず行う
-  populateFilters(allLiveRecords);
+// ★追加: 楽曲・会場タブに「何月何日時点」の注意書きを表示（セトリ未登録の未来公演は除く）
+try {
+  const asofLatest = allLiveRecords
+    .filter(rec => (rec.songCount || 0) > 0)
+    .reduce((latest, rec) => {
+      const d = new Date(rec.date);
+      return d > latest ? d : latest;
+    }, new Date(0));
+  if (!isNaN(asofLatest.getTime())) {
+    const asofText = `※ ${asofLatest.getMonth() + 1}月${asofLatest.getDate()}日時点`;
+    const songNote = document.getElementById('song-asof-note');
+    if (songNote) songNote.textContent = asofText;
+    const venueNote = document.getElementById('venue-asof-note');
+    if (venueNote) venueNote.textContent = asofText;
+  }
+} catch(e) { console.error(e); }
+
+// フィルタの準備とリスト表示はStep1でも必ず行う
+populateFilters(allLiveRecords);
+
   
   const searchInput = document.getElementById('search-input');
   if (searchInput && !searchInput.hasAttribute('data-listener-attached')) {
