@@ -1096,29 +1096,25 @@ try {
         
         if(dailyViewsChartInstance) { dailyViewsChartInstance.destroy(); dailyViewsChartInstance = null; }
         
-        try {
-            if(dailyViewsChartInstance) { dailyViewsChartInstance.destroy(); dailyViewsChartInstance = null; }
-        
-// グラフデータを塊から取得する間は読み込み表示にする
-document.getElementById('graphLoading').style.display = 'block';
-document.getElementById('dailyViewsChart').style.display = 'none';
-document.getElementById('noGraphData').style.display = 'none';
-        
-try {
-    const series = await getGraphSeries(url);
-    if (series && series.length > 0) {
-        document.getElementById('graphLoading').style.display = 'none';
-        document.getElementById('dailyViewsChart').style.display = 'block';
+        // グラフデータを塊から取得する間は読み込み表示にする
+        document.getElementById('graphLoading').style.display = 'block';
+        document.getElementById('dailyViewsChart').style.display = 'none';
         document.getElementById('noGraphData').style.display = 'none';
+        
+        try {
+            const series = await getGraphSeries(url);
+            if (series && series.length > 0) {
+                document.getElementById('graphLoading').style.display = 'none';
+                document.getElementById('dailyViewsChart').style.display = 'block';
+                document.getElementById('noGraphData').style.display = 'none';
                 
-        const formattedData = series.map(d => ({
-            date: d[0],
-            views: d[1]
-        }));
+                const formattedData = series.map(d => ({
+                    date: d[0],
+                    views: d[1]
+                }));
                 
-        renderGraph(formattedData);
-    } else {
-
+                renderGraph(formattedData);
+            } else {
                 document.getElementById('graphLoading').style.display = 'none';
                 document.getElementById('dailyViewsChart').style.display = 'none';
                 document.getElementById('noGraphData').style.display = 'block';
