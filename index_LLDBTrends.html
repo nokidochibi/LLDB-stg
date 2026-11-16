@@ -730,9 +730,39 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // ★追加: キャッシュキー定数
-    const DATA_CACHE_KEY = 'lldb_trends_table_cache';
-    let fullTrendGraphsData = null; // ★追加: 全グラフデータを保持する変数
+// ★追加: キャッシュキー定数
+const DATA_CACHE_KEY = 'lldb_trends_table_cache_v2';
+// ★追加: グラフの塊データを保持する変数（塊番号 -> { URL: [[日付, 回数], ...] }）
+const trendGraphChunks = {};
+// グラフを何個の塊に分けるか（GAS・Workerと同じ値にすること）
+const TREND_CHUNK_COUNT = 24;
+
+// URLから塊の番号を決める（GAS・Workerと同じ計算式）
+function getTrendChunkIndex(targetUrl) {
+    let hash = 0;
+    for (let i = 0; i < targetUrl.length; i++) {
+        hash = (hash * 31 + targetUrl.charCodeAt(i)) >>> 0;
+    }
+    return hash % TREND_CHUNK_COUNT;
+}
+
+// 指定した動画が入っている塊を取得する（取得済みなら使い回す）
+async function loadTrendGraphChunk(targetUrl) {
+    const chunkIndex = getTrendChunkIndex(targetUrl);
+    if (trendGraphChunks[chunkIndex]) return trendGraphChunks[chunkIndex];
+    const res = await fetch(`https://lldb.noki-dochibi.workers.dev/trends-graph?chunk=${chunkIndex}`);
+    if (!res.ok) return {};
+    const chunkData = await res.json();
+    trendGraphChunks[chunkIndex] = chunkData;
+    return chunkData;
+}
+
+// 指定した動画のグラフデータ（[[日付, 回数], ...]）を取得する
+async function getGraphSeries(targetUrl) {
+    const chunkData = await loadTrendGraphChunk(targetUrl);
+    return chunkData[targetUrl] || [];
+}
+
     
     // ★追加: 楽曲リリース年取得のためのデータ保存用
     let songDatabaseForYear = []; 
@@ -756,29 +786,26 @@
             await loadSongDataForYear();
         }
 
-        // 1. キャッシュがあれば即表示
-        try {
-            const cached = localStorage.getItem(DATA_CACHE_KEY);
-            if (cached) {
-                const json = JSON.parse(cached);
-                processAndDisplay(json);
-                // グラフデータもキャッシュから復元
-                if (json.trendGraphsData) fullTrendGraphsData = json.trendGraphsData;
-            }
-        } catch (e) { console.warn("Cache load failed", e); }
-        
-        // 2. ネットワークから最新データを取得
-        try {
-            // ★変更: GASではなくCloudflareの新しい引き出しから取得
-            const res = await fetch(`https://lldb.noki-dochibi.workers.dev/trends`);
-            const json = await res.json();
-            
-            if (json.status === 'error') throw new Error(json.message);
-            
-            // ★追加: 全グラフデータを変数に保存
-            if (json.trendGraphsData) fullTrendGraphsData = json.trendGraphsData;
+// 1. キャッシュがあれば即表示
+try {
+    const cached = localStorage.getItem(DATA_CACHE_KEY);
+    if (cached) {
+        const json = JSON.parse(cached);
+        processAndDisplay(json);
+    }
+} catch (e) { console.warn("Cache load failed", e); }
 
-            // 3. キャッシュを更新
+        
+// 2. ネットワークから最新データを取得
+try {
+    // ★変更: 一覧だけの軽い引き出しから取得（グラフは必要なときに塊ごと取得する）
+    const res = await fetch(`https://lldb.noki-dochibi.workers.dev/trends-meta`);
+    const json = await res.json();
+            
+    if (json.status === 'error') throw new Error(json.message);
+
+    // 3. キャッシュを更新
+
             try {
                 localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(json));
             } catch (e) { console.warn("Cache save failed", e); }
@@ -1070,18 +1097,28 @@
         if(dailyViewsChartInstance) { dailyViewsChartInstance.destroy(); dailyViewsChartInstance = null; }
         
         try {
-            if (fullTrendGraphsData && fullTrendGraphsData[url] && fullTrendGraphsData[url].length > 0) {
-                document.getElementById('graphLoading').style.display = 'none';
-                document.getElementById('dailyViewsChart').style.display = 'block';
-                document.getElementById('noGraphData').style.display = 'none';
+            if(dailyViewsChartInstance) { dailyViewsChartInstance.destroy(); dailyViewsChartInstance = null; }
+        
+// グラフデータを塊から取得する間は読み込み表示にする
+document.getElementById('graphLoading').style.display = 'block';
+document.getElementById('dailyViewsChart').style.display = 'none';
+document.getElementById('noGraphData').style.display = 'none';
+        
+try {
+    const series = await getGraphSeries(url);
+    if (series && series.length > 0) {
+        document.getElementById('graphLoading').style.display = 'none';
+        document.getElementById('dailyViewsChart').style.display = 'block';
+        document.getElementById('noGraphData').style.display = 'none';
                 
-                const formattedData = fullTrendGraphsData[url].map(d => ({
-                    date: d[0],
-                    views: d[1]
-                }));
+        const formattedData = series.map(d => ({
+            date: d[0],
+            views: d[1]
+        }));
                 
-                renderGraph(formattedData);
-            } else {
+        renderGraph(formattedData);
+    } else {
+
                 document.getElementById('graphLoading').style.display = 'none';
                 document.getElementById('dailyViewsChart').style.display = 'none';
                 document.getElementById('noGraphData').style.display = 'block';
@@ -1092,7 +1129,8 @@
         }
     }
 
-    function openCompareGraph() {
+    async function openCompareGraph() {
+
         if (selectedCompareUrls.size === 0) {
             showToast("比較したい動画を1つ以上選んでね");
             return;
@@ -1114,17 +1152,26 @@
         
         if(dailyViewsChartInstance) { dailyViewsChartInstance.destroy(); dailyViewsChartInstance = null; }
 
-        if (!fullTrendGraphsData) {
-            document.getElementById('graphLoading').textContent = "データを読み込み中です...";
-            return;
-        }
+        // 選ばれた動画のグラフデータを塊から取得する
+document.getElementById('graphLoading').style.display = 'block';
+const compareGraphsData = {};
+try {
+    for (const targetUrl of selectedUrls) {
+        compareGraphsData[targetUrl] = await getGraphSeries(targetUrl);
+    }
+} catch(e) {
+    console.error("比較グラフ取得エラー:", e);
+    document.getElementById('graphLoading').textContent = "エラーが発生しました";
+    return;
+}
 
-        // 全日付のユニーク配列を作成（時系列昇順）
-        const allDatesSet = new Set();
-        selectedUrls.forEach(url => {
-            const history = fullTrendGraphsData[url] || [];
-            history.forEach(d => allDatesSet.add(d[0]));
-        });
+// 全日付のユニーク配列を作成（時系列昇順）
+const allDatesSet = new Set();
+selectedUrls.forEach(url => {
+    const history = compareGraphsData[url] || [];
+    history.forEach(d => allDatesSet.add(d[0]));
+});
+
         const sortedDates = Array.from(allDatesSet).sort((a, b) => new Date(a) - new Date(b));
 
         if (sortedDates.length === 0) {
@@ -1146,7 +1193,8 @@
                 displayTitle = displayTitle.substring(0, 14);
             }
 
-            const rawData = fullTrendGraphsData[url] || [];
+            const rawData = compareGraphsData[url] || [];
+
             const dataMap = {};
             rawData.forEach(d => { dataMap[d[0]] = d[1]; });
 
